@@ -91,7 +91,7 @@ public class EthereumBean {
     public void start()  {
         //printCP();
         ethereum = EthereumFactory.createEthereum();
-        ((BlockchainImpl)ethereum.getBlockchain()).setStopOn(0);
+        //((BlockchainImpl)ethereum.getBlockchain()).setStopOn(0);
 
 
 
