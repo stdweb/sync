@@ -44,7 +44,7 @@ public class MyRestController {
 //        return "Error handling";
 //    }
 
-    @RequestMapping(value = "/blockchain/{cmd}", method = GET, produces = APPLICATION_JSON_VALUE)
+    @RequestMapping(value = "/ledger/{cmd}", method = GET, produces = APPLICATION_JSON_VALUE)
     @ResponseBody
     public String ledger(@PathVariable String cmd) throws IOException, SQLException, InterruptedException {
 
