@@ -39,7 +39,7 @@ public class EthereumBean {
         EthereumBean.ledgerSyncBlock = ledgerSyncBlock;
     }
 
-    public static long ledgerSyncBlock=Long.MAX_VALUE;
+    private static long ledgerSyncBlock=Long.MAX_VALUE;
 
     //contract
     //[{"constant":false,"inputs":
@@ -108,16 +108,27 @@ public class EthereumBean {
         //loadLedger();
     }
 
-    public void syncLedger() throws SQLException {
-        if (ledgerSyncBlock==Long.MAX_VALUE)
-            return;
-        else {
-            LedgerStore ledgerStore = LedgerStore.getLedgerStore(listener);
+    public synchronized  void  syncLedger() throws SQLException, InterruptedException {
+
+        ((BlockchainImpl)ethereum.getBlockchain()).setStopOn(0);
+        Thread.sleep(1000);
+        //EthereumBean.setLedgerSyncBlock(0);
+
+        LedgerStore ledgerStore = LedgerStore.getLedgerStore(listener);
+        ledgerSyncBlock = ledgerStore.ledgerTopBlock();
+
+        Thread sync = new Thread(() -> {
             while (ledgerSyncBlock <= ethereum.getBlockchain().getBestBlock().getNumber()) {
-                ledgerStore.insertBlock(ledgerSyncBlock);
-                ++ledgerSyncBlock;
+                try {
+                    ledgerStore.insertBlock(ledgerSyncBlock);
+                    ++ledgerSyncBlock;
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+
             }
-        }
+        });
+        sync.start();
 
         if (ledgerSyncBlock==ethereum.getBlockchain().getBestBlock().getNumber())
             ledgerSyncBlock=Long.MAX_VALUE;

@@ -46,6 +46,29 @@ public class MyRestController {
 
     @RequestMapping(value = "/blockchain/{cmd}", method = GET, produces = APPLICATION_JSON_VALUE)
     @ResponseBody
+    public String ledger(@PathVariable String cmd) throws IOException, SQLException, InterruptedException {
+
+        BlockchainImpl blockchain = (BlockchainImpl)ethereumBean.getEthereum().getBlockchain();
+        switch (cmd.toLowerCase())
+        {
+            case "stop":
+                blockchain.setStopOn(0);break;
+            case "start":
+                blockchain.setStopOn(0);
+                //EthereumBean.setLedgerSyncBlock(0);
+                ethereumBean.syncLedger();
+                break;
+
+            //status
+        }
+        //long stopBlockNo=Long.valueOf(blockId);
+        String result = blockchainStatus( blockchain);
+
+        return result;
+    }
+
+    @RequestMapping(value = "/blockchain/{cmd}", method = GET, produces = APPLICATION_JSON_VALUE)
+    @ResponseBody
     public String blockchain(@PathVariable String cmd) throws IOException, SQLException, InterruptedException {
 
         BlockchainImpl blockchain = (BlockchainImpl)ethereumBean.getEthereum().getBlockchain();
