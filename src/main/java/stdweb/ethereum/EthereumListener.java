@@ -6,11 +6,8 @@ import org.ethereum.core.TransactionReceipt;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.listener.EthereumListenerAdapter;
 import org.ethereum.util.BIUtil;
-import org.ethereum.vm.program.InternalTransaction;
-import org.spongycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
-import java.sql.SQLException;
 import java.util.List;
 
 public class EthereumListener extends EthereumListenerAdapter {
