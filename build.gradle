@@ -18,9 +18,9 @@ repositories {
     mavenLocal()
     mavenCentral()
 
-//    maven {
-//        url "http://dl.bintray.com/ethereum/maven"
-//    }
+    maven {
+        url "http://dl.bintray.com/ethereum/maven"
+    }
 }
 
 configurations.all {
