@@ -364,7 +364,7 @@ public class LedgerStore {
     public void insertLedgerEntry(LedgerEntry entry) throws SQLException {
         Block block = replayBlock.getBlock();
 
-        PreparedStatement st = statInsertEntry;
+        PreparedStatement st = getInsertEntryStatement();
 
         //String insEntrySql="insert into ledger
         // (tx ,address ,amount ,block ,blocktimestamp,depth ,gasused ,fee ,entryType,offsetAccount,descr,GrossAmount)
@@ -388,9 +388,17 @@ public class LedgerStore {
 
     }
 
+    private PreparedStatement getInsertEntryStatement() throws SQLException {
+        ensureConnection();
+
+        return statInsertEntry;
+    }
 
 
     public void deleteBlocksFrom(long blockNo) throws SQLException {
+
+        ensureConnection();
+
         String s="delete from ledger where block>="+blockNo;
         Statement statement = conn.createStatement();
         statement.execute(s);
@@ -399,6 +407,15 @@ public class LedgerStore {
         statement = conn.createStatement();
         statement.execute(s);
         conn.commit();
+    }
+
+    private void ensureConnection() throws SQLException {
+        if (conn==null || conn.isClosed()) {
+            System.out.println("ensure connection!");
+            conn = DriverManager.getConnection("jdbc:h2:~/testh2db", "sa", "");
+            String insEntrySql="insert into ledger (tx ,address ,amount ,block ,blocktimestamp,depth ,gasused ,fee ,entryType,offsetAccount,descr,GrossAmount) values(?,?,?,?,?,?,?,?,?,?,?,?)";
+            statInsertEntry = conn.prepareStatement(insEntrySql);
+        }
     }
 
     public void truncateLedger() throws SQLException {
@@ -623,7 +640,7 @@ public class LedgerStore {
     private LedgerStore(EthereumListener listener) throws SQLException {
         this.listener=listener;
         this.ethereum=listener.getEthereum();
-        conn = DriverManager.getConnection("jdbc:h2:~/testh2db", "sa", "");
+        ensureConnection();
         conn.setAutoCommit(false);
         count=0;
         syncStatus=SyncStatus.stopped;
@@ -695,9 +712,10 @@ public class LedgerStore {
 
 
 
-        String insEntrySql="insert into ledger (tx ,address ,amount ,block ,blocktimestamp,depth ,gasused ,fee ,entryType,offsetAccount,descr,GrossAmount) values(?,?,?,?,?,?,?,?,?,?,?,?)";
 
-        statInsertEntry = conn.prepareStatement(insEntrySql);
+
+        //statInsertEntry = conn.prepareStatement(insEntrySql);
+        ensureConnection();
 
         createSyncLedgerThread();
 
