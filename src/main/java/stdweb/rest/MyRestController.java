@@ -54,15 +54,16 @@ public class MyRestController {
 
         int i = Integer.parseInt(cmd);
 
+        String ret="";
         try {
             switch (cmd) {
                 case "delete":
                     ledgerStore.deleteBlocksFrom(i);
-                    return "block deleted:"+i;
+                    ret="block deleted:"+i;
                     break;
                 case "insert":
                     ledgerStore.insertBlock(i);
-                    return "block inserted:"+i;
+                    ret= "block inserted:"+i;
                     break;
             }
         }
@@ -71,6 +72,7 @@ public class MyRestController {
             System.out.println(e.getMessage()+"\n");
             e.printStackTrace();
         }
+        return  ret;
 
 
     }
