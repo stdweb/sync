@@ -52,7 +52,7 @@ public class MyRestController {
     public String sql(@PathVariable String cmd, @PathVariable String param) throws IOException,  InterruptedException {
         LedgerStore ledgerStore = LedgerStore.getLedgerStore(ethereumBean.getListener());
 
-        int i = Integer.parseInt(cmd);
+        int i = Integer.parseInt(param);
 
         String ret="";
         try {
