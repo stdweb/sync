@@ -47,6 +47,34 @@ public class MyRestController {
 //        return "Error handling";
 //    }
 
+    @RequestMapping(value = "/ledger/{cmd}/{param}", method = GET, produces = APPLICATION_JSON_VALUE)
+    @ResponseBody
+    public String sql(@PathVariable String cmd, @PathVariable String param) throws IOException,  InterruptedException {
+        LedgerStore ledgerStore = LedgerStore.getLedgerStore(ethereumBean.getListener());
+
+        int i = Integer.parseInt(cmd);
+
+        try {
+            switch (cmd) {
+                case "delete":
+                    ledgerStore.deleteBlocksFrom(i);
+                    return "block deleted:"+i;
+                    break;
+                case "insert":
+                    ledgerStore.insertBlock(i);
+                    return "block inserted:"+i;
+                    break;
+            }
+        }
+        catch (SQLException e)
+        {
+            System.out.println(e.getMessage()+"\n");
+            e.printStackTrace();
+        }
+
+
+    }
+
     @RequestMapping(value = "/ledger/{cmd}", method = GET, produces = APPLICATION_JSON_VALUE)
     @ResponseBody
     public String ledger(@PathVariable String cmd) throws IOException, SQLException, InterruptedException {
@@ -70,6 +98,8 @@ public class MyRestController {
                 ledgerStore.setSyncStatus(SyncStatus.stopped);
                 ledgerStore.setNextStatus(SyncStatus.stopped);
                 break;
+
+
 
             default:
 
