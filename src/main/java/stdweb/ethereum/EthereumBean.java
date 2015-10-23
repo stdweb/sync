@@ -12,7 +12,10 @@ import stdweb.Core.SyncStatus;
 
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.sql.Connection;
+import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -71,8 +74,13 @@ public class EthereumBean {
 
     public void start()  {
         //printCP();
+//        AzureSql();
+
         ethereum = EthereumFactory.createEthereum();
+        ethereum.stopPeerDiscovery();
+
         blockchain = ((BlockchainImpl) ethereum.getBlockchain());
+
 
         blockchainSyncStatus=SyncStatus.stopped;
 
@@ -85,6 +93,49 @@ public class EthereumBean {
         System.out.println("________________________________________________________________________");
 
         //loadLedger();
+    }
+
+    private void AzureSql() {
+        try {
+
+            Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
+            String connstr="jdbc:sqlserver://ledg.database.windows.net:1433;database=ledgerdb;user=std;password={Str,.ul11};encrypt=true;trustServerCertificate=false;hostNameInCertificate=*.database.windows.net;loginTimeout=30;";
+            Connection conn = DriverManager.getConnection(connstr);
+
+            Statement statement = conn.createStatement();
+
+            //stat.execute("drop table if exists LEDGER");
+            String delTable=
+            "IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[ledger]') AND type in (N'U')) "+
+            "DROP TABLE [dbo].[ledger]";
+            String createTable="CREATE TABLE [dbo].[ledger]" +
+                    "( [id] [bigint] IDENTITY(1,1) NOT NULL, " +
+                    "  [tx] [binary](50) NULL," +
+                    " CONSTRAINT [PK_ledger] PRIMARY KEY CLUSTERED " +
+                    "( [id] ASC )" +
+                    "WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]            ) ON [PRIMARY]";
+            String dropInd="IF  EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[ledger]') AND name = N'IX_ledger')\n" +
+                    "DROP INDEX [IX_ledger] ON [dbo].[ledger] WITH ( ONLINE = OFF )";
+
+            String createInd="CREATE NONCLUSTERED INDEX [IX_ledger] ON [dbo].[ledger] ( [tx] ASC )";
+
+
+            statement.execute(delTable);
+            statement.execute(createTable);
+            statement.execute(dropInd);
+            statement.execute(createInd);
+            //statement.execute("create index if not exists idx_ledger_address_tx on ledger(address,tx)");
+            //statement.execute("create index if not exists idx_ledger_tx on ledger(tx)");
+            //statement.execute("create index if not exists idx_ledger_block_id on ledger(block,id)");
+
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+            System.exit(0);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+
     }
 
 

@@ -84,6 +84,7 @@ public class LedgerStore {
 
         System.out.println("Ledger Start BulkLoad from :"+_block);
 
+
         this.lastSyncBlock=_block;
         if (!syncLedgerThread.isAlive()) {
             createSyncLedgerThread();
@@ -610,7 +611,7 @@ public class LedgerStore {
         if (ledgerStore==null)
             try {
                 ledgerStore=new LedgerStore(listener);
-                ledgerStore.init();
+                ledgerStore.init("h2");
             } catch (SQLException e) {
                 e.printStackTrace();
             } catch (Exception e) {
@@ -629,13 +630,31 @@ public class LedgerStore {
         nextStatus=SyncStatus.stopped;
     }
 
-    private void init() throws Exception {
+    private void initMsSql() throws Exception
+    {
+        Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
+        String connstr="jdbc:sqlserver://ledg.database.windows.net:1433;database=ledgerdb;user=std;password={Str,.ul11};encrypt=true;trustServerCertificate=false;hostNameInCertificate=*.database.windows.net;loginTimeout=30;";
+        Connection conn = DriverManager.getConnection(connstr);
 
+        Statement statement = conn.createStatement();
 
-        System.out.println("Init");
+        //stat.execute("drop table if exists LEDGER");
+        String delTable=
+                "IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[ledger]') AND type in (N'U')) "+
+                        "DROP TABLE [dbo].[ledger]";
+        String createTable="CREATE TABLE [dbo].[ledger]" +
+                "( [id] [bigint] IDENTITY(1,1) NOT NULL, " +
+                "  [tx] [binary](50) NULL," +
+                " CONSTRAINT [PK_ledger] PRIMARY KEY CLUSTERED " +
+                "( [id] ASC )" +
+                "WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]            ) ON [PRIMARY]";
+        String dropInd="IF  EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[ledger]') AND name = N'IX_ledger')\n" +
+                "DROP INDEX [IX_ledger] ON [dbo].[ledger] WITH ( ONLINE = OFF )";
 
-
-
+        String createInd="CREATE NONCLUSTERED INDEX [IX_ledger] ON [dbo].[ledger] ( [tx] ASC )";
+    }
+    private void initH2()  throws Exception
+    {
         Class.forName("org.h2.Driver");
         //Connection conn = DriverManager.getConnection("jdbc:h2:~/testh2db", "sa", "");
         //System.out.println(conn);
@@ -655,13 +674,34 @@ public class LedgerStore {
 
         statement.execute("create index if not exists idx_block_hash_id on block(hash,id)");
 
+        statement.close();
+
+
+    }
+    private void init(String sqltype) throws Exception {
+
+
+        System.out.println("Init");
+
+        switch (sqltype.toLowerCase())
+        {
+            case "mssql":
+                initMsSql();break;
+            case "h2":
+                initH2();break;
+
+        }
+
+
+
+
         String insEntrySql="insert into ledger (tx ,address ,amount ,block ,blocktimestamp,depth ,gasused ,fee ,entryType,offsetAccount,descr,GrossAmount) values(?,?,?,?,?,?,?,?,?,?,?,?)";
 
         statInsertEntry = conn.prepareStatement(insEntrySql);
 
         createSyncLedgerThread();
 
-        statement.close();
+
 
         ensureGenesis();
 
