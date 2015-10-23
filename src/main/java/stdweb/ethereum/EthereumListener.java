@@ -6,8 +6,11 @@ import org.ethereum.core.TransactionReceipt;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.listener.EthereumListenerAdapter;
 import org.ethereum.util.BIUtil;
+import stdweb.Core.LedgerStore;
+import stdweb.Core.SyncStatus;
 
 import java.math.BigInteger;
+import java.sql.SQLException;
 import java.util.List;
 
 public class EthereumListener extends EthereumListenerAdapter {
@@ -33,21 +36,17 @@ public class EthereumListener extends EthereumListenerAdapter {
 
     @Override
     public void onBlock(Block block, List<TransactionReceipt> receipts) {
-//        try {
-//
-//            if (EthereumBean.getLedgerSyncBlock()==Long.MAX_VALUE) {
-//                LedgerStore.getLedgerStore(this).insertBlock(block.getNumber());
-//
-//                if (block.getNumber() % 200 == 0)
-//                    System.out.println("Ledger insertBlock:" + block.getNumber());
-//            }
-//
-//        } catch (SQLException e) {
-//            e.printStackTrace();
-//        }
-        if (block.getNumber() % 1 == 0)
-            System.out.println("Ledger insertBlock:" + block.getNumber());
-
+        LedgerStore ledgerStore = LedgerStore.getLedgerStore(this);
+        if (ledgerStore.getSyncStatus()== SyncStatus.onBlockSync)
+            try {
+                ledgerStore.insertBlock(block.getNumber());
+                if (block.getNumber() % 1 == 0)
+                    System.out.println("On Block Ledger  insert:" + block.getNumber());
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        else
+            System.out.println("Block:"+ block.getNumber());
     }
 
     @Override

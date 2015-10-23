@@ -4,9 +4,12 @@ package stdweb.rest;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockchainImpl;
 import org.ethereum.facade.Ethereum;
+import org.ethereum.net.eth.handler.Eth;
 import org.springframework.web.bind.annotation.PathVariable;
 import stdweb.Core.Convert2json;
+import stdweb.Core.Ledger;
 import stdweb.Core.LedgerStore;
+import stdweb.Core.SyncStatus;
 import stdweb.ethereum.EthereumBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -49,20 +52,40 @@ public class MyRestController {
     public String ledger(@PathVariable String cmd) throws IOException, SQLException, InterruptedException {
 
         BlockchainImpl blockchain = (BlockchainImpl)ethereumBean.getEthereum().getBlockchain();
+        LedgerStore ledgerStore = LedgerStore.getLedgerStore(ethereumBean.getListener());
         switch (cmd.toLowerCase())
         {
             case "stop":
-                blockchain.setStopOn(0);break;
+                ledgerStore.stopSync();
+                break;
+                //ethereumBean.ledgerStopSync();
             case "start":
-                blockchain.setStopOn(0);
-                //EthereumBean.setLedgerSyncBlock(0);
-                ethereumBean.syncLedger();
+                ledgerStore.ledgerBulkLoad();
+                //ethereumBean.ledgerStartSync(Long.MAX_VALUE);
+                break;
+            case "sync":
+                ledgerStore.setNextStatus(SyncStatus.onBlockSync);
+                break;
+            case "stopsync":
+                ledgerStore.setSyncStatus(SyncStatus.stopped);
+                ledgerStore.setNextStatus(SyncStatus.stopped);
                 break;
 
-            //status
+            default:
+
+                try {
+
+                    int block = Integer.parseInt(cmd);
+
+                    ledgerStore.ledgerBulkLoad(block);
+                    //ethereumBean.ledgerStartSync(block);
+                }
+                catch (NumberFormatException e)
+                {
+                    return "Wrong cmd in method /ledger/{cmd}";
+                }
         }
-        //long stopBlockNo=Long.valueOf(blockId);
-        String result = blockchainStatus( blockchain);
+        String result = blockchainStatus( );
 
         return result;
     }
@@ -72,17 +95,26 @@ public class MyRestController {
     public String blockchain(@PathVariable String cmd) throws IOException, SQLException, InterruptedException {
 
         BlockchainImpl blockchain = (BlockchainImpl)ethereumBean.getEthereum().getBlockchain();
+        String result = blockchainStatus( );
         switch (cmd.toLowerCase())
         {
             case "stop":
-                blockchain.setStopOn(0);break;
+                ethereumBean.blockchainStopSync();
+
+                break;
             case "start":
-                blockchain.setStopOn(Long.MAX_VALUE);break;
+                ethereumBean.blockchainStartSync();
+
+                break;
+
+            case "check":
+                result+=checkBalance();
+                break;
 
             //status
         }
         //long stopBlockNo=Long.valueOf(blockId);
-        String result = blockchainStatus( blockchain);
+
 
         return result;
     }
@@ -110,7 +142,15 @@ public class MyRestController {
 //        return result;
 //    }
 
+    public String checkBalance() throws InterruptedException, SQLException {
+        long number = EthereumBean.getBlockchain().getBestBlock().getNumber();
+        LedgerStore ledgerStore = LedgerStore.getLedgerStore(ethereumBean.getListener());
+        int sqlTopBlock = ledgerStore.getSqlTopBlock();
+        Block blockByNumber = EthereumBean.getBlockchain().getBlockByNumber(Math.min(number, sqlTopBlock));
+        return checkBalance(blockByNumber);
+    }
     public String checkBalance(Block block) throws InterruptedException, SQLException {
+
         LedgerStore ledgerStore = LedgerStore.getLedgerStore(ethereumBean.getListener());
         BlockchainImpl blockchain = (BlockchainImpl)ethereumBean.getEthereum().getBlockchain();
 
@@ -132,10 +172,13 @@ public class MyRestController {
 
         return result;
     }
-    private String blockchainStatus( BlockchainImpl blockchain) throws SQLException, InterruptedException {
+    private String blockchainStatus(  ) throws SQLException, InterruptedException {
 
+        BlockchainImpl blockchain = (BlockchainImpl)ethereumBean.getEthereum().getBlockchain();
         String result="TopBlock:"+blockchain.getBestBlock().getNumber()+"\n";
         result+="stopOn:"+blockchain.getStopOn()+"\n";
+
+        result+="Blockchain syncStatus:"+EthereumBean.getBlockchainSyncStatus()+"\n";
 
         if (blockchain.getStopOn()<=blockchain.getBestBlock().getNumber())
             result+=String.format("Top block %s, Blockchain is stopped\n",String.valueOf(blockchain.getBestBlock().getNumber()));
@@ -143,14 +186,20 @@ public class MyRestController {
             result+=String.format("Top block %s, Blockchain is loading\n",String.valueOf(blockchain.getBestBlock().getNumber()));
 
         try {
-            result+=String.format("Ledger Top block: %s\n",LedgerStore.getLedgerStore(ethereumBean.getListener()).ledgerTopBlock());
+            result+=String.format("Ledger sql Top block: %s\n",LedgerStore.getLedgerStore(ethereumBean.getListener()).getSqlTopBlock());
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        result+=checkBalance(blockchain.getBestBlock())+"\n";
+        LedgerStore ledgerStore = LedgerStore.getLedgerStore(ethereumBean.getListener());
+        result+="Ledger syncStatus:"+ledgerStore.getSyncStatus()+"\n";
+        result+="Ledger nextStatus:"+ledgerStore.getNextStatus()+"\n";
+        //result+="Ledger sql top block:"+ledgerStore.getSqlTopBlock()+"\n";
+
+
+        //result+=checkBalance(blockchain.getBestBlock())+"\n";
         //result+=checkDelta(blockchain.getBestBlock())+"\n";
 
-        result+="ledgerSyncBlock: "+EthereumBean.getLedgerSyncBlock()+"\n";
+        //result+="ledgerSyncBlock: "+EthereumBean.getLedgerSyncBlock()+"\n";
 
         return result;
     }

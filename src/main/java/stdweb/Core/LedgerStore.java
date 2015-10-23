@@ -12,6 +12,7 @@ import org.ethereum.vm.program.InternalTransaction;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.spongycastle.util.encoders.Hex;
+import stdweb.ethereum.EthereumBean;
 import stdweb.ethereum.EthereumListener;
 
 import java.math.BigDecimal;
@@ -34,6 +35,99 @@ public class LedgerStore {
     private ReplayBlock replayBlock;
     private PreparedStatement statInsertEntry;
 
+
+    long lastSyncBlock;
+
+    public SyncStatus getSyncStatus() {
+        return syncStatus;
+    }
+
+    public void setSyncStatus(SyncStatus syncStatus) {
+        this.syncStatus = syncStatus;
+    }
+
+    SyncStatus syncStatus;
+
+    public void setNextStatus(SyncStatus nextStatus) {
+        this.nextStatus = nextStatus;
+    }
+
+    public SyncStatus getNextStatus() {
+        return nextStatus;
+    }
+
+    SyncStatus nextStatus;
+
+    private Thread syncLedgerThread;
+
+    public void setLastBlock() throws SQLException {
+        this.lastSyncBlock = getSqlTopBlock();
+        deleteBlocksFrom(lastSyncBlock +1);
+        syncStatus=SyncStatus.stopped;
+
+    }
+    public void reloadFrom(long _from) throws SQLException {
+        deleteBlocksFrom(_from);
+        this.lastSyncBlock = _from;
+        syncStatus=SyncStatus.bulkLoading;
+
+    }
+
+
+
+    public void ledgerBulkLoad() throws SQLException, InterruptedException {
+        this.ledgerBulkLoad(getSqlTopBlock() + 1);
+    }
+
+
+    public void ledgerBulkLoad(long _block) throws SQLException, InterruptedException {
+
+        System.out.println("Ledger Start BulkLoad from :"+_block);
+
+        this.lastSyncBlock=_block;
+        if (!syncLedgerThread.isAlive()) {
+            createSyncLedgerThread();
+            syncLedgerThread.start();
+        }
+    }
+
+    public void stopSync()
+    {
+        System.out.println("stop BulkLoad");
+        lastSyncBlock =1_000_000_000;
+    }
+    public synchronized  void  createSyncLedgerThread() throws SQLException, InterruptedException {
+
+        System.out.println("create Ledger BulkLoadThread");
+        EthereumBean.blockchainStopSync();
+        LedgerStore ledgerStore = LedgerStore.getLedgerStore(listener);
+
+        syncLedgerThread = new Thread(() -> {
+            while (true)
+            {
+                syncStatus=SyncStatus.bulkLoading;
+                if (lastSyncBlock <= ethereum.getBlockchain().getBestBlock().getNumber())
+                    try {
+                        ledgerStore.insertBlock(lastSyncBlock);
+                        ++lastSyncBlock;
+
+                    } catch (SQLException e) {
+                        System.out.println("Error inserting block:"+ lastSyncBlock);
+                        e.printStackTrace();
+                    }
+                else {
+                    syncStatus = nextStatus;
+                    break;
+                }
+//                    try {
+//                        Thread.sleep(1000);
+//                    } catch (InterruptedException e) {
+//                        e.printStackTrace();
+//                    }
+
+            }
+        });
+    }
 //    public void updateBatch() throws SQLException {
 //
 ////        count+=stat.executeBatch().length;
@@ -313,7 +407,7 @@ public class LedgerStore {
         conn.commit();
     }
 
-    public int ledgerTopBlock() throws SQLException {
+    public int getSqlTopBlock() throws SQLException {
         ResultSet rs;
         Statement statement = conn.createStatement();
 
@@ -506,6 +600,7 @@ public class LedgerStore {
                 });
 
         conn.commit();
+        System.out.println("Ledger - block inserted:"+blockNo);
        //checkDelta();
     }
 
@@ -515,7 +610,7 @@ public class LedgerStore {
         if (ledgerStore==null)
             try {
                 ledgerStore=new LedgerStore(listener);
-                ledgerStore.initdb();
+                ledgerStore.init();
             } catch (SQLException e) {
                 e.printStackTrace();
             } catch (Exception e) {
@@ -530,12 +625,16 @@ public class LedgerStore {
         conn = DriverManager.getConnection("jdbc:h2:~/testh2db", "sa", "");
         conn.setAutoCommit(false);
         count=0;
+        syncStatus=SyncStatus.stopped;
+        nextStatus=SyncStatus.stopped;
     }
 
-    private void initdb() throws Exception {
+    private void init() throws Exception {
 
 
-        System.out.println("InitDb");
+        System.out.println("Init");
+
+
 
         Class.forName("org.h2.Driver");
         //Connection conn = DriverManager.getConnection("jdbc:h2:~/testh2db", "sa", "");
@@ -560,6 +659,8 @@ public class LedgerStore {
 
         statInsertEntry = conn.prepareStatement(insEntrySql);
 
+        createSyncLedgerThread();
+
         statement.close();
 
         ensureGenesis();
@@ -568,7 +669,7 @@ public class LedgerStore {
     }
 
     private void ensureGenesis() throws SQLException {
-        if (ledgerTopBlock()==0 && ledgerCount()==0)
+        if (getSqlTopBlock()==0 && ledgerCount()==0)
         {
             insertBlock(0);
         }
