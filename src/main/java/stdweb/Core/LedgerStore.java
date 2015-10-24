@@ -411,11 +411,13 @@ public class LedgerStore {
 
     private void ensureConnection() throws SQLException {
         if (conn==null || conn.isClosed()) {
-            System.out.println("ensure connection!");
+            System.out.println("ensure connection - Restore!");
             conn = DriverManager.getConnection("jdbc:h2:~/testh2db", "sa", "");
             String insEntrySql="insert into ledger (tx ,address ,amount ,block ,blocktimestamp,depth ,gasused ,fee ,entryType,offsetAccount,descr,GrossAmount) values(?,?,?,?,?,?,?,?,?,?,?,?)";
             statInsertEntry = conn.prepareStatement(insEntrySql);
         }
+        else
+            System.out.println("ensure connection - Ok!");
     }
 
     public void truncateLedger() throws SQLException {
