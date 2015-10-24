@@ -88,7 +88,7 @@ public class LedgerStore {
         this.lastSyncBlock=_block;
         deleteBlocksFrom(_block);
 
-        if (!syncLedgerThread.isAlive()) {
+        if (syncLedgerThread==null || !syncLedgerThread.isAlive()) {
             createSyncLedgerThread();
             syncLedgerThread.start();
         }
@@ -418,13 +418,13 @@ public class LedgerStore {
 
     private void ensureConnection() throws SQLException {
         if (conn==null || conn.isClosed()) {
-            System.out.println("ensure connection - Restore!");
+            //System.out.println("ensure connection - Restore!");
             conn = DriverManager.getConnection("jdbc:h2:~/testh2db", "sa", "");
             String insEntrySql="insert into ledger (tx ,address ,amount ,block ,blocktimestamp,depth ,gasused ,fee ,entryType,offsetAccount,descr,GrossAmount) values(?,?,?,?,?,?,?,?,?,?,?,?)";
             statInsertEntry = conn.prepareStatement(insEntrySql);
         }
-        else
-            System.out.println("ensure connection - Ok!");
+        //else
+        //    System.out.println("ensure connection - Ok!");
     }
 
     public void truncateLedger() throws SQLException {
@@ -599,13 +599,13 @@ public class LedgerStore {
 
     int blockCount2flush=0;
     public synchronized void flush(int n) throws SQLException {
+
+        blockCount2flush++;
         if (blockCount2flush>=n) {
             conn.commit();
             blockCount2flush=0;
             System.out.println("Ledger - block inserted:"+getSqlTopBlock());
         }
-        else
-            blockCount2flush++;
     }
 
     public synchronized void insertBlock(long blockNo) throws SQLException{
@@ -637,8 +637,8 @@ public class LedgerStore {
                     }
                 });
 
-        flush(10);
-        System.out.println("Ledger - block inserted:"+blockNo);
+        flush(50);
+        //System.out.println("Ledger - block inserted:"+blockNo);
        //checkDelta();
     }
 
@@ -648,7 +648,7 @@ public class LedgerStore {
         if (ledgerStore==null)
             try {
                 ledgerStore=new LedgerStore(listener);
-                ledgerStore.init("h2");
+
             } catch (SQLException e) {
                 e.printStackTrace();
             } catch (Exception e) {
@@ -657,9 +657,10 @@ public class LedgerStore {
         return ledgerStore;
     }
 
-    private LedgerStore(EthereumListener listener) throws SQLException {
+    private LedgerStore(EthereumListener listener) throws Exception {
         this.listener=listener;
         this.ethereum=listener.getEthereum();
+        init("h2");
         ensureConnection();
         conn.setAutoCommit(false);
         count=0;
@@ -693,12 +694,8 @@ public class LedgerStore {
     private void initH2()  throws Exception
     {
         Class.forName("org.h2.Driver");
-        //Connection conn = DriverManager.getConnection("jdbc:h2:~/testh2db", "sa", "");
-        //System.out.println(conn);
-
-        Statement statement = conn.createStatement();
-
-        //stat.execute("drop table if exists LEDGER");
+        Connection conn1 = DriverManager.getConnection("jdbc:h2:~/testh2db", "sa", "");
+        Statement statement = conn1.createStatement();
         statement.execute("create table if not exists ledger(id identity primary key, tx binary(32),address binary(20),amount decimal(31,0),block bigint,blocktimestamp timestamp," +
                 "depth tinyint,gasused bigint,fee decimal(31,0),entryType tinyint,offsetaccount binary(20),descr varchar(32),GrossAmount decimal(31,0))");
         statement.execute("create index if not exists idx_ledger_address_tx on ledger(address,tx)");
@@ -712,7 +709,9 @@ public class LedgerStore {
         statement.execute("create index if not exists idx_block_hash_id on block(hash,id)");
 
         statement.close();
+        conn1.close();
 
+        ensureConnection();
 
     }
     private void init(String sqltype) throws Exception {
@@ -728,19 +727,9 @@ public class LedgerStore {
                 initH2();break;
 
         }
-
-
-
-
-
-
         //statInsertEntry = conn.prepareStatement(insEntrySql);
         ensureConnection();
-
-        createSyncLedgerThread();
-
-
-
+        //createSyncLedgerThread();
         ensureGenesis();
 
         //conn.close();
@@ -749,320 +738,317 @@ public class LedgerStore {
     private void ensureGenesis() throws SQLException {
         if (getSqlTopBlock()==0 && ledgerCount()==0)
         {
+            deleteBlocksFrom(0);
             insertBlock(0);
+            flush(1);
         }
     }
 
-
-    //______________________________________________________________________________________________________//
-    //______________________________________________________________________________________________________//
-    //______________________________________________________________________________________________________//
-    //______________________________________________________________________________________________________//
-
-    public void del_insertLedgerEntries(ReplayBlock _replayBlock) throws Exception {
-
-        this.replayBlock=_replayBlock;
-
-        deleteBlocksFrom(replayBlock.getBlock().getNumber());
-
-        String sql="insert into ledger (tx ,address ,amount ,block ,blocktimestamp,depth ,gasused ,fee ,entryType,offsetAccount,descr,GrossAmount) values(?,?,?,?,?,?,?,?,?,?,?,?)";
-
-            stat = conn.prepareStatement(sql);
-
-        if (replayBlock.getBlock().getNumber()==0) {
-            del_loadGenesis();
-            del_insertBlock(_replayBlock);
-            return;
-        }
-        replayBlock.run();
-        del_insertCoinbaseEntry();
-
-            List<Transaction> txList = replayBlock.getTxList();
-            int ind=-1;
-            for (Transaction tx:txList)
-            {
-                ind++;
-                del_insertLedgerEntry(tx, replayBlock, ind);
-            }
-
-        del_insertBlock(_replayBlock);
-
-        conn.commit();
-
-        //System.out.println("insert ledger block#"+replayBlock.getBlock().getNumber());
-
-
-    }
-
-
-
-    private void del_loadGenesis() throws SQLException {
-
-        org.ethereum.core.Repository snapshot = ((RepositoryImpl) ethereum.getRepository()).getSnapshotTo(Hex.decode("d7f8974fb5ac78d9ac099b9ad5018bedc2ce0a72dad1827a1709da30580f0544"));
-        Block block = ethereum.getBlockchain().getBlockByNumber(0);
-
-
-        Set<byte[]> accountsKeys = snapshot.getAccountsKeys();
-
-        for (byte[] account : accountsKeys)
-        {
-
-            System.out.println("acc:"+Hex.toHexString(account));
-
-            BigDecimal balance = new BigDecimal(snapshot.getBalance(account));
-
-            stat.setBytes(1, HashUtil.EMPTY_DATA_HASH);
-            stat.setBytes(2,account);
-            stat.setBigDecimal(3,balance);
-            stat.setLong(4,block.getNumber()); //genesis blockno 0
-            stat.setTimestamp(5, new Timestamp(1438269973000l)); //genesis timestamp
-            stat.setByte(6, (byte) 0);//depth
-            stat.setLong(7,0);//gasused
-
-            stat.setBigDecimal(8, new BigDecimal(0));
-            stat.setByte(9,(byte)EntryType.Genesis.ordinal());
-            stat.setBytes(10, ByteUtil.ZERO_BYTE_ARRAY);//offset account - genesis
-            stat.setString(11,"Genesis balance entry");
-            stat.setBigDecimal(12,balance  );
-
-           // stat.addBatch();
-            stat.executeUpdate();
-        }
-    }
-    private EntryType del_getEntryType(Transaction tx, String entryType) {
-        EntryType entry_type= EntryType.NA;
-
-        if (tx.isContractCreation())
-            if (entryType.equals("send"))
-                return EntryType.ContractCreation;
-            else
-                return EntryType.ContractCreated;
-
-        if (tx instanceof InternalTransaction)
-            return EntryType.InternalCall;
-
-        if (entryType.equals("send") &&tx.getContractAddress()==null)
-        {
-            byte[] receiveAddress = tx.getReceiveAddress();
-            RepositoryImpl repository = (RepositoryImpl)ethereum.getRepository();
-            AccountState accountState = repository.getAccountState(receiveAddress);
-            ContractDetails contractDetails = repository.getContractDetails(receiveAddress);
-
-            if (contractDetails.getCode().length==0)
-                return EntryType.Send;
-            else
-                return EntryType.Call;
-
-        }
-
-
-        if (entryType.equals("receive"))
-            entry_type= EntryType.Receive;
-
-        return entry_type;
-    }
-
-    private void del_insertBlock(ReplayBlock replayBlock) throws SQLException {
-
-        Block block = replayBlock.getBlock();
-
-
-        //String sql="insert into block (id ,TrieBalance, blocktimestamp,hash,prevhash,stateroot,gasused,fee) values(?,?,?,?,?,?,?,?)";
-        //stat = conn.prepareStatement(sql);
-
-        BigDecimal trieBalance = BigDecimal.valueOf(0);
-        BigDecimal ledgerBlockBalance = BigDecimal.valueOf(0);
-
-        BigDecimal trieDelta = BigDecimal.valueOf(0);
-        BigDecimal ledgerBlockDelta = BigDecimal.valueOf(0);
-
-        long number = block.getNumber();
-
-        //46859
-        if (number >= 46147) {
-            trieBalance=getTrieBalance(replayBlock.getBlock());
-            ledgerBlockBalance=getLedgerBlockBalance(block);
-
-            trieDelta=getTrieDelta(replayBlock.getBlock());
-            ledgerBlockDelta=getLedgerBlockDelta(block);
-
-            //System.out.println("trieBalance");
-            if (trieDelta.equals(ledgerBlockDelta))
-                System.out.println("Block delta correct:" + number + ": " + Convert2json.BI2ValStr(trieDelta.toBigInteger(), false));
-            else {
-                System.out.println("Block Delta incorrect:" + number + ", trie - ledger: " + Convert2json.BI2ValStr(trieDelta.toBigInteger(), false) + " - " + Convert2json.BI2ValStr(ledgerBlockDelta.toBigInteger(), false));
-                //throw (new SQLException("Block balance incorrect:" + number + ", trie - ledger: " + Convert2json.BI2ValStr(trieBalance.toBigInteger(), false) + " - " + Convert2json.BI2ValStr(ledgerBlockBalance.toBigInteger(), false)));
-            }
-
-            //System.out.println("trieBalance");
-            if (trieBalance.equals(ledgerBlockBalance))
-                System.out.println("Block balance correct:" + number + ": " + Convert2json.BI2ValStr(trieBalance.toBigInteger(), false));
-            else {
-                System.out.println("Block balance incorrect:" + number + ", trie - ledger: " + Convert2json.BI2ValStr(trieBalance.toBigInteger(), false) + " - " + Convert2json.BI2ValStr(ledgerBlockBalance.toBigInteger(), false));
-                //throw (new SQLException("Block balance incorrect:" + number + ", trie - ledger: " + Convert2json.BI2ValStr(trieBalance.toBigInteger(), false) + " - " + Convert2json.BI2ValStr(ledgerBlockBalance.toBigInteger(), false)));
-            }
-
-            try {
-                Thread.sleep(000);;//2000
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-
-
-
-//        stat.setLong(1, replayBlock.getBlock().getNumber());
-//        stat.setBigDecimal(2, trieBalance);
-//        stat.setTimestamp(3, new Timestamp(block.getTimestamp()*1000));
-//        stat.setBytes(4,block.getHash());
-//        stat.setBytes(5,block.getParentHash());
-//        stat.setBytes(6,block.getStateRoot());
-//        stat.setLong(7,block.getGasUsed());
-//        stat.setLong(8,0);
 //
-//        stat.executeUpdate();
-
-
-        // conn.commit();
-
-    }
-
-    private BigInteger del_getFee(Transaction tx, long gasUsed, EntryType entry_type, String entryType) {
-        //if (entry_type==EntryType.Receive)
-        if (entryType=="receive")
-            return BigInteger.valueOf(0);
-        else
-            return (new BigInteger(1, tx.getGasPrice())).multiply(BigInteger.valueOf(gasUsed));
-    }
-    public void  del_insertLedgerEntry(Transaction tx,String entryType,ReplayBlock replayBlock, int ind) throws SQLException {
-
-        Block block = replayBlock.getBlock();
-
-
-
-
-        if (tx instanceof InternalTransaction)
-            stat.setBytes(1,((InternalTransaction)tx).getParentHash());
-        else
-            stat.setBytes(1,tx.getHash());
-
-
-        BigInteger biVal=new BigInteger(1,tx.getValue());
-        if (entryType.equals("send")) {
-            stat.setBytes(2, tx.getSender());
-
-            stat.setBytes(10,(tx.getContractAddress()==null? tx.getReceiveAddress():tx.getContractAddress())); //offset account
-            biVal=biVal.negate();
-        }
-        else {
-            stat.setBytes(10,tx.getSender());//offset account
-
-            if (tx.getReceiveAddress()==null)
-                stat.setBytes(2,tx.getContractAddress());
-            else
-                stat.setBytes(2, tx.getReceiveAddress());
-        }
-
-
-        stat.setBigDecimal(3, new BigDecimal(biVal));
-
-
-        stat.setLong(4, block.getNumber());
-
-        stat.setTimestamp(5, new Timestamp(block.getTimestamp()*1000));
-
-
-        String indStr=String.valueOf(ind);
-        byte depth=0;
-        if (tx instanceof InternalTransaction)
-        {
-            depth=(byte)(((InternalTransaction) tx).getDeep()+1);
-        }
-        if (tx instanceof InternalTransaction) {
-            indStr += ":" + ((InternalTransaction) tx).getIndex();
-            if (((InternalTransaction) tx).getDeep()!=0)
-                indStr+= " (deep " + ((InternalTransaction) tx).getDeep() + ")";
-        }
-
-
-        stat.setByte(6, depth);
-
-        long gasUsed=0;
-        if (replayBlock.getTxGasUsedList().containsKey(tx))
-            gasUsed=replayBlock.getTxGasUsedList().get(tx);
-
-        stat.setLong(7,gasUsed);
-
-
-        EntryType entry_type = del_getEntryType(tx, entryType);
-
-        BigInteger fee = del_getFee(tx, gasUsed, entry_type, entryType);
-        stat.setBigDecimal(8, new BigDecimal(fee));
-
-
-        stat.setByte(9,(byte)entry_type.ordinal());
-
-        stat.setString(11,"Descr ");
-
-
-        BigDecimal bigDecimal = new BigDecimal(biVal.subtract(fee));
-        stat.setBigDecimal(12,bigDecimal  );
-
-        //stat.executeUpdate();
-
-
-        count+=stat.executeUpdate();
-        //System.out.println("insertion status :" + stat.executeUpdate());
-
-    }
-    public void  del_insertLedgerEntry(Transaction tx,ReplayBlock replayBlock,int ind) throws SQLException {
-
-        del_insertLedgerEntry(tx, "send", replayBlock, ind);
-        del_insertLedgerEntry(tx, "receive", replayBlock, ind);
-
-    }
-
-    void del_insertCoinbaseEntry() throws SQLException {
-
-        Block block = replayBlock.getBlock();
-        byte[] coinbase = block.getCoinbase();
-
-        HashSet<ByteArrayWrapper> accounts=new HashSet<>();
-        accounts.add(new ByteArrayWrapper(coinbase));
-
-
-        block.getUncleList().forEach(uncle -> accounts.add(new ByteArrayWrapper(uncle.getCoinbase())));
-
-        for (ByteArrayWrapper acc : accounts) {
-
-            BigDecimal delta = new BigDecimal(replayBlock.getAccountDelta(acc.getData()));
-
-
-            stat.setBytes(1, HashUtil.EMPTY_DATA_HASH);
-            stat.setBytes(2,acc.getData());//address
-            stat.setBigDecimal(3,delta);
-            stat.setLong(4,block.getNumber()); //genesis blockno 0
-            stat.setTimestamp(5, new Timestamp(block.getTimestamp()*1000)); //genesis timestamp
-            stat.setByte(6, (byte) 0);//depth
-            stat.setLong(7,0);//gasused
-
-            stat.setBigDecimal(8, new BigDecimal(0));//fee
-
-            if (acc.equals(new ByteArrayWrapper(coinbase))) {
-                stat.setByte(9, (byte) EntryType.CoinbaseReward.ordinal());
-                stat.setString(11,"Coinbase reward entry");
-            }
-            else {
-                stat.setByte(9, (byte) EntryType.UncleReward.ordinal());
-                stat.setString(11,"Uncle reward entry");
-            }
-
-            stat.setBytes(10, ByteUtil.ZERO_BYTE_ARRAY);//offset account - genesis
-
-            stat.setBigDecimal(12,delta  );
-
-            // stat.addBatch();
-            stat.executeUpdate();
-        }
-    }
+//    public void del_insertLedgerEntries(ReplayBlock _replayBlock) throws Exception {
+//
+//        this.replayBlock=_replayBlock;
+//
+//        deleteBlocksFrom(replayBlock.getBlock().getNumber());
+//
+//        String sql="insert into ledger (tx ,address ,amount ,block ,blocktimestamp,depth ,gasused ,fee ,entryType,offsetAccount,descr,GrossAmount) values(?,?,?,?,?,?,?,?,?,?,?,?)";
+//
+//            stat = conn.prepareStatement(sql);
+//
+//        if (replayBlock.getBlock().getNumber()==0) {
+//            del_loadGenesis();
+//            del_insertBlock(_replayBlock);
+//            return;
+//        }
+//        replayBlock.run();
+//        del_insertCoinbaseEntry();
+//
+//            List<Transaction> txList = replayBlock.getTxList();
+//            int ind=-1;
+//            for (Transaction tx:txList)
+//            {
+//                ind++;
+//                del_insertLedgerEntry(tx, replayBlock, ind);
+//            }
+//
+//        del_insertBlock(_replayBlock);
+//
+//        conn.commit();
+//
+//        //System.out.println("insert ledger block#"+replayBlock.getBlock().getNumber());
+//
+//
+//    }
+//
+//
+//
+//    private void del_loadGenesis() throws SQLException {
+//
+//        org.ethereum.core.Repository snapshot = ((RepositoryImpl) ethereum.getRepository()).getSnapshotTo(Hex.decode("d7f8974fb5ac78d9ac099b9ad5018bedc2ce0a72dad1827a1709da30580f0544"));
+//        Block block = ethereum.getBlockchain().getBlockByNumber(0);
+//
+//
+//        Set<byte[]> accountsKeys = snapshot.getAccountsKeys();
+//
+//        for (byte[] account : accountsKeys)
+//        {
+//
+//            System.out.println("acc:"+Hex.toHexString(account));
+//
+//            BigDecimal balance = new BigDecimal(snapshot.getBalance(account));
+//
+//            stat.setBytes(1, HashUtil.EMPTY_DATA_HASH);
+//            stat.setBytes(2,account);
+//            stat.setBigDecimal(3,balance);
+//            stat.setLong(4,block.getNumber()); //genesis blockno 0
+//            stat.setTimestamp(5, new Timestamp(1438269973000l)); //genesis timestamp
+//            stat.setByte(6, (byte) 0);//depth
+//            stat.setLong(7,0);//gasused
+//
+//            stat.setBigDecimal(8, new BigDecimal(0));
+//            stat.setByte(9,(byte)EntryType.Genesis.ordinal());
+//            stat.setBytes(10, ByteUtil.ZERO_BYTE_ARRAY);//offset account - genesis
+//            stat.setString(11,"Genesis balance entry");
+//            stat.setBigDecimal(12,balance  );
+//
+//           // stat.addBatch();
+//            stat.executeUpdate();
+//        }
+//    }
+//    private EntryType del_getEntryType(Transaction tx, String entryType) {
+//        EntryType entry_type= EntryType.NA;
+//
+//        if (tx.isContractCreation())
+//            if (entryType.equals("send"))
+//                return EntryType.ContractCreation;
+//            else
+//                return EntryType.ContractCreated;
+//
+//        if (tx instanceof InternalTransaction)
+//            return EntryType.InternalCall;
+//
+//        if (entryType.equals("send") &&tx.getContractAddress()==null)
+//        {
+//            byte[] receiveAddress = tx.getReceiveAddress();
+//            RepositoryImpl repository = (RepositoryImpl)ethereum.getRepository();
+//            AccountState accountState = repository.getAccountState(receiveAddress);
+//            ContractDetails contractDetails = repository.getContractDetails(receiveAddress);
+//
+//            if (contractDetails.getCode().length==0)
+//                return EntryType.Send;
+//            else
+//                return EntryType.Call;
+//
+//        }
+//
+//
+//        if (entryType.equals("receive"))
+//            entry_type= EntryType.Receive;
+//
+//        return entry_type;
+//    }
+//
+//    private void del_insertBlock(ReplayBlock replayBlock) throws SQLException {
+//
+//        Block block = replayBlock.getBlock();
+//
+//
+//        //String sql="insert into block (id ,TrieBalance, blocktimestamp,hash,prevhash,stateroot,gasused,fee) values(?,?,?,?,?,?,?,?)";
+//        //stat = conn.prepareStatement(sql);
+//
+//        BigDecimal trieBalance = BigDecimal.valueOf(0);
+//        BigDecimal ledgerBlockBalance = BigDecimal.valueOf(0);
+//
+//        BigDecimal trieDelta = BigDecimal.valueOf(0);
+//        BigDecimal ledgerBlockDelta = BigDecimal.valueOf(0);
+//
+//        long number = block.getNumber();
+//
+//        //46859
+//        if (number >= 46147) {
+//            trieBalance=getTrieBalance(replayBlock.getBlock());
+//            ledgerBlockBalance=getLedgerBlockBalance(block);
+//
+//            trieDelta=getTrieDelta(replayBlock.getBlock());
+//            ledgerBlockDelta=getLedgerBlockDelta(block);
+//
+//            //System.out.println("trieBalance");
+//            if (trieDelta.equals(ledgerBlockDelta))
+//                System.out.println("Block delta correct:" + number + ": " + Convert2json.BI2ValStr(trieDelta.toBigInteger(), false));
+//            else {
+//                System.out.println("Block Delta incorrect:" + number + ", trie - ledger: " + Convert2json.BI2ValStr(trieDelta.toBigInteger(), false) + " - " + Convert2json.BI2ValStr(ledgerBlockDelta.toBigInteger(), false));
+//                //throw (new SQLException("Block balance incorrect:" + number + ", trie - ledger: " + Convert2json.BI2ValStr(trieBalance.toBigInteger(), false) + " - " + Convert2json.BI2ValStr(ledgerBlockBalance.toBigInteger(), false)));
+//            }
+//
+//            //System.out.println("trieBalance");
+//            if (trieBalance.equals(ledgerBlockBalance))
+//                System.out.println("Block balance correct:" + number + ": " + Convert2json.BI2ValStr(trieBalance.toBigInteger(), false));
+//            else {
+//                System.out.println("Block balance incorrect:" + number + ", trie - ledger: " + Convert2json.BI2ValStr(trieBalance.toBigInteger(), false) + " - " + Convert2json.BI2ValStr(ledgerBlockBalance.toBigInteger(), false));
+//                //throw (new SQLException("Block balance incorrect:" + number + ", trie - ledger: " + Convert2json.BI2ValStr(trieBalance.toBigInteger(), false) + " - " + Convert2json.BI2ValStr(ledgerBlockBalance.toBigInteger(), false)));
+//            }
+//
+//            try {
+//                Thread.sleep(000);;//2000
+//            } catch (InterruptedException e) {
+//                e.printStackTrace();
+//            }
+//        }
+//
+//
+//
+////        stat.setLong(1, replayBlock.getBlock().getNumber());
+////        stat.setBigDecimal(2, trieBalance);
+////        stat.setTimestamp(3, new Timestamp(block.getTimestamp()*1000));
+////        stat.setBytes(4,block.getHash());
+////        stat.setBytes(5,block.getParentHash());
+////        stat.setBytes(6,block.getStateRoot());
+////        stat.setLong(7,block.getGasUsed());
+////        stat.setLong(8,0);
+////
+////        stat.executeUpdate();
+//
+//
+//        // conn.commit();
+//
+//    }
+//
+//    private BigInteger del_getFee(Transaction tx, long gasUsed, EntryType entry_type, String entryType) {
+//        //if (entry_type==EntryType.Receive)
+//        if (entryType=="receive")
+//            return BigInteger.valueOf(0);
+//        else
+//            return (new BigInteger(1, tx.getGasPrice())).multiply(BigInteger.valueOf(gasUsed));
+//    }
+//    public void  del_insertLedgerEntry(Transaction tx,String entryType,ReplayBlock replayBlock, int ind) throws SQLException {
+//
+//        Block block = replayBlock.getBlock();
+//
+//
+//
+//
+//        if (tx instanceof InternalTransaction)
+//            stat.setBytes(1,((InternalTransaction)tx).getParentHash());
+//        else
+//            stat.setBytes(1,tx.getHash());
+//
+//
+//        BigInteger biVal=new BigInteger(1,tx.getValue());
+//        if (entryType.equals("send")) {
+//            stat.setBytes(2, tx.getSender());
+//
+//            stat.setBytes(10,(tx.getContractAddress()==null? tx.getReceiveAddress():tx.getContractAddress())); //offset account
+//            biVal=biVal.negate();
+//        }
+//        else {
+//            stat.setBytes(10,tx.getSender());//offset account
+//
+//            if (tx.getReceiveAddress()==null)
+//                stat.setBytes(2,tx.getContractAddress());
+//            else
+//                stat.setBytes(2, tx.getReceiveAddress());
+//        }
+//
+//
+//        stat.setBigDecimal(3, new BigDecimal(biVal));
+//
+//
+//        stat.setLong(4, block.getNumber());
+//
+//        stat.setTimestamp(5, new Timestamp(block.getTimestamp()*1000));
+//
+//
+//        String indStr=String.valueOf(ind);
+//        byte depth=0;
+//        if (tx instanceof InternalTransaction)
+//        {
+//            depth=(byte)(((InternalTransaction) tx).getDeep()+1);
+//        }
+//        if (tx instanceof InternalTransaction) {
+//            indStr += ":" + ((InternalTransaction) tx).getIndex();
+//            if (((InternalTransaction) tx).getDeep()!=0)
+//                indStr+= " (deep " + ((InternalTransaction) tx).getDeep() + ")";
+//        }
+//
+//
+//        stat.setByte(6, depth);
+//
+//        long gasUsed=0;
+//        if (replayBlock.getTxGasUsedList().containsKey(tx))
+//            gasUsed=replayBlock.getTxGasUsedList().get(tx);
+//
+//        stat.setLong(7,gasUsed);
+//
+//
+//        EntryType entry_type = del_getEntryType(tx, entryType);
+//
+//        BigInteger fee = del_getFee(tx, gasUsed, entry_type, entryType);
+//        stat.setBigDecimal(8, new BigDecimal(fee));
+//
+//
+//        stat.setByte(9,(byte)entry_type.ordinal());
+//
+//        stat.setString(11,"Descr ");
+//
+//
+//        BigDecimal bigDecimal = new BigDecimal(biVal.subtract(fee));
+//        stat.setBigDecimal(12,bigDecimal  );
+//
+//        //stat.executeUpdate();
+//
+//
+//        count+=stat.executeUpdate();
+//        //System.out.println("insertion status :" + stat.executeUpdate());
+//
+//    }
+//    public void  del_insertLedgerEntry(Transaction tx,ReplayBlock replayBlock,int ind) throws SQLException {
+//
+//        del_insertLedgerEntry(tx, "send", replayBlock, ind);
+//        del_insertLedgerEntry(tx, "receive", replayBlock, ind);
+//
+//    }
+//
+//    void del_insertCoinbaseEntry() throws SQLException {
+//
+//        Block block = replayBlock.getBlock();
+//        byte[] coinbase = block.getCoinbase();
+//
+//        HashSet<ByteArrayWrapper> accounts=new HashSet<>();
+//        accounts.add(new ByteArrayWrapper(coinbase));
+//
+//
+//        block.getUncleList().forEach(uncle -> accounts.add(new ByteArrayWrapper(uncle.getCoinbase())));
+//
+//        for (ByteArrayWrapper acc : accounts) {
+//
+//            BigDecimal delta = new BigDecimal(replayBlock.getAccountDelta(acc.getData()));
+//
+//
+//            stat.setBytes(1, HashUtil.EMPTY_DATA_HASH);
+//            stat.setBytes(2,acc.getData());//address
+//            stat.setBigDecimal(3,delta);
+//            stat.setLong(4,block.getNumber()); //genesis blockno 0
+//            stat.setTimestamp(5, new Timestamp(block.getTimestamp()*1000)); //genesis timestamp
+//            stat.setByte(6, (byte) 0);//depth
+//            stat.setLong(7,0);//gasused
+//
+//            stat.setBigDecimal(8, new BigDecimal(0));//fee
+//
+//            if (acc.equals(new ByteArrayWrapper(coinbase))) {
+//                stat.setByte(9, (byte) EntryType.CoinbaseReward.ordinal());
+//                stat.setString(11,"Coinbase reward entry");
+//            }
+//            else {
+//                stat.setByte(9, (byte) EntryType.UncleReward.ordinal());
+//                stat.setString(11,"Uncle reward entry");
+//            }
+//
+//            stat.setBytes(10, ByteUtil.ZERO_BYTE_ARRAY);//offset account - genesis
+//
+//            stat.setBigDecimal(12,delta  );
+//
+//            // stat.addBatch();
+//            stat.executeUpdate();
+//        }
+//    }
 }

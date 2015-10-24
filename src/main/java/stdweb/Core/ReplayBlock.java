@@ -365,12 +365,14 @@ public class ReplayBlock {
         int entryNo=0;
         for (byte[] account : accountsKeys)
         {
-            System.out.println("acc "+entryNo+":"+Hex.toHexString(account));
+
 
             LedgerEntry entry = new LedgerEntry();
             ++entryNo;
 
             BigDecimal balance = new BigDecimal(snapshot.getBalance(account));
+
+            System.out.println("acc "+entryNo+":"+Hex.toHexString(account)+" = "+Convert2json.BD2ValStr(balance,false));
 
             entry.txNo=entryNo;
             entry.Account=new LedgerAccount(account);

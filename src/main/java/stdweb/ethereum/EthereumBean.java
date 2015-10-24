@@ -75,19 +75,15 @@ public class EthereumBean {
     public void start()  {
         //printCP();
 //        AzureSql();
-
         ethereum = EthereumFactory.createEthereum();
         ethereum.stopPeerDiscovery();
 
-        blockchain = ((BlockchainImpl) ethereum.getBlockchain());
-
-
-        blockchainSyncStatus=SyncStatus.stopped;
-
-        blockchainStopSync();
-
         this.listener=new EthereumListener(ethereum);
         this.ethereum.addListener(this.listener);
+        blockchain = ((BlockchainImpl) ethereum.getBlockchain());
+        blockchainStopSync();
+
+        LedgerStore ledgerStore = LedgerStore.getLedgerStore(listener);
 
         System.out.println("________________________________________________________________________");
         System.out.println("________________________________________________________________________");
