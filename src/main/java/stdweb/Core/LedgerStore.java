@@ -75,7 +75,7 @@ public class LedgerStore {
     public void ledgerBulkLoad(long _block) throws SQLException, InterruptedException {
 
         System.out.println("Ledger Start BulkLoad from :"+_block);
-
+        syncStatus=SyncStatus.bulkLoading;
 
         this.nextSyncBlock =_block;
         deleteBlocksFrom(_block);
@@ -89,6 +89,7 @@ public class LedgerStore {
     public void stopSync()
     {
         System.out.println("stop BulkLoad");
+        syncStatus=SyncStatus.stopped;
         nextSyncBlock =1_000_000_000;
     }
     public synchronized  void  createSyncLedgerThread() throws SQLException, InterruptedException {
@@ -98,33 +99,31 @@ public class LedgerStore {
         LedgerStore ledgerStore = LedgerStore.getLedgerStore(listener);
 
         syncLedgerThread = new Thread(() -> {
-            while (true)
+            while (syncStatus==SyncStatus.bulkLoading)
             {
-                syncStatus=SyncStatus.bulkLoading;
+
                 if (nextSyncBlock <= ethereum.getBlockchain().getBestBlock().getNumber())
                     try {
                         ledgerStore.insertBlock(nextSyncBlock);
-                        ++nextSyncBlock;
+                        nextSyncBlock++;
+
 
                     } catch (SQLException e) {
-                        System.out.println("Error inserting block:"+ nextSyncBlock);
+                        System.out.println("Error inserting  block :"+ (nextSyncBlock));
                         e.printStackTrace();
                     }
                 else {
                     syncStatus = nextStatus;
-                    try {
-                        flush(1);
-                    } catch (SQLException e) {
-                        e.printStackTrace();
-                    }
+
                     break;
                 }
-//                    try {
-//                        Thread.sleep(1000);
-//                    } catch (InterruptedException e) {
-//                        e.printStackTrace();
-//                    }
+              }
 
+            try {
+                        flush(1);
+
+            } catch (SQLException e) {
+                e.printStackTrace();
             }
         });
     }
@@ -600,36 +599,42 @@ public class LedgerStore {
         }
     }
 
-    public synchronized void insertBlock(long blockNo) throws SQLException{
-        this.replayBlock=new ReplayBlock(listener,blockNo);
-        replayBlock.run();
+    public synchronized int insertBlock(long blockNo) throws SQLException{
 
-        //deleteBlocksFrom(blockNo);
 
-        List<EntryType> rewardEntryTypes = Arrays.asList(EntryType.CoinbaseReward, EntryType.UncleReward, EntryType.FeeReward);
+            this.replayBlock = new ReplayBlock(listener, blockNo);
+            replayBlock.run();
 
-        //reward entries first
-        replayBlock.getLedgerEntries()
-                .stream().filter( e -> rewardEntryTypes.contains(e.entryType))
-                .forEach(e -> {
-                    try {
-                        insertLedgerEntry(e);
-                    } catch (SQLException e1) {
-                        e1.printStackTrace();
-                    }
-                });
+            //deleteBlocksFrom(blockNo);
 
-        replayBlock.getLedgerEntries()
-                .stream().filter( e -> !rewardEntryTypes.contains(e.entryType))
-                .forEach(e -> {
-                    try {
-                        insertLedgerEntry(e);
-                    } catch (SQLException e1) {
-                        e1.printStackTrace();
-                    }
-                });
+            List<EntryType> rewardEntryTypes = Arrays.asList(EntryType.CoinbaseReward, EntryType.UncleReward, EntryType.FeeReward);
 
-        flush(50);
+            //reward entries first
+            replayBlock.getLedgerEntries()
+                    .stream().filter(e -> rewardEntryTypes.contains(e.entryType))
+                    .forEach(e -> {
+                        try {
+                            insertLedgerEntry(e);
+                        } catch (SQLException e1) {
+                            e1.printStackTrace();
+                        }
+                    });
+
+            replayBlock.getLedgerEntries()
+                    .stream().filter(e -> !rewardEntryTypes.contains(e.entryType))
+                    .forEach(e -> {
+                        try {
+                            insertLedgerEntry(e);
+                        } catch (SQLException e1) {
+                            e1.printStackTrace();
+                        }
+                    });
+
+        flush(1);
+
+        int sqlTopBlock = getSqlTopBlock();
+
+        return sqlTopBlock;
         //System.out.println("Ledger - block inserted:"+blockNo);
        //checkDelta();
     }
@@ -732,7 +737,8 @@ public class LedgerStore {
         {
             deleteBlocksFrom(0);
             insertBlock(0);
-            flush(1);
+            conn.commit();
+            //flush(1);
         }
     }
 
