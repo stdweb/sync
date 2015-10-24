@@ -395,7 +395,7 @@ public class LedgerStore {
     }
 
 
-    public void deleteBlocksFrom(long blockNo) throws SQLException {
+    public synchronized void deleteBlocksFrom(long blockNo) throws SQLException {
 
         ensureConnection();
 
@@ -590,7 +590,7 @@ public class LedgerStore {
         }
     }
 
-    public void insertBlock(long blockNo) throws SQLException{
+    public synchronized void insertBlock(long blockNo) throws SQLException{
         this.replayBlock=new ReplayBlock(listener,blockNo);
         replayBlock.run();
 
