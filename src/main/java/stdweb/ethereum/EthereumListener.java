@@ -39,6 +39,7 @@ public class EthereumListener extends EthereumListenerAdapter {
         LedgerStore ledgerStore = LedgerStore.getLedgerStore(this);
         if (ledgerStore.getSyncStatus()== SyncStatus.onBlockSync)
             try {
+                ledgerStore.deleteBlocksFrom(block.getNumber());
                 ledgerStore.insertBlock(block.getNumber());
                 if (block.getNumber() % 1 == 0)
                     System.out.println("On Block Ledger  insert:" + block.getNumber());

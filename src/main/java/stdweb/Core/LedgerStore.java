@@ -86,6 +86,8 @@ public class LedgerStore {
 
 
         this.lastSyncBlock=_block;
+        deleteBlocksFrom(_block);
+
         if (!syncLedgerThread.isAlive()) {
             createSyncLedgerThread();
             syncLedgerThread.start();
@@ -118,6 +120,11 @@ public class LedgerStore {
                     }
                 else {
                     syncStatus = nextStatus;
+                    try {
+                        flush(1);
+                    } catch (SQLException e) {
+                        e.printStackTrace();
+                    }
                     break;
                 }
 //                    try {
@@ -590,11 +597,22 @@ public class LedgerStore {
         }
     }
 
+    int blockCount2flush=0;
+    public synchronized void flush(int n) throws SQLException {
+        if (blockCount2flush>=n) {
+            conn.commit();
+            blockCount2flush=0;
+            System.out.println("Ledger - block inserted:"+getSqlTopBlock());
+        }
+        else
+            blockCount2flush++;
+    }
+
     public synchronized void insertBlock(long blockNo) throws SQLException{
         this.replayBlock=new ReplayBlock(listener,blockNo);
         replayBlock.run();
 
-        deleteBlocksFrom(blockNo);
+        //deleteBlocksFrom(blockNo);
 
         List<EntryType> rewardEntryTypes = Arrays.asList(EntryType.CoinbaseReward, EntryType.UncleReward, EntryType.FeeReward);
 
@@ -619,7 +637,7 @@ public class LedgerStore {
                     }
                 });
 
-        conn.commit();
+        flush(10);
         System.out.println("Ledger - block inserted:"+blockNo);
        //checkDelta();
     }
