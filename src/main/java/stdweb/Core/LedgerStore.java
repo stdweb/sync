@@ -1,14 +1,8 @@
 package stdweb.Core;
 
 import org.ethereum.core.*;
-import org.ethereum.crypto.HashUtil;
-import org.ethereum.db.ByteArrayWrapper;
-import org.ethereum.db.ContractDetails;
-import org.ethereum.db.RepositoryImpl;
 import org.ethereum.facade.Ethereum;
-import org.ethereum.util.ByteUtil;
 //import org.ethereum.vm.program.InternalTransaction;
-import org.ethereum.vm.program.InternalTransaction;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.spongycastle.util.encoders.Hex;
@@ -19,9 +13,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.sql.*;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 /**
  * Created by bitledger on 28.09.15.
@@ -36,7 +28,7 @@ public class LedgerStore {
     private PreparedStatement statInsertEntry;
 
 
-    long lastSyncBlock;
+    long nextSyncBlock;
 
     public SyncStatus getSyncStatus() {
         return syncStatus;
@@ -60,18 +52,18 @@ public class LedgerStore {
 
     private Thread syncLedgerThread;
 
-    public void setLastBlock() throws SQLException {
-        this.lastSyncBlock = getSqlTopBlock();
-        deleteBlocksFrom(lastSyncBlock +1);
-        syncStatus=SyncStatus.stopped;
+//    public void setLastBlock() throws SQLException {
+//        this.nextSyncBlock = getSqlTopBlock();
+//        deleteBlocksFrom(nextSyncBlock +1);
+//        syncStatus=SyncStatus.stopped;
+//    }
 
-    }
-    public void reloadFrom(long _from) throws SQLException {
-        deleteBlocksFrom(_from);
-        this.lastSyncBlock = _from;
-        syncStatus=SyncStatus.bulkLoading;
-
-    }
+//    public void reloadFrom(long _from) throws SQLException {
+//        deleteBlocksFrom(_from);
+//        this.nextSyncBlock = _from;
+//        syncStatus=SyncStatus.bulkLoading;
+//
+//    }
 
 
 
@@ -85,7 +77,7 @@ public class LedgerStore {
         System.out.println("Ledger Start BulkLoad from :"+_block);
 
 
-        this.lastSyncBlock=_block;
+        this.nextSyncBlock =_block;
         deleteBlocksFrom(_block);
 
         if (syncLedgerThread==null || !syncLedgerThread.isAlive()) {
@@ -97,7 +89,7 @@ public class LedgerStore {
     public void stopSync()
     {
         System.out.println("stop BulkLoad");
-        lastSyncBlock =1_000_000_000;
+        nextSyncBlock =1_000_000_000;
     }
     public synchronized  void  createSyncLedgerThread() throws SQLException, InterruptedException {
 
@@ -109,13 +101,13 @@ public class LedgerStore {
             while (true)
             {
                 syncStatus=SyncStatus.bulkLoading;
-                if (lastSyncBlock <= ethereum.getBlockchain().getBestBlock().getNumber())
+                if (nextSyncBlock <= ethereum.getBlockchain().getBestBlock().getNumber())
                     try {
-                        ledgerStore.insertBlock(lastSyncBlock);
-                        ++lastSyncBlock;
+                        ledgerStore.insertBlock(nextSyncBlock);
+                        ++nextSyncBlock;
 
                     } catch (SQLException e) {
-                        System.out.println("Error inserting block:"+ lastSyncBlock);
+                        System.out.println("Error inserting block:"+ nextSyncBlock);
                         e.printStackTrace();
                     }
                 else {
@@ -450,13 +442,13 @@ public class LedgerStore {
 
     }
 
-    public int ledgerCount() throws SQLException {
+    public int ledgerCount(long _block) throws SQLException {
         ResultSet rs;
         Statement statement = conn.createStatement();
 
         //String accStr = Hex.toHexString(account);
         //'f0134ff161a5c8f7c4f8cc33d3e1a7ae088594a9'
-        String sql="select count(*) as c from ledger";
+        String sql="select count(*) as c from ledger where block<="+_block;
 
         rs = statement.executeQuery(sql);
         rs.first();
@@ -736,7 +728,7 @@ public class LedgerStore {
     }
 
     private void ensureGenesis() throws SQLException {
-        if (getSqlTopBlock()==0 && ledgerCount()==0)
+        if (getSqlTopBlock()==0 && ledgerCount(0)==0)
         {
             deleteBlocksFrom(0);
             insertBlock(0);

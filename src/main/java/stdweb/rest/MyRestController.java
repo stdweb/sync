@@ -65,6 +65,9 @@ public class MyRestController {
                     ledgerStore.insertBlock(i);
                     ret= "block inserted:"+i;
                     break;
+                case "check":
+                    ret=checkBalance(i);
+                    break;
             }
         }
         catch (SQLException e)
@@ -176,6 +179,10 @@ public class MyRestController {
 
     public String checkBalance() throws InterruptedException, SQLException {
         long number = EthereumBean.getBlockchain().getBestBlock().getNumber();
+        return checkBalance(number);
+    }
+    public String checkBalance(long number) throws InterruptedException, SQLException {
+
         LedgerStore ledgerStore = LedgerStore.getLedgerStore(ethereumBean.getListener());
         int sqlTopBlock = ledgerStore.getSqlTopBlock();
         Block blockByNumber = EthereumBean.getBlockchain().getBlockByNumber(Math.min(number, sqlTopBlock));
@@ -201,6 +208,8 @@ public class MyRestController {
         }
 
         blockchain.setStopOn(stopOn);
+
+        result+="\n"+"ledger count:"+ledgerStore.ledgerCount(block.getNumber());
 
         return result;
     }
