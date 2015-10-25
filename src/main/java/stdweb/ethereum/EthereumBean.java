@@ -85,10 +85,20 @@ public class EthereumBean {
 
         LedgerStore ledgerStore = LedgerStore.getLedgerStore(listener);
 
+
+
         System.out.println("________________________________________________________________________");
         System.out.println("________________________________________________________________________");
 
-        //loadLedger();
+        check();
+
+    }
+
+    private void check() {
+        ReplayBlock replayBlock = new ReplayBlock(listener, 181692);
+
+        replayBlock.run();
+
     }
 
     private void AzureSql() {

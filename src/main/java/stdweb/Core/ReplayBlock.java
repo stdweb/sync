@@ -7,6 +7,7 @@ import org.ethereum.db.RepositoryImpl;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.program.InternalTransaction;
+import org.ethereum.vm.program.ProgramResult;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
 import org.spongycastle.util.encoders.Hex;
 import stdweb.ethereum.EthereumListener;
@@ -215,8 +216,10 @@ public class ReplayBlock {
 
         if (tx instanceof InternalTransaction)
             ledgerEntrySend.gasUsed=0;
-        else
-            ledgerEntrySend.gasUsed=executor.getGasUsed();
+        else {
+            long gasRefund = Math.min(executor.getResult().getFutureRefund(), executor.getResult().getGasUsed() / 2);
+            ledgerEntrySend.gasUsed = executor.getGasUsed()-gasRefund;
+        }
 
         ledgerEntryRecv.gasUsed=0;
 
@@ -355,7 +358,7 @@ public class ReplayBlock {
     }
 
 
-    private void loadGenesis() throws SQLException {
+    private void loadGenesis()  {
 
         org.ethereum.core.Repository snapshot = ((RepositoryImpl) ethereum.getRepository()).getSnapshotTo(Hex.decode("d7f8974fb5ac78d9ac099b9ad5018bedc2ce0a72dad1827a1709da30580f0544"));
         Block block = ethereum.getBlockchain().getBlockByNumber(0);
@@ -394,7 +397,7 @@ public class ReplayBlock {
 
     }
 
-    public void   run() throws SQLException {
+    public void   run()  {
         if (block==null) {
 
             return;
@@ -426,6 +429,8 @@ public class ReplayBlock {
 
         int entryNo=0;
         long totalGasUsed = 0;
+
+
         for (Transaction tx : block.getTransactionsList()) {
 
 
@@ -439,9 +444,12 @@ public class ReplayBlock {
             executor.go();
             //executor.finalization();
 
-            totalGasUsed += executor.getGasUsed();
+            //executor.getResult().refundGas();
 
-            gasUsedList.put(tx,executor.getGasUsed());
+            totalGasUsed += executor.getGasUsed();
+            ProgramResult result = executor.getResult();
+            long gasRefund = Math.min(result.getFutureRefund(), result.getGasUsed() / 2);
+            gasUsedList.put(tx,executor.getGasUsed()-gasRefund);
 
             ++entryNo;
             txlist.add(tx);
@@ -454,6 +462,9 @@ public class ReplayBlock {
 //            {
 //                addTxEntries(t,executor,f_entryNo);
 //            }
+
+
+
             executor.getResult().getInternalTransactions()
                     .forEach(t -> addTxEntries(t, executor, f_entryNo));
 

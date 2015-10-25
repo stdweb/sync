@@ -181,6 +181,46 @@ public class LedgerStore {
         return rs.getBigDecimal(1);
     }
 
+    public BigDecimal getLedgerBlockTxFee(Block block) throws SQLException {
+        ResultSet rs;
+        Statement statement = conn.createStatement();
+
+        //String accStr = Hex.toHexString(account);
+        //'f0134ff161a5c8f7c4f8cc33d3e1a7ae088594a9'
+        String sql="select  case when sum(fee) is null then 0 else sum(fee) end  amo, count(*) c from ledger  where  block="+block.getNumber();
+        //sql+=" and entrytype="+EntryType.TxFee.ordinal();
+        rs = statement.executeQuery(sql);
+        rs.first();
+
+
+        return rs.getBigDecimal(1);
+    }
+
+    public BigDecimal getCoinbaseTrieDelta(Block block) throws SQLException {
+
+        BlockchainImpl blockchain = (BlockchainImpl) ethereum.getBlockchain();
+        Repository track = blockchain.getRepository();
+
+        Repository snapshot = track.getSnapshotTo(block.getStateRoot());
+
+        BigInteger balance=BigInteger.valueOf(0);
+        byte[] acc=block.getCoinbase();
+
+        balance=balance.add(snapshot.getBalance(acc));
+
+
+        if (block.getNumber()>0) {
+            Block blockPrev = blockchain.getBlockByHash(block.getParentHash());
+            Repository snapshotPrev = track.getSnapshotTo(blockPrev.getStateRoot());
+
+
+            BigInteger balancePrev = snapshotPrev.getBalance(acc);
+            balance = balance.subtract(balancePrev);
+
+        }
+
+        return new BigDecimal(balance);
+    }
 
     public BigDecimal getTrieDelta(Block block) throws SQLException {
 
@@ -605,7 +645,7 @@ public class LedgerStore {
             this.replayBlock = new ReplayBlock(listener, blockNo);
             replayBlock.run();
 
-            //deleteBlocksFrom(blockNo);
+            deleteBlocksFrom(blockNo);
 
             List<EntryType> rewardEntryTypes = Arrays.asList(EntryType.CoinbaseReward, EntryType.UncleReward, EntryType.FeeReward);
 
@@ -735,7 +775,7 @@ public class LedgerStore {
     private void ensureGenesis() throws SQLException {
         if (getSqlTopBlock()==0 && ledgerCount(0)==0)
         {
-            deleteBlocksFrom(0);
+            //deleteBlocksFrom(0);
             insertBlock(0);
             conn.commit();
             //flush(1);

@@ -5,6 +5,7 @@ import org.ethereum.core.Block;
 import org.ethereum.core.BlockchainImpl;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.net.eth.handler.Eth;
+import org.spongycastle.util.encoders.Hex;
 import org.springframework.web.bind.annotation.PathVariable;
 import stdweb.Core.Convert2json;
 import stdweb.Core.Ledger;
@@ -154,28 +155,29 @@ public class MyRestController {
         return result;
     }
 
-//    public String checkDelta(Block block) throws InterruptedException, SQLException {
-//        LedgerStore ledgerStore = LedgerStore.getLedgerStore(ethereumBean.getListener());
-//        BlockchainImpl blockchain = (BlockchainImpl)ethereumBean.getEthereum().getBlockchain();
-//
-//        long stopOn = blockchain.getStopOn();
-//        blockchain.setStopOn(0);
-//        Thread.sleep(500);
-//        BigDecimal trieDelta = ledgerStore.getTrieDelta(block);
-//        BigDecimal ledgerBlockDelta = ledgerStore.getLedgerBlockDelta(block);
-//
-//        long number = block.getNumber();
-//        String result="";
-//        if (trieDelta.equals(ledgerBlockDelta))
-//            result="Block delta correct:" + number + ": " + Convert2json.BI2ValStr(trieDelta.toBigInteger(), false);
-//        else {
-//            result="Block delta incorrect:" + number + ", trie - ledger: " + Convert2json.BI2ValStr(trieDelta.toBigInteger(), false) + " - " + Convert2json.BI2ValStr(ledgerBlockDelta.toBigInteger(), false);
-//        }
-//
-//        blockchain.setStopOn(stopOn);
-//
-//        return result;
-//    }
+
+    public String checkDelta(Block block) throws InterruptedException, SQLException {
+        LedgerStore ledgerStore = LedgerStore.getLedgerStore(ethereumBean.getListener());
+        BlockchainImpl blockchain = (BlockchainImpl)ethereumBean.getEthereum().getBlockchain();
+
+        long stopOn = blockchain.getStopOn();
+        blockchain.setStopOn(0);
+        Thread.sleep(500);
+        BigDecimal trieDelta = ledgerStore.getTrieDelta(block);
+        BigDecimal ledgerBlockDelta = ledgerStore.getLedgerBlockDelta(block);
+
+        long number = block.getNumber();
+        String result="";
+        if (trieDelta.equals(ledgerBlockDelta))
+            result="Block delta correct:" + number + ": " + Convert2json.BI2ValStr(trieDelta.toBigInteger(), false);
+        else {
+            result="Block delta incorrect:" + number + ", trie - ledger: " + Convert2json.BI2ValStr(trieDelta.toBigInteger(), false) + " - " + Convert2json.BI2ValStr(ledgerBlockDelta.toBigInteger(), false);
+        }
+
+        blockchain.setStopOn(stopOn);
+
+        return result;
+    }
 
     public String checkBalance() throws InterruptedException, SQLException {
         long number = EthereumBean.getBlockchain().getBestBlock().getNumber();
@@ -209,7 +211,8 @@ public class MyRestController {
 
         blockchain.setStopOn(stopOn);
 
-        result+="\n"+"ledger count:"+ledgerStore.ledgerCount(block.getNumber());
+        result+="\n"+"ledger count:"+ledgerStore.ledgerCount(block.getNumber())+"\n";
+        result+="Coinbase delta:"+ Hex.toHexString(block.getCoinbase())+" -> "+Convert2json.BD2ValStr(ledgerStore.getCoinbaseTrieDelta(block),false);
 
         return result;
     }

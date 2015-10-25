@@ -9,10 +9,12 @@ import org.ethereum.db.RepositoryImpl;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.vm.program.InternalTransaction;
 import org.spongycastle.util.encoders.Hex;
+import stdweb.ethereum.EthereumBean;
 import stdweb.ethereum.EthereumListener;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.sql.SQLException;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -292,13 +294,17 @@ public class Convert2json {
         return sdf.format(d);
     }
 
-    public static String block2json(Block block, EthereumListener listener)
-    {
+    public static String block2json(Block block, EthereumListener listener) throws SQLException {
 
         HashMap<String, String> hashMap = new HashMap<>();
 
         hashMap.put("height",String.valueOf(block.getNumber()) );
         hashMap.put("hash",addParentheses("0x"+Hex.toHexString(block.getHash())));
+        hashMap.put("parenthash",addParentheses("0x"+Hex.toHexString(block.getParentHash())));
+        hashMap.put("stateroot",addParentheses("0x"+Hex.toHexString(block.getStateRoot())));
+        hashMap.put("receiptroot",addParentheses("0x"+Hex.toHexString(block.getReceiptsRoot())));
+        hashMap.put("txtrieroot",addParentheses("0x"+Hex.toHexString(block.getTxTrieRoot())));
+
         hashMap.put("difficulty",String.valueOf(new BigInteger(block.getDifficulty()) ));
         hashMap.put("coinbase",addParentheses("0x"+Hex.toHexString(block.getCoinbase())));
 
@@ -312,7 +318,7 @@ public class Convert2json {
         SimpleDateFormat sdf=new SimpleDateFormat("yyyy-MM-dd' 'HH:mm:ss");
         hashMap.put("timestamp",addParentheses(convertTimestamp2str(block.getTimestamp())));
 
-        hashMap.put("tx#",addParentheses(Num2ValStr(block.getTransactionsList().size(),true) ));
+        hashMap.put("txcount",addParentheses(Num2ValStr(block.getTransactionsList().size(),true) ));
 
 //        long fee=0;
 //        for (Transaction tx : block.getTransactionsList())
@@ -321,9 +327,11 @@ public class Convert2json {
 //                continue;
 //            fee+=tx.transactionCost()*(new BigInteger(1,tx.getGasPrice()).longValue());
 //        }
-        BigInteger blockFee = new ReplayBlock(listener, block).getBlockFee();
 
-        hashMap.put("txfee",addParentheses(BI2ValStr(blockFee,true)));
+        //BigInteger blockFee = new ReplayBlock(listener, block).getBlockFee();
+        BigDecimal ledgerBlockTxFee = LedgerStore.getLedgerStore(listener).getLedgerBlockTxFee(block);
+
+        hashMap.put("txfee",addParentheses(BD2ValStr(ledgerBlockTxFee, true)));
 
         ReplayBlock replayBlock = new ReplayBlock(listener, block);
         BigInteger blockReward = replayBlock.getBlockReward();
