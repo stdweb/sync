@@ -656,12 +656,12 @@ public class LedgerStore {
     int blockCount2flush=0;
     public synchronized void flush(int n) throws SQLException {
 
-        if (nextSyncBlock% 100==0)
+        if (nextSyncBlock% 500==0)
         {
-            System.out.println("System GC");
+            System.out.println("System GC at "+nextSyncBlock);
             System.gc();
-
         }
+
         blockCount2flush++;
         if (blockCount2flush>=n) {
             conn.commit();
@@ -675,12 +675,6 @@ public class LedgerStore {
 
             this.replayBlock = new ReplayBlock(listener, blockNo);
             replayBlock.run();
-        if (blockNo % 100==0)
-            System.gc();
-
-        System.out.println("skip block:" +blockNo);
-
-        if (true) return (int)(++blockNo);
 
             deleteBlocksFrom(blockNo);
 
