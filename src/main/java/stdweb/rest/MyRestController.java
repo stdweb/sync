@@ -339,6 +339,25 @@ public class MyRestController {
 //        return result;
 //    }
 
+    @RequestMapping(value = "/tx/{txId}", method = GET, produces = APPLICATION_JSON_VALUE)
+    @ResponseBody
+    public String gettx(@PathVariable String txId) throws IOException {
+
+        try {
+            LedgerStore ledgerStore = LedgerStore.getLedgerStore(ethereumBean.getListener());
+            String s = ledgerStore.LedgerSelectTx(txId);
+
+            s=s.replace(":"," ");
+            return s;
+
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return  "error";
+
+    }
     @RequestMapping(value = "/account/{accountId}", method = GET, produces = APPLICATION_JSON_VALUE)
     @ResponseBody
     public String getAccountLedger(@PathVariable String accountId) throws IOException {

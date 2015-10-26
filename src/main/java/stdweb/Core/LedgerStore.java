@@ -561,6 +561,31 @@ public class LedgerStore {
             return "{error :"+e.toString()+"}";
         }
     }
+
+    public String LedgerSelectTx(String txStr) throws SQLException {
+
+        if (txStr.startsWith("0x"))
+            txStr=txStr.substring(2);
+
+        ResultSet rs;
+        Statement statement = conn.createStatement();
+
+        String sql="select  id   , tx ,address, case when amount>0 then amount else 0 end as Received ,case when amount<0 then -amount else 0 end as sent, block ,blocktimestamp ,depth ,gasused ,fee ,entryType , offsetaccount, descr ," +
+                " GrossAmount from ledger  where tx =X'" +txStr+"' "
+                +                "order by id";
+
+        rs = statement.executeQuery(sql);
+
+        try {
+            //JSONArray jsonArray = RsToJSON(rs);
+            JSONArray jsonArray = getJson(rs,true);
+            return jsonArray.toJSONString();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "{error :"+e.toString()+"}";
+        }
+    }
+
     public String LedgerSelect(String accStr) throws SQLException {
 
         if (accStr.startsWith("0x"))
@@ -631,6 +656,12 @@ public class LedgerStore {
     int blockCount2flush=0;
     public synchronized void flush(int n) throws SQLException {
 
+        if (nextSyncBlock% 100==0)
+        {
+            System.out.println("System GC");
+            System.gc();
+
+        }
         blockCount2flush++;
         if (blockCount2flush>=n) {
             conn.commit();
@@ -644,6 +675,9 @@ public class LedgerStore {
 
             this.replayBlock = new ReplayBlock(listener, blockNo);
             replayBlock.run();
+        if (blockNo % 100==0)
+            System.gc();
+
         System.out.println("skip block:" +blockNo);
 
         if (true) return (int)(++blockNo);
