@@ -656,7 +656,7 @@ public class LedgerStore {
     int blockCount2flush=0;
     public synchronized void flush(int n) throws SQLException {
 
-        if (nextSyncBlock% 500==0)
+        if (nextSyncBlock% 200==0)
         {
             System.out.println("System GC at "+nextSyncBlock);
             System.gc();
