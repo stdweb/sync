@@ -644,6 +644,9 @@ public class LedgerStore {
 
             this.replayBlock = new ReplayBlock(listener, blockNo);
             replayBlock.run();
+        System.out.println("skip block:" +blockNo);
+
+        if (true) return (int)(++blockNo);
 
             deleteBlocksFrom(blockNo);
 
