@@ -7,10 +7,7 @@ import org.ethereum.facade.Ethereum;
 import org.ethereum.net.eth.handler.Eth;
 import org.spongycastle.util.encoders.Hex;
 import org.springframework.web.bind.annotation.PathVariable;
-import stdweb.Core.Convert2json;
-import stdweb.Core.Ledger;
-import stdweb.Core.LedgerStore;
-import stdweb.Core.SyncStatus;
+import stdweb.Core.*;
 import stdweb.ethereum.EthereumBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -164,7 +161,7 @@ public class MyRestController {
         blockchain.setStopOn(0);
         Thread.sleep(500);
         BigDecimal trieDelta = ledgerStore.getTrieDelta(block);
-        BigDecimal ledgerBlockDelta = ledgerStore.getLedgerBlockDelta(block);
+        BigDecimal ledgerBlockDelta = ledgerStore.getQuery().getLedgerBlockDelta(block);
 
         long number = block.getNumber();
         String result="";
@@ -186,7 +183,7 @@ public class MyRestController {
     public String checkBalance(long number) throws InterruptedException, SQLException {
 
         LedgerStore ledgerStore = LedgerStore.getLedgerStore(ethereumBean.getListener());
-        int sqlTopBlock = ledgerStore.getSqlTopBlock();
+        int sqlTopBlock = ledgerStore.getQuery().getSqlTopBlock();
         Block blockByNumber = EthereumBean.getBlockchain().getBlockByNumber(Math.min(number, sqlTopBlock));
         return checkBalance(blockByNumber);
     }
@@ -211,7 +208,7 @@ public class MyRestController {
 
         blockchain.setStopOn(stopOn);
 
-        result+="\n"+"ledger count:"+ledgerStore.ledgerCount(block.getNumber())+"\n";
+        result+="\n"+"ledger count:"+ledgerStore.getQuery().ledgerCount(block.getNumber())+"\n";
         result+="Coinbase delta:"+ Hex.toHexString(block.getCoinbase())+" -> "+Convert2json.BD2ValStr(ledgerStore.getCoinbaseTrieDelta(block),false);
 
         return result;
@@ -230,7 +227,7 @@ public class MyRestController {
             result+=String.format("Top block %s, Blockchain is loading\n",String.valueOf(blockchain.getBestBlock().getNumber()));
 
         try {
-            result+=String.format("Ledger sql Top block: %s\n",LedgerStore.getLedgerStore(ethereumBean.getListener()).getSqlTopBlock());
+            result+=String.format("Ledger sql Top block: %s\n",LedgerStore.getLedgerStore(ethereumBean.getListener()).getQuery().getSqlTopBlock());
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -298,9 +295,9 @@ public class MyRestController {
 
         try {
             Block block=ethereumBean.getBlock(blockId);
-            LedgerStore ledgerStore = LedgerStore.getLedgerStore(ethereumBean.getListener());
+            LedgerQuery ledgerQuery = LedgerStore.getLedgerStore(ethereumBean.getListener()).getQuery();
 
-            String s = ledgerStore.LedgerSelectByBlock(String.valueOf(block.getNumber()));
+            String s = ledgerQuery.LedgerSelectByBlock(String.valueOf(block.getNumber()));
 
             s=s.replace(":"," ");
             return s;
@@ -344,8 +341,8 @@ public class MyRestController {
     public String gettx(@PathVariable String txId) throws IOException {
 
         try {
-            LedgerStore ledgerStore = LedgerStore.getLedgerStore(ethereumBean.getListener());
-            String s = ledgerStore.LedgerSelectTx(txId);
+            LedgerQuery ledgerQuery = LedgerStore.getLedgerStore(ethereumBean.getListener()).getQuery();
+            String s = ledgerQuery.LedgerSelectByTx(txId);
 
             s=s.replace(":"," ");
             return s;

@@ -442,7 +442,8 @@ public class ReplayBlock {
             executor.init();
             executor.execute();
             executor.go();
-            //executor.finalization();
+
+            executor.finalization();
 
             //executor.getResult().refundGas();
 

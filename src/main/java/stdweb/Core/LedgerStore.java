@@ -30,6 +30,12 @@ public class LedgerStore {
 
     long nextSyncBlock;
 
+    public LedgerQuery getQuery() {
+        return query;
+    }
+
+    private final LedgerQuery query;
+
     public SyncStatus getSyncStatus() {
         return syncStatus;
     }
@@ -68,7 +74,7 @@ public class LedgerStore {
 
 
     public void ledgerBulkLoad() throws SQLException, InterruptedException {
-        this.ledgerBulkLoad(getSqlTopBlock() + 1);
+        this.ledgerBulkLoad(query.getSqlTopBlock() + 1);
     }
 
 
@@ -156,18 +162,8 @@ public class LedgerStore {
         return "{'balance' "+Convert2json.BI2ValStr(bi,false) +", count "+count+", 'triebalance'" +Convert2json.BI2ValStr(trieBalance,false)+ " }";
     }
 
-    public BigDecimal getLedgerBlockDelta(Block block) throws SQLException {
-        ResultSet rs;
-        Statement statement = conn.createStatement();
 
-        //String accStr = Hex.toHexString(account);
-        //'f0134ff161a5c8f7c4f8cc33d3e1a7ae088594a9'
-        String sql="select  sum(grossamount) amo, count(*) c from ledger  where block="+block.getNumber();
-        rs = statement.executeQuery(sql);
-        rs.first();
 
-        return rs.getBigDecimal(1);
-    }
     public BigDecimal getLedgerBlockBalance(Block block) throws SQLException {
         ResultSet rs;
         Statement statement = conn.createStatement();
@@ -261,143 +257,14 @@ public class LedgerStore {
         return new BigDecimal(balance);
     }
 
+    public Connection getConn() {
+        return conn;
+    }
+
     private Connection conn;
     private PreparedStatement stat;
 
-    public static JSONArray getJson(ResultSet resultSet,boolean calcBalance) throws Exception {
-        JSONArray jsonArray = new JSONArray();
-
-        BigDecimal balance=new BigDecimal(0);
-        BigDecimal fee=new BigDecimal(0);
-        BigDecimal received=new BigDecimal(0);
-        BigDecimal sent=new BigDecimal(0);
-
-        while (resultSet.next()) {
-
-            int total_cols = resultSet.getMetaData().getColumnCount();
-            JSONObject obj = new JSONObject();
-
-            if (calcBalance) {
-                balance = balance.add(resultSet.getBigDecimal("RECEIVED")).subtract(resultSet.getBigDecimal("SENT"));
-                obj.put("BALANCE", Convert2json.BI2ValStr(balance.toBigInteger(), true));
-
-                received = received.add(resultSet.getBigDecimal("RECEIVED"));
-                sent = sent.add(resultSet.getBigDecimal("SENT"));
-            }
-
-            //fee
-
-            for (int i = 1; i <= total_cols; i++) {
-                //String columnTypeName = resultSet.getMetaData().getColumnTypeName(i);
-                String columnLabel = resultSet.getMetaData().getColumnLabel(i);
-
-                DataItem item= new DataItem("ledger", columnLabel, resultSet.getObject(i));
-                obj.put(item.getKey(),item.getValue());
-            }
-            jsonArray.add(obj);
-        }
-        //add total row to json
-        if (calcBalance) {
-            JSONObject obj = new JSONObject();
-            obj.put("BLOCK", "Total:");
-
-            obj.put("RECEIVED", Convert2json.BI2ValStr(received.toBigInteger(), true));
-            obj.put("RECEIVED", Convert2json.BI2ValStr(received.toBigInteger(), true));
-            obj.put("SENT", Convert2json.BI2ValStr(sent.toBigInteger(), true));
-            obj.put("FEE", Convert2json.BI2ValStr(fee.toBigInteger(), true));
-            obj.put("BALANCE", Convert2json.BI2ValStr(balance.toBigInteger(), true));
-            jsonArray.add(obj);
-        }
-
-        return jsonArray;
-
-    }
-
-
-
-    public static JSONArray RsToJSON(ResultSet resultSet)
-            throws Exception {
-        JSONArray jsonArray = new JSONArray();
-
-
-        BigDecimal balance=new BigDecimal(0);
-        BigDecimal fee=new BigDecimal(0);
-        BigDecimal received=new BigDecimal(0);
-        BigDecimal sent=new BigDecimal(0);
-
-
-        while (resultSet.next()) {
-
-            long block = resultSet.getLong("BLOCK");
-
-            int total_cols = resultSet.getMetaData().getColumnCount();
-            JSONObject obj = new JSONObject();
-
-            fee=fee.add(resultSet.getBigDecimal("FEE"));
-
-            if (resultSet.getBigDecimal("AMOUNT").signum()==1) {
-                received = received.add(resultSet.getBigDecimal("AMOUNT"));
-                obj.put("RECEIVED",Convert2json.BI2ValStr(resultSet.getBigDecimal("AMOUNT").toBigInteger(),true));
-            }
-            else {
-                sent = sent.add(resultSet.getBigDecimal("AMOUNT"));
-                obj.put("SENT",Convert2json.BI2ValStr(resultSet.getBigDecimal("AMOUNT").toBigInteger(),true));
-            }
-
-            balance=balance.add(resultSet.getBigDecimal("GROSSAMOUNT"));
-            obj.put("BALANCE",Convert2json.BI2ValStr(balance.toBigInteger(),true));
-
-
-            String e=EntryType.values()[resultSet.getInt("ENTRYTYPE")].toString();
-            obj.put("ENTRYTYPE",e);
-
-            for (int i = 1; i <= total_cols; i++) {
-
-                String columnTypeName = resultSet.getMetaData().getColumnTypeName(i);
-
-                String columnLabel = resultSet.getMetaData().getColumnLabel(i);
-
-                switch (columnTypeName)
-                {
-                    case "DECIMAL":
-
-                        obj.put(columnLabel, Convert2json.BI2ValStr(resultSet.getBigDecimal(i).toBigInteger(), true));
-                        break;
-                    case "VARBINARY":
-                        obj.put(columnLabel,"0x"+Hex.toHexString(resultSet.getBytes(i)));break;
-                    case "TINYINT":
-//                        if (columnLabel.equals("ENTRYTYPE"))
-//                            obj.put(columnLabel,EntryType.values()[resultSet.getInt(i)].toString());
-//                        else
-//                            obj.put(columnLabel,resultSet.getLong(i));
-
-                        break;
-                    case "TIMESTAMP":
-                        obj.put(columnLabel,resultSet.getTimestamp(i).toString());break;
-                    default:
-                        obj.put(columnLabel,resultSet.getObject(i));
-                }
-                //obj.put(resultSet.getMetaData().getColumnLabel(i + 1).toLowerCase(), resultSet.getObject(i + 1));
-            }
-
-
-            jsonArray.add(obj);
-        }
-        //add total row to json
-        JSONObject obj = new JSONObject();
-        obj.put("BLOCK", "Total:");
-
-        obj.put("RECEIVED",Convert2json.BI2ValStr(received.toBigInteger(),true));
-        obj.put("RECEIVED",Convert2json.BI2ValStr(received.toBigInteger(),true));
-        obj.put("SENT",Convert2json.BI2ValStr(sent.toBigInteger(),true));
-        obj.put("FEE", Convert2json.BI2ValStr(fee.toBigInteger(), true));
-        obj.put("BALANCE",Convert2json.BI2ValStr(balance.toBigInteger(), true));
-        jsonArray.add(obj);
-
-        return jsonArray;
-
-    }
-
+//
 
     public void insertLedgerEntry(LedgerEntry entry) throws SQLException {
         Block block = replayBlock.getBlock();
@@ -465,156 +332,8 @@ public class LedgerStore {
         conn.commit();
     }
 
-    public int getSqlTopBlock() throws SQLException {
-        ResultSet rs;
-        Statement statement = conn.createStatement();
-
-        //String accStr = Hex.toHexString(account);
-        //'f0134ff161a5c8f7c4f8cc33d3e1a7ae088594a9'
-        String sql = "select max(block) as topblock from ledger";
-
-        rs = statement.executeQuery(sql);
-
-        boolean first = rs.first();
-
-        return rs.getInt("topblock");
-
-    }
-
-    public int ledgerCount(long _block) throws SQLException {
-        ResultSet rs;
-        Statement statement = conn.createStatement();
-
-        //String accStr = Hex.toHexString(account);
-        //'f0134ff161a5c8f7c4f8cc33d3e1a7ae088594a9'
-        String sql="select count(*) as c from ledger where block<="+_block;
-
-        rs = statement.executeQuery(sql);
-        rs.first();
-        return  rs.getInt("c");
-    }
-
-    public String LedgerSelectByBlock(String blockStr) throws SQLException {
-
-        if (blockStr.startsWith("0x"))
-            blockStr=blockStr.substring(2);
-
-        ResultSet rs;
-        Statement statement = conn.createStatement();
-
-        //String accStr = Hex.toHexString(account);
-        //'f0134ff161a5c8f7c4f8cc33d3e1a7ae088594a9'
 
 
-        String sql="select  id   , tx ,address Receiver ,amount ,block ,blocktimestamp ,depth ,gasused ,fee ,entryType , offsetaccount sender, descr ," +
-                " GrossAmount from ledger  where block =" +blockStr+
-                " and entryType in ("+EntryType.FeeReward.ordinal()+","+EntryType.CoinbaseReward.ordinal()+", "+EntryType.UncleReward.ordinal()+")"+
-                " order by id";
-
-
-
-        String sql1="select  id   , tx ,address sender,abs(amount) amount ,block ,blocktimestamp ,depth ,gasused ,fee ,entryType , offsetaccount receiver, descr ," +
-                " GrossAmount from ledger  where block =" +blockStr+
-                " and entryType  in ("+EntryType.Send.ordinal()+","
-                +EntryType.InternalCall.ordinal()
-                +","+EntryType.Call.ordinal()
-                +","+EntryType.NA.ordinal()
-                +", "+EntryType.ContractCreation.ordinal()+")"+
-                " order by id";
-        try {
-            System.out.println(sql1);
-            rs = statement.executeQuery(sql);
-            JSONArray jsonArray = getJson(rs,false);
-            rs = statement.executeQuery(sql1);
-            jsonArray.addAll(getJson(rs,false));
-
-
-            System.out.println(jsonArray.toJSONString());
-            return jsonArray.toJSONString();
-        } catch (Exception e) {
-            e.printStackTrace();
-            return "{error :"+e.toString()+"}";
-        }
-    }
-
-    public String LedgerSelect1(String accStr) throws SQLException {
-
-        if (accStr.startsWith("0x"))
-            accStr=accStr.substring(2);
-
-        ResultSet rs;
-        Statement statement = conn.createStatement();
-
-        //String accStr = Hex.toHexString(account);
-        //'f0134ff161a5c8f7c4f8cc33d3e1a7ae088594a9'
-        String sql="select  id   , tx ,address ,amount ,block ,blocktimestamp ,depth ,gasused ,fee ,entryType , offsetaccount, descr ," +
-                " GrossAmount from ledger  where address =X'" +accStr+"' "+
-                "order by id";
-        rs = statement.executeQuery(sql);
-
-        try {
-            JSONArray jsonArray = RsToJSON(rs);
-            System.out.println(jsonArray.toJSONString());
-            return jsonArray.toJSONString();
-        } catch (Exception e) {
-            e.printStackTrace();
-            return "{error :"+e.toString()+"}";
-        }
-    }
-
-    public String LedgerSelectTx(String txStr) throws SQLException {
-
-        if (txStr.startsWith("0x"))
-            txStr=txStr.substring(2);
-
-        ResultSet rs;
-        Statement statement = conn.createStatement();
-
-        String sql="select  id   , tx ,address, case when amount>0 then amount else 0 end as Received ,case when amount<0 then -amount else 0 end as sent, block ,blocktimestamp ,depth ,gasused ,fee ,entryType , offsetaccount, descr ," +
-                " GrossAmount from ledger  where tx =X'" +txStr+"' "
-                +                "order by id";
-
-        rs = statement.executeQuery(sql);
-
-        try {
-            //JSONArray jsonArray = RsToJSON(rs);
-            JSONArray jsonArray = getJson(rs,true);
-            return jsonArray.toJSONString();
-        } catch (Exception e) {
-            e.printStackTrace();
-            return "{error :"+e.toString()+"}";
-        }
-    }
-
-    public String LedgerSelect(String accStr) throws SQLException {
-
-        if (accStr.startsWith("0x"))
-            accStr=accStr.substring(2);
-
-        ResultSet rs;
-        Statement statement = conn.createStatement();
-
-        //String accStr = Hex.toHexString(account);
-        //'f0134ff161a5c8f7c4f8cc33d3e1a7ae088594a9'
-        String sql="select  id   , tx ,address, case when amount>0 then amount else 0 end as Received ,case when amount<0 then -amount else 0 end as sent, block ,blocktimestamp ,depth ,gasused ,fee ,entryType , offsetaccount, descr ," +
-                " GrossAmount from ledger  where address =X'" +accStr+"' "
-                ;//+                "order by id"; //"+EntryType.TxFee.ordinal()+" as
-        sql +=" union all ";
-        sql+=" select  id   , X'00' as tx ,address ,0 as received,fee as sent ,block ,blocktimestamp ,depth ,0 gasused, fee, "+EntryType.TxFee.ordinal()+" as  entryType , X'00' as offsetaccount, descr ," +
-                " GrossAmount from ledger  where fee<>0 and address =X'" +accStr+"' "
-                +                "order by id,entryType";
-        rs = statement.executeQuery(sql);
-
-        try {
-            //JSONArray jsonArray = RsToJSON(rs);
-            JSONArray jsonArray = getJson(rs,true);
-            System.out.println(jsonArray.toJSONString());
-            return jsonArray.toJSONString();
-        } catch (Exception e) {
-            e.printStackTrace();
-            return "{error :"+e.toString()+"}";
-        }
-    }
 
     private void checkBalance() throws SQLException {
         BigDecimal trieBalance = BigDecimal.valueOf(0);
@@ -641,7 +360,7 @@ public class LedgerStore {
 
         Block block = replayBlock.getBlock();
         trieDelta=getTrieDelta(block);
-        ledgerBlockDelta=getLedgerBlockDelta(block);
+        ledgerBlockDelta=query. getLedgerBlockDelta(block);
         long number = block.getNumber();
 
         //System.out.println("trieBalance");
@@ -666,12 +385,11 @@ public class LedgerStore {
         if (blockCount2flush>=n) {
             conn.commit();
             blockCount2flush=0;
-            System.out.println("Ledger - block inserted:"+getSqlTopBlock());
+            System.out.println("Ledger - block inserted:"+query.getSqlTopBlock());
         }
     }
 
     public synchronized int insertBlock(long blockNo) throws SQLException{
-
 
             this.replayBlock = new ReplayBlock(listener, blockNo);
             replayBlock.run();
@@ -703,38 +421,14 @@ public class LedgerStore {
 
         flush(1);
 
-        int sqlTopBlock = getSqlTopBlock();
+        int sqlTopBlock = query.getSqlTopBlock();
 
         return sqlTopBlock;
         //System.out.println("Ledger - block inserted:"+blockNo);
        //checkDelta();
     }
 
-    public static LedgerStore getLedgerStore(EthereumListener listener)
-    {
 
-        if (ledgerStore==null)
-            try {
-                ledgerStore=new LedgerStore(listener);
-
-            } catch (SQLException e) {
-                e.printStackTrace();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        return ledgerStore;
-    }
-
-    private LedgerStore(EthereumListener listener) throws Exception {
-        this.listener=listener;
-        this.ethereum=listener.getEthereum();
-        init("h2");
-        ensureConnection();
-        conn.setAutoCommit(false);
-        count=0;
-        syncStatus=SyncStatus.stopped;
-        nextStatus=SyncStatus.stopped;
-    }
 
     private void initMsSql() throws Exception
     {
@@ -783,28 +477,19 @@ public class LedgerStore {
 
     }
     private void init(String sqltype) throws Exception {
-
-
-        System.out.println("Init");
-
         switch (sqltype.toLowerCase())
         {
             case "mssql":
                 initMsSql();break;
             case "h2":
                 initH2();break;
-
         }
-        //statInsertEntry = conn.prepareStatement(insEntrySql);
         ensureConnection();
-        //createSyncLedgerThread();
-        ensureGenesis();
 
-        //conn.close();
     }
 
     private void ensureGenesis() throws SQLException {
-        if (getSqlTopBlock()==0 && ledgerCount(0)==0)
+        if (query.getSqlTopBlock()==0 && query.ledgerCount(0)==0)
         {
             //deleteBlocksFrom(0);
             insertBlock(0);
@@ -813,6 +498,35 @@ public class LedgerStore {
         }
     }
 
+    public static LedgerStore getLedgerStore(EthereumListener listener)
+    {
+
+        if (ledgerStore==null)
+            try {
+                ledgerStore=new LedgerStore(listener);
+
+            } catch (SQLException e) {
+                e.printStackTrace();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        return ledgerStore;
+    }
+
+    private LedgerStore(EthereumListener listener) throws Exception {
+        this.listener=listener;
+        this.ethereum=listener.getEthereum();
+        init("h2");
+        ensureConnection();
+        conn.setAutoCommit(false);
+        count=0;
+        syncStatus=SyncStatus.stopped;
+        nextStatus=SyncStatus.stopped;
+
+        query=LedgerQuery.getQuery(this);
+
+        ensureGenesis();
+    }
 //
 //    public void del_insertLedgerEntries(ReplayBlock _replayBlock) throws Exception {
 //
@@ -1120,4 +834,187 @@ public class LedgerStore {
 //            stat.executeUpdate();
 //        }
 //    }
-}
+
+    //    public String LedgerSelect1(String accStr) throws SQLException {
+//
+//        if (accStr.startsWith("0x"))
+//            accStr=accStr.substring(2);
+//
+//        ResultSet rs;
+//        Statement statement = conn.createStatement();
+//
+//        //String accStr = Hex.toHexString(account);
+//        //'f0134ff161a5c8f7c4f8cc33d3e1a7ae088594a9'
+//        String sql="select  id   , tx ,address ,amount ,block ,blocktimestamp ,depth ,gasused ,fee ,entryType , offsetaccount, descr ," +
+//                " GrossAmount from ledger  where address =X'" +accStr+"' "+
+//                "order by id";
+//        rs = statement.executeQuery(sql);
+//
+//        try {
+//            JSONArray jsonArray = RsToJSON(rs);
+//            System.out.println(jsonArray.toJSONString());
+//            return jsonArray.toJSONString();
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//            return "{error :"+e.toString()+"}";
+//        }
+//    }
+
+//    public String LedgerSelectTx(String txStr) throws SQLException {
+//
+//        if (txStr.startsWith("0x"))
+//            txStr=txStr.substring(2);
+//
+//        ResultSet rs;
+//        Statement statement = conn.createStatement();
+//
+//        String sql="select  id   , tx ,address, case when amount>0 then amount else 0 end as Received ,case when amount<0 then -amount else 0 end as sent, block ,blocktimestamp ,depth ,gasused ,fee ,entryType , offsetaccount, descr ," +
+//                " GrossAmount from ledger  where tx =X'" +txStr+"' "
+//                +                "order by id";
+//
+//        rs = statement.executeQuery(sql);
+//
+//        try {
+//            //JSONArray jsonArray = RsToJSON(rs);
+//            JSONArray jsonArray = getJson(rs,true);
+//            return jsonArray.toJSONString();
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//            return "{error :"+e.toString()+"}";
+//        }
+//    }
+
+    //public static JSONArray getJson(ResultSet resultSet,boolean calcBalance) throws Exception {
+//        JSONArray jsonArray = new JSONArray();
+//
+//        BigDecimal balance=new BigDecimal(0);
+//        BigDecimal fee=new BigDecimal(0);
+//        BigDecimal received=new BigDecimal(0);
+//        BigDecimal sent=new BigDecimal(0);
+//
+//        while (resultSet.next()) {
+//
+//            int total_cols = resultSet.getMetaData().getColumnCount();
+//            JSONObject obj = new JSONObject();
+//
+//            if (calcBalance) {
+//                balance = balance.add(resultSet.getBigDecimal("RECEIVED")).subtract(resultSet.getBigDecimal("SENT"));
+//                obj.put("BALANCE", Convert2json.BI2ValStr(balance.toBigInteger(), true));
+//
+//                received = received.add(resultSet.getBigDecimal("RECEIVED"));
+//                sent = sent.add(resultSet.getBigDecimal("SENT"));
+//            }
+//
+//            //fee
+//
+//            for (int i = 1; i <= total_cols; i++) {
+//                //String columnTypeName = resultSet.getMetaData().getColumnTypeName(i);
+//                String columnLabel = resultSet.getMetaData().getColumnLabel(i);
+//
+//                DataItem item= new DataItem("ledger", columnLabel, resultSet.getObject(i));
+//                obj.put(item.getKey(),item.getValue());
+//            }
+//            jsonArray.add(obj);
+//        }
+//        //add total row to json
+//        if (calcBalance) {
+//            JSONObject obj = new JSONObject();
+//            obj.put("BLOCK", "Total:");
+//
+//            obj.put("RECEIVED", Convert2json.BI2ValStr(received.toBigInteger(), true));
+//            obj.put("RECEIVED", Convert2json.BI2ValStr(received.toBigInteger(), true));
+//            obj.put("SENT", Convert2json.BI2ValStr(sent.toBigInteger(), true));
+//            obj.put("FEE", Convert2json.BI2ValStr(fee.toBigInteger(), true));
+//            obj.put("BALANCE", Convert2json.BI2ValStr(balance.toBigInteger(), true));
+//            jsonArray.add(obj);
+//        }
+//
+//        return jsonArray;
+//    }
+//
+//
+//
+//    public static JSONArray RsToJSON(ResultSet resultSet)
+//            throws Exception {
+//        JSONArray jsonArray = new JSONArray();
+//
+//
+//        BigDecimal balance=new BigDecimal(0);
+//        BigDecimal fee=new BigDecimal(0);
+//        BigDecimal received=new BigDecimal(0);
+//        BigDecimal sent=new BigDecimal(0);
+//
+//
+//        while (resultSet.next()) {
+//
+//            long block = resultSet.getLong("BLOCK");
+//
+//            int total_cols = resultSet.getMetaData().getColumnCount();
+//            JSONObject obj = new JSONObject();
+//
+//            fee=fee.add(resultSet.getBigDecimal("FEE"));
+//
+//            if (resultSet.getBigDecimal("AMOUNT").signum()==1) {
+//                received = received.add(resultSet.getBigDecimal("AMOUNT"));
+//                obj.put("RECEIVED",Convert2json.BI2ValStr(resultSet.getBigDecimal("AMOUNT").toBigInteger(),true));
+//            }
+//            else {
+//                sent = sent.add(resultSet.getBigDecimal("AMOUNT"));
+//                obj.put("SENT",Convert2json.BI2ValStr(resultSet.getBigDecimal("AMOUNT").toBigInteger(),true));
+//            }
+//
+//            balance=balance.add(resultSet.getBigDecimal("GROSSAMOUNT"));
+//            obj.put("BALANCE",Convert2json.BI2ValStr(balance.toBigInteger(),true));
+//
+//
+//            String e=EntryType.values()[resultSet.getInt("ENTRYTYPE")].toString();
+//            obj.put("ENTRYTYPE",e);
+//
+//            for (int i = 1; i <= total_cols; i++) {
+//
+//                String columnTypeName = resultSet.getMetaData().getColumnTypeName(i);
+//
+//                String columnLabel = resultSet.getMetaData().getColumnLabel(i);
+//
+//                switch (columnTypeName)
+//                {
+//                    case "DECIMAL":
+//
+//                        obj.put(columnLabel, Convert2json.BI2ValStr(resultSet.getBigDecimal(i).toBigInteger(), true));
+//                        break;
+//                    case "VARBINARY":
+//                        obj.put(columnLabel,"0x"+Hex.toHexString(resultSet.getBytes(i)));break;
+//                    case "TINYINT":
+////                        if (columnLabel.equals("ENTRYTYPE"))
+////                            obj.put(columnLabel,EntryType.values()[resultSet.getInt(i)].toString());
+////                        else
+////                            obj.put(columnLabel,resultSet.getLong(i));
+//
+//                        break;
+//                    case "TIMESTAMP":
+//                        obj.put(columnLabel,resultSet.getTimestamp(i).toString());break;
+//                    default:
+//                        obj.put(columnLabel,resultSet.getObject(i));
+//                }
+//                //obj.put(resultSet.getMetaData().getColumnLabel(i + 1).toLowerCase(), resultSet.getObject(i + 1));
+//            }
+//
+//
+//            jsonArray.add(obj);
+//        }
+//        //add total row to json
+//        JSONObject obj = new JSONObject();
+//        obj.put("BLOCK", "Total:");
+//
+//        obj.put("RECEIVED",Convert2json.BI2ValStr(received.toBigInteger(),true));
+//        obj.put("RECEIVED",Convert2json.BI2ValStr(received.toBigInteger(),true));
+//        obj.put("SENT",Convert2json.BI2ValStr(sent.toBigInteger(),true));
+//        obj.put("FEE", Convert2json.BI2ValStr(fee.toBigInteger(), true));
+//        obj.put("BALANCE",Convert2json.BI2ValStr(balance.toBigInteger(), true));
+//        jsonArray.add(obj);
+//
+//        return jsonArray;
+//
+//    }
+
+    }

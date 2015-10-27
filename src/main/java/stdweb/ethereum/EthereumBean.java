@@ -5,10 +5,7 @@ import org.ethereum.core.BlockchainImpl;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.facade.EthereumFactory;
 import org.spongycastle.util.encoders.Hex;
-import stdweb.Core.Convert2json;
-import stdweb.Core.LedgerStore;
-import stdweb.Core.ReplayBlock;
-import stdweb.Core.SyncStatus;
+import stdweb.Core.*;
 
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -208,7 +205,8 @@ public class EthereumBean {
     public String getAccountLedger(String accountId) {
         try {
             LedgerStore ledgerStore = LedgerStore.getLedgerStore(listener);
-            String s = ledgerStore.LedgerSelect(accountId);
+            LedgerQuery ledgerQuery = LedgerQuery.getQuery(ledgerStore);
+            String s = ledgerQuery.LedgerSelect(accountId);
 
             s=s.replace(":"," ");
             return s;
