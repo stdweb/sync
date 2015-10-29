@@ -130,11 +130,11 @@ public class LedgerQuery {
                 +", "+EntryType.ContractCreation.ordinal()+")"+
                 " order by id";
         try {
-            System.out.println(sql1);
+
             rs = statement.executeQuery(sql1);
             JSONArray jsonArray = getJson(rs,false);
 
-            //System.out.println(jsonArray.toJSONString());
+
             return jsonArray.toJSONString();
         } catch (Exception e) {
             e.printStackTrace();
@@ -167,14 +167,12 @@ public class LedgerQuery {
                 +", "+EntryType.ContractCreation.ordinal()+")"+
                 " order by id";
         try {
-            System.out.println(sql1);
+
             rs = statement.executeQuery(sql);
             JSONArray jsonArray = getJson(rs,false);
             rs = statement.executeQuery(sql1);
             jsonArray.addAll(getJson(rs,false));
 
-
-            System.out.println(jsonArray.toJSONString());
             return jsonArray.toJSONString();
         } catch (Exception e) {
             e.printStackTrace();
@@ -252,7 +250,6 @@ public class LedgerQuery {
         try {
 
             JSONArray jsonArray = getJson(rs,true);
-            System.out.println(jsonArray.toJSONString());
             return jsonArray;
         } catch (Exception e) {
             //e.printStackTrace();
