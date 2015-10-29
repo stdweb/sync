@@ -202,22 +202,7 @@ public class EthereumBean {
         return block;
     }
 
-    public String getAccountLedger(String accountId) {
-        try {
-            LedgerStore ledgerStore = LedgerStore.getLedgerStore(listener);
-            LedgerQuery ledgerQuery = LedgerQuery.getQuery(ledgerStore);
-            String s = ledgerQuery.LedgerSelect(accountId);
 
-            s=s.replace(":"," ");
-            return s;
-
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-
-        return  "error";
-    }
 
     public String getBalance(String blockId) throws SQLException {
         LedgerStore ledgerStore = LedgerStore.getLedgerStore(listener);

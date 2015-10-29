@@ -3,6 +3,8 @@ package stdweb.Core;
 import org.ethereum.core.Block;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
+import org.spongycastle.util.encoders.Hex;
+import stdweb.ethereum.EthereumBean;
 
 import java.math.BigDecimal;
 import java.sql.Connection;
@@ -83,6 +85,7 @@ public class LedgerQuery {
         return rs.getInt("topblock");
 
     }
+    int acc_page_size=25;
 
     public BigDecimal getLedgerBlockDelta(Block block) throws SQLException {
         ResultSet rs;
@@ -179,31 +182,86 @@ public class LedgerQuery {
         }
     }
 
-    public String LedgerSelect(String accStr) throws SQLException {
+    public JSONObject acc_entry_count(String accStr,String offsetStr) throws SQLException {
 
         if (accStr.startsWith("0x"))
             accStr=accStr.substring(2);
 
+        int offset;
+        try {
+            offset= Integer.parseInt(offsetStr);
+        }
+        catch (NumberFormatException e)
+        {
+            offset=0;
+        }
+
         ResultSet rs;
         Statement statement = conn.createStatement();
 
-        String sql="select  id   , tx ,address, case when amount>0 then amount else 0 end as Received ,case when amount<0 then -amount else 0 end as sent, block ,blocktimestamp ,depth ,gasused ,fee ,entryType , offsetaccount, descr ," +
+        String sql="";
+        //sql+="select sum(case when fee<>0 then 2 else 1 end) c from  ledger  where address =X'" +accStr+"' ";
+
+        sql+=" select  count(*) c from ledger  where address =X'" +accStr+"' ";
+
+        rs = statement.executeQuery(sql);
+        rs.first();
+        long entries_count = rs.getLong("c");
+
+        try {
+            JSONObject obj = new JSONObject();
+            obj.put("entries_count",entries_count);
+            obj.put("page_count",entries_count%acc_page_size);
+
+            return obj;
+
+        } catch (Exception e) {
+            JSONObject jsonObject = new JSONObject();
+            jsonObject.put("err",e.toString());
+            return jsonObject;
+        }
+    }
+
+    public JSONArray LedgerSelect(String accStr,String offsetStr) throws SQLException {
+
+        if (accStr.startsWith("0x"))
+            accStr=accStr.substring(2);
+
+        int offset;
+        try {
+            offset= Integer.parseInt(offsetStr);
+        }
+        catch (NumberFormatException e)
+        {
+            offset=0;
+        }
+
+        ResultSet rs;
+        Statement statement = conn.createStatement();
+
+        String sql="";
+        sql+="select  id   , tx ,address, case when amount>0 then amount else 0 end as Received ,case when amount<0 then -amount else 0 end as sent, block ,blocktimestamp ,depth ,gasused ,fee ,entryType , offsetaccount, descr ," +
                 " GrossAmount from ledger  where address =X'" +accStr+"' "
                 ;//+                "order by id"; //"+EntryType.TxFee.ordinal()+" as
         sql +=" union all ";
         sql+=" select  id   , X'00' as tx ,address ,0 as received,fee as sent ,block ,blocktimestamp ,depth ,0 gasused, fee, "+EntryType.TxFee.ordinal()+" as  entryType , X'00' as offsetaccount, descr ," +
-                " GrossAmount from ledger  where fee<>0 and address =X'" +accStr+"' "
-                +                "order by id,entryType limit 25 ";
+                " GrossAmount from ledger  where fee<>0 and address =X'" +accStr+"' ";
+        sql+=                "order by id,entryType limit 25 offset "+offset*acc_page_size;
         rs = statement.executeQuery(sql);
 
         try {
 
             JSONArray jsonArray = getJson(rs,true);
             System.out.println(jsonArray.toJSONString());
-            return jsonArray.toJSONString();
+            return jsonArray;
         } catch (Exception e) {
-            e.printStackTrace();
-            return "{error :"+e.toString()+"}";
+            //e.printStackTrace();
+            JSONObject jsonObject = new JSONObject();
+            jsonObject.put("err",e.toString());
+
+            JSONArray arr = new JSONArray();
+            arr.add(jsonObject);
+            return arr;
         }
     }
 
@@ -219,4 +277,70 @@ public class LedgerQuery {
     }
 
 
+    public JSONObject search(String search_string) throws SQLException {
+        JSONObject jsonObject = new JSONObject();
+
+        try {
+            long blockNo=Long.parseLong(search_string);
+            Block block = EthereumBean.getBlockchain().getBlockByNumber(blockNo);
+            if (block!=null) {
+                jsonObject.put("resulttype","block");
+                jsonObject.put("blocknumber", String.valueOf(block.getNumber()));
+                jsonObject.put("blockhash", Hex.toHexString(block.getHash()));
+                return jsonObject;
+            }
+
+        }
+        catch (NumberFormatException e)
+        {
+
+        }
+
+        if (search_string.startsWith("0x"))
+            search_string=search_string.substring(2);
+
+
+        String sql ="select top 1 id from ledger ";
+        Statement statement;
+        ResultSet rs;
+        switch (search_string.length())
+        {
+            case 40:
+                sql+=" where address =X'"+search_string+"'";
+                statement = conn.createStatement();
+                rs = statement.executeQuery(sql);
+                if (rs.first())
+                {
+                    jsonObject.put("resulttype","address");
+                    jsonObject.put("address",search_string);
+                    return jsonObject;
+                }
+
+                break;
+            case 64:
+
+                Block block = EthereumBean.getBlockchain().getBlockByHash(Hex.decode(search_string));
+                if (block!=null) {
+                    jsonObject.put("resulttype","block");
+                    jsonObject.put("blocknumber", String.valueOf(block.getNumber()));
+                    jsonObject.put("blockhash", Hex.toHexString(block.getHash()));
+                    return jsonObject;
+                }
+
+                sql+=" where tx =X'"+search_string+"'";
+                statement = conn.createStatement();
+                rs = statement.executeQuery(sql);
+                if (rs.first())
+                {
+                    jsonObject.put("resulttype","tx");
+                    jsonObject.put("tx",search_string);
+                    return jsonObject;
+                }
+
+        }
+
+
+        jsonObject.put("resulttype","");
+        return jsonObject;
+    }
 }

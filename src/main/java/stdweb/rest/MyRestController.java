@@ -5,6 +5,8 @@ import org.ethereum.core.Block;
 import org.ethereum.core.BlockchainImpl;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.net.eth.handler.Eth;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
 import org.spongycastle.util.encoders.Hex;
 import org.springframework.web.bind.annotation.PathVariable;
 import stdweb.Core.*;
@@ -227,7 +229,7 @@ public class MyRestController {
             result+=String.format("Top block %s, Blockchain is loading\n",String.valueOf(blockchain.getBestBlock().getNumber()));
 
         try {
-            result+=String.format("Ledger sql Top block: %s\n",LedgerStore.getLedgerStore(ethereumBean.getListener()).getQuery().getSqlTopBlock());
+            result+=String.format("Ledger sql Top block: %s\n", LedgerStore.getLedgerStore(ethereumBean.getListener()).getQuery().getSqlTopBlock());
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -355,11 +357,26 @@ public class MyRestController {
         return  "error";
 
     }
-    @RequestMapping(value = "/account/{accountId}", method = GET, produces = APPLICATION_JSON_VALUE)
+    @RequestMapping(value = "/account/{accountId}/{offset}", method = GET, produces = APPLICATION_JSON_VALUE)
     @ResponseBody
-    public String getAccountLedger(@PathVariable String accountId) throws IOException {
+    public String getAccountLedger(@PathVariable String accountId,@PathVariable String offset) throws IOException {
 
-        return ethereumBean.getAccountLedger(accountId);
+        try {
+            LedgerStore ledgerStore = LedgerStore.getLedgerStore(ethereumBean.getListener());
+            LedgerQuery ledgerQuery = LedgerQuery.getQuery(ledgerStore);
+
+            JSONArray jsonArray = ledgerQuery.LedgerSelect(accountId, offset);
+            JSONObject entriesJson=ledgerQuery.acc_entry_count(accountId,offset);
+            entriesJson.put("entries",jsonArray);
+            String s=entriesJson.toJSONString();
+
+            s=s.replace(":"," ");
+            return s;
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return  e.toString();
+        }
     }
 
 }
