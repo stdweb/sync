@@ -42,6 +42,7 @@ public class ApiController {
                 "api/ledger/stop - stop bulk loading sql db\n" +
                 "api/ledger/sync - set  sync status to 'OnBlockSync'  after sql bulkload finished\n" +
                 "api/ledger/stopsync - set sync status to Stop\n" +
+                "api/ledger/{i} - delete and start sql db bulkload from i block" +
                 "\n" +
                 "api/blockchain/start - start blockchain sync\n" +
                 "api/blockchain/stop - stop blockchain sync\n" +
