@@ -7,15 +7,15 @@ import org.ethereum.facade.Ethereum;
 import org.ethereum.listener.EthereumListenerAdapter;
 import org.ethereum.util.BIUtil;
 import stdweb.Core.LedgerStore;
+import stdweb.Core.ReplayBlock;
 import stdweb.Core.SyncStatus;
 
+import javax.transaction.NotSupportedException;
 import java.math.BigInteger;
 import java.sql.SQLException;
 import java.util.List;
 
 public class EthereumListener extends EthereumListenerAdapter {
-
-
 
     Ethereum ethereum;
 
@@ -32,17 +32,16 @@ public class EthereumListener extends EthereumListenerAdapter {
 
     }
 
-
-
     @Override
     public void onBlock(Block block, List<TransactionReceipt> receipts) {
         LedgerStore ledgerStore = LedgerStore.getLedgerStore(this);
+
         if (ledgerStore.getSyncStatus()== SyncStatus.onBlockSync)
             try {
-                ledgerStore.deleteBlocksFrom(block.getNumber());
-                ledgerStore.insertBlock(block.getNumber());
+                //ledgerStore.deleteBlocksFrom(block.getNumber());
+                ledgerStore.insertBlock(ReplayBlock.CURRENT(block));
                 if (block.getNumber() % 1 == 0)
-                    System.out.println("On Block Ledger  insert:" + block.getNumber());
+                    System.out.println("On Block Ledger  insert:"+ block.getNumber());
             } catch (SQLException e) {
                 e.printStackTrace();
             }
@@ -53,22 +52,15 @@ public class EthereumListener extends EthereumListenerAdapter {
     @Override
     public void onTransactionExecuted(TransactionExecutionSummary summary)
     {
-        //BigInteger gasUsed = summary.getGasUsed();
-        //return;
+        LedgerStore ledgerStore = LedgerStore.getLedgerStore(this);
+        if (ledgerStore.getSyncStatus()== SyncStatus.onBlockSync) {
+            ReplayBlock replayBlock ;
 
-//        if (Hex.toHexString(summary.getTransactionHash()).equals("275de8f52e08e8f66c7d21900d9ee8bedb1114d2eb82706a7a7e65f6d7e4b745"))
-//        {
-//            for ( InternalTransaction tx:summary.getInternalTransactions())
-//            {
-//                System.out.println("---------------------listener>");
-//                String sender=Hex.toHexString(tx.getSender());
-//                String receiver=Hex.toHexString(tx.getReceiveAddress());
-//                String valStr=Convert2json.BI2ValStr(tx);
-//                System.out.println(sender+" -> "+receiver+" := "+valStr);
-//                System.out.println("<---------------------listener");
-//
-//            }
-//        }
+            replayBlock = ReplayBlock.CURRENT(summary.getBlock());
+            replayBlock.addTxEntries(summary);
+
+            //System.out.println("onTx executed:" + summary.toString());
+        }
     }
 
     /**

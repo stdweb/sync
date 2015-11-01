@@ -5,10 +5,7 @@ import org.ethereum.core.BlockchainImpl;
 import org.spongycastle.util.encoders.Hex;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
-import stdweb.Core.Convert2json;
-import stdweb.Core.LedgerQuery;
-import stdweb.Core.LedgerStore;
-import stdweb.Core.SyncStatus;
+import stdweb.Core.*;
 import stdweb.ethereum.EthereumBean;
 
 import java.io.IOException;
@@ -36,7 +33,8 @@ public class ApiController {
 
         String s="api/ledger/delete/{i} - delete blocks from i block (sql db)\n" +
                 "api/ledger/insert/{i} - insert i block into sql db\n" +
-                "api/ledger/check/{i} - compare balances on i block - blockchain vs sql db\n" +
+                "api/ledger/check/{i} - compare balances for only BLOCK accounts on i block - blockchain vs sql db\n" +
+                "api/ledger/check/{i} - compare balances for ALL accounts on i block - blockchain vs sql db\n" +
                 "\n" +
                 "api/ledger/start - start bulk load sql from last sql block\n" +
                 "api/ledger/stop - stop bulk loading sql db\n" +
@@ -66,11 +64,18 @@ public class ApiController {
                     ret="block deleted:"+i;
                     break;
                 case "insert":
-                    ledgerStore.insertBlock(i);
+                    ledgerStore.replayAndInsertBlock(i);
                     ret= "block inserted:"+i;
                     break;
+                case "checkall":
+                    ret=TestBalances.checkBalance(i);
+                    ret+="\n";
+                    ret+=TestBalances.checkAccountsBalance(i,true);
+                    break;
                 case "check":
-                    ret=checkBalance(i);
+                    //ret=TestBalances.checkBalance(i);
+                    ret+="\n";
+                    ret+=TestBalances.checkAccountsBalance(i,false);
                     break;
             }
         }
@@ -107,15 +112,9 @@ public class ApiController {
                 ledgerStore.setSyncStatus(SyncStatus.stopped);
                 ledgerStore.setNextStatus(SyncStatus.stopped);
                 break;
-
-
-
             default:
-
                 try {
-
                     int block = Integer.parseInt(cmd);
-
                     ledgerStore.ledgerBulkLoad(block);
                     //ethereumBean.ledgerStartSync(block);
                 }
@@ -134,6 +133,7 @@ public class ApiController {
     public String blockchain(@PathVariable String cmd) throws IOException, SQLException, InterruptedException {
 
         BlockchainImpl blockchain = (BlockchainImpl)ethereumBean.getEthereum().getBlockchain();
+        LedgerStore ledgerStore = LedgerStore.getLedgerStore(ethereumBean.getListener());
         String result = blockchainStatus( );
         switch (cmd.toLowerCase())
         {
@@ -142,19 +142,16 @@ public class ApiController {
 
                 break;
             case "start":
+                ledgerStore.setSyncStatus(SyncStatus.onBlockSync);
+                ledgerStore.setNextStatus(SyncStatus.onBlockSync);
                 ethereumBean.blockchainStartSync();
-
                 break;
-
             case "check":
-                result+=checkBalance();
+                result+=TestBalances.checkBalance();
                 break;
-
             //status
         }
         //long stopBlockNo=Long.valueOf(blockId);
-
-
         return result;
     }
 
@@ -180,8 +177,6 @@ public class ApiController {
         result+="Ledger syncStatus:"+ledgerStore.getSyncStatus()+"\n";
         result+="Ledger nextStatus:"+ledgerStore.getNextStatus()+"\n";
         //result+="Ledger sql top block:"+ledgerStore.getSqlTopBlock()+"\n";
-
-
         //result+=checkBalance(blockchain.getBestBlock())+"\n";
         //result+=checkDelta(blockchain.getBestBlock())+"\n";
 
@@ -190,41 +185,5 @@ public class ApiController {
         return result;
     }
 
-    public String checkBalance() throws InterruptedException, SQLException {
-        long number = EthereumBean.getBlockchain().getBestBlock().getNumber();
-        return checkBalance(number);
-    }
-    public String checkBalance(long number) throws InterruptedException, SQLException {
 
-        LedgerStore ledgerStore = LedgerStore.getLedgerStore(ethereumBean.getListener());
-        int sqlTopBlock = ledgerStore.getQuery().getSqlTopBlock();
-        Block blockByNumber = EthereumBean.getBlockchain().getBlockByNumber(Math.min(number, sqlTopBlock));
-        return checkBalance(blockByNumber);
-    }
-    public String checkBalance(Block block) throws InterruptedException, SQLException {
-
-        LedgerStore ledgerStore = LedgerStore.getLedgerStore(ethereumBean.getListener());
-        BlockchainImpl blockchain = (BlockchainImpl)ethereumBean.getEthereum().getBlockchain();
-
-        long stopOn = blockchain.getStopOn();
-        blockchain.setStopOn(0);
-        Thread.sleep(500);
-        BigDecimal trieBalance = ledgerStore.getTrieBalance(block);
-        BigDecimal ledgerBlockBalance = ledgerStore.getLedgerBlockBalance(block);
-
-        long number = block.getNumber();
-        String result="";
-        if (trieBalance.equals(ledgerBlockBalance))
-            result="Block balance correct:" + number + ": " + Convert2json.BI2ValStr(trieBalance.toBigInteger(), false);
-        else {
-            result="Block balance incorrect:" + number + ", trie - ledger: " + Convert2json.BI2ValStr(trieBalance.toBigInteger(), false) + " - " + Convert2json.BI2ValStr(ledgerBlockBalance.toBigInteger(), false);
-        }
-
-        blockchain.setStopOn(stopOn);
-
-        result+="\n"+"ledger count:"+ledgerStore.getQuery().ledgerCount(block.getNumber())+"\n";
-        result+="Coinbase delta:"+ Hex.toHexString(block.getCoinbase())+" -> "+Convert2json.BD2ValStr(ledgerStore.getCoinbaseTrieDelta(block),false);
-
-        return result;
-    }
 }

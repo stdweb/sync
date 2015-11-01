@@ -9,6 +9,7 @@ import org.spongycastle.util.encoders.Hex;
 import stdweb.ethereum.EthereumBean;
 import stdweb.ethereum.EthereumListener;
 
+import javax.transaction.NotSupportedException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.sql.*;
@@ -48,6 +49,9 @@ public class LedgerStore {
 
     public void setNextStatus(SyncStatus nextStatus) {
         this.nextStatus = nextStatus;
+        if (EthereumBean.getBlockchainSyncStatus()==SyncStatus.stopped)
+            this.syncStatus=nextStatus;
+
     }
 
     public SyncStatus getNextStatus() {
@@ -110,7 +114,7 @@ public class LedgerStore {
 
                 if (nextSyncBlock <= ethereum.getBlockchain().getBestBlock().getNumber())
                     try {
-                        ledgerStore.insertBlock(nextSyncBlock);
+                        ledgerStore.replayAndInsertBlock(nextSyncBlock);
                         nextSyncBlock++;
 
 
@@ -146,7 +150,7 @@ public class LedgerStore {
 
     public String getBalance(Block block) throws SQLException {
 
-        BigDecimal bigDecimal = getLedgerBlockBalance(block);
+        BigDecimal bigDecimal = query.getLedgerBlockBalance(block);
 
 
         BigInteger bi=BigInteger.valueOf(0);
@@ -156,7 +160,7 @@ public class LedgerStore {
 
         //Long count=rs.getLong(2);
 
-        BigInteger trieBalance = getTrieBalance(block).toBigInteger();
+        BigInteger trieBalance = BlockchainQuery.getTrieBalance(block).toBigInteger();
 
 
         return "{'balance' "+Convert2json.BI2ValStr(bi,false) +", count "+count+", 'triebalance'" +Convert2json.BI2ValStr(trieBalance,false)+ " }";
@@ -164,18 +168,7 @@ public class LedgerStore {
 
 
 
-    public BigDecimal getLedgerBlockBalance(Block block) throws SQLException {
-        ResultSet rs;
-        Statement statement = conn.createStatement();
 
-        //String accStr = Hex.toHexString(account);
-        //'f0134ff161a5c8f7c4f8cc33d3e1a7ae088594a9'
-        String sql="select  sum(grossamount) amo, count(*) c from ledger  where block<="+block.getNumber();
-        rs = statement.executeQuery(sql);
-        rs.first();
-
-        return rs.getBigDecimal(1);
-    }
 
     public BigDecimal getLedgerBlockTxFee(Block block) throws SQLException {
         ResultSet rs;
@@ -192,70 +185,11 @@ public class LedgerStore {
         return rs.getBigDecimal(1);
     }
 
-    public BigDecimal getCoinbaseTrieDelta(Block block) throws SQLException {
-
-        BlockchainImpl blockchain = (BlockchainImpl) ethereum.getBlockchain();
-        Repository track = blockchain.getRepository();
-
-        Repository snapshot = track.getSnapshotTo(block.getStateRoot());
-
-        BigInteger balance=BigInteger.valueOf(0);
-        byte[] acc=block.getCoinbase();
-
-        balance=balance.add(snapshot.getBalance(acc));
 
 
-        if (block.getNumber()>0) {
-            Block blockPrev = blockchain.getBlockByHash(block.getParentHash());
-            Repository snapshotPrev = track.getSnapshotTo(blockPrev.getStateRoot());
 
 
-            BigInteger balancePrev = snapshotPrev.getBalance(acc);
-            balance = balance.subtract(balancePrev);
 
-        }
-
-        return new BigDecimal(balance);
-    }
-
-    public BigDecimal getTrieDelta(Block block) throws SQLException {
-
-        BlockchainImpl blockchain = (BlockchainImpl) ethereum.getBlockchain();
-        Repository track = blockchain.getRepository();
-
-        Repository snapshot = track.getSnapshotTo(block.getStateRoot());
-
-        BigInteger balance=BigInteger.valueOf(0);
-        for (byte[] acc : snapshot.getAccountsKeys()) {
-            balance=balance.add(snapshot.getBalance(acc));
-        }
-
-        if (block.getNumber()>0) {
-            Block blockPrev = blockchain.getBlockByHash(block.getParentHash());
-            Repository snapshotPrev = track.getSnapshotTo(blockPrev.getStateRoot());
-
-            for (byte[] acc : snapshotPrev.getAccountsKeys()) {
-                BigInteger balancePrev = snapshotPrev.getBalance(acc);
-                balance = balance.subtract(balancePrev);
-            }
-        }
-
-        return new BigDecimal(balance);
-    }
-
-    public BigDecimal getTrieBalance(Block block) throws SQLException {
-
-        BlockchainImpl blockchain = (BlockchainImpl) ethereum.getBlockchain();
-        Repository track = blockchain.getRepository();
-
-        Repository snapshot = track.getSnapshotTo(block.getStateRoot());
-
-        BigInteger balance=BigInteger.valueOf(0);
-        for (byte[] acc : snapshot.getAccountsKeys()) {
-            balance=balance.add(snapshot.getBalance(acc));
-        }
-        return new BigDecimal(balance);
-    }
 
     public Connection getConn() {
         return conn;
@@ -268,6 +202,7 @@ public class LedgerStore {
 
     public void insertLedgerEntry(LedgerEntry entry) throws SQLException {
         Block block = replayBlock.getBlock();
+
 
         PreparedStatement st = getInsertEntryStatement();
 
@@ -333,15 +268,13 @@ public class LedgerStore {
     }
 
 
-
-
     private void checkBalance() throws SQLException {
         BigDecimal trieBalance = BigDecimal.valueOf(0);
         BigDecimal ledgerBlockBalance = BigDecimal.valueOf(0);
         Block block = replayBlock.getBlock();
 
-        trieBalance=getTrieBalance(replayBlock.getBlock());
-        ledgerBlockBalance=getLedgerBlockBalance(block);
+        trieBalance=BlockchainQuery.getTrieBalance(replayBlock.getBlock());
+        ledgerBlockBalance=query.getLedgerBlockBalance(block);
         long number = block.getNumber();
 
 
@@ -359,7 +292,7 @@ public class LedgerStore {
         BigDecimal ledgerBlockDelta = BigDecimal.valueOf(0);
 
         Block block = replayBlock.getBlock();
-        trieDelta=getTrieDelta(block);
+        trieDelta=BlockchainQuery.getTrieDelta(block);
         ledgerBlockDelta=query. getLedgerBlockDelta(block);
         long number = block.getNumber();
 
@@ -374,27 +307,39 @@ public class LedgerStore {
 
     int blockCount2flush=0;
     public synchronized void flush(int n) throws SQLException {
-
-        if (nextSyncBlock% 200==0)
-        {
-            System.out.println("System GC at "+nextSyncBlock);
-            System.gc();
-        }
+        if (syncStatus==SyncStatus.bulkLoading)
+            if (nextSyncBlock% 200==0)
+            {
+                System.out.println("System GC at "+nextSyncBlock);
+                System.gc();
+            }
 
         blockCount2flush++;
         if (blockCount2flush>=n) {
             conn.commit();
             blockCount2flush=0;
-            System.out.println("Ledger - block inserted:"+query.getSqlTopBlock());
+            //System.out.println("Ledger - block inserted:"+query.getSqlTopBlock());
         }
     }
 
-    public synchronized int insertBlock(long blockNo) throws SQLException{
+    public synchronized int replayAndInsertBlock(long blockNumber) throws SQLException {
 
-            this.replayBlock = new ReplayBlock(listener, blockNo);
-            replayBlock.run();
+        Block blockByNumber = ethereum.getBlockchain().getBlockByNumber(blockNumber);
+        ReplayBlock current = ReplayBlock.CURRENT(blockByNumber);
+        current.run();
 
-            deleteBlocksFrom(blockNo);
+        return  insertBlock(current);
+    }
+
+    public synchronized int insertBlock(ReplayBlock _replayBlock) throws SQLException{
+
+            //this.replayBlock = new ReplayBlock(listener, blockNo);
+            //replayBlock.run();
+            this.replayBlock=_replayBlock;
+            deleteBlocksFrom(replayBlock.getBlock().getNumber());
+
+            if (_replayBlock.getBlock().getNumber()!=0) //no reward entry for genesis
+                replayBlock.addRewardEntries();
 
             List<EntryType> rewardEntryTypes = Arrays.asList(EntryType.CoinbaseReward, EntryType.UncleReward, EntryType.FeeReward);
 
@@ -420,6 +365,9 @@ public class LedgerStore {
                     });
 
         flush(1);
+        this.replayBlock=null;
+
+        ReplayBlock.setNullCurrent();
 
         int sqlTopBlock = query.getSqlTopBlock();
 
@@ -492,7 +440,7 @@ public class LedgerStore {
         if (query.getSqlTopBlock()==0 && query.ledgerCount(0)==0)
         {
             //deleteBlocksFrom(0);
-            insertBlock(0);
+            insertBlock(ReplayBlock.GENESIS());
             conn.commit();
             //flush(1);
         }

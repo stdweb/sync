@@ -1,10 +1,16 @@
 package stdweb.Core;
 
+import org.ethereum.core.Block;
+import org.ethereum.core.BlockchainImpl;
+import org.ethereum.core.Repository;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.db.ContractDetails;
 import org.ethereum.db.RepositoryImpl;
 import org.spongycastle.util.encoders.Hex;
 import stdweb.ethereum.EthereumBean;
+
+import java.math.BigDecimal;
+import java.math.BigInteger;
 
 /**
  * Created by bitledger on 09.10.15.
@@ -64,4 +70,17 @@ public class LedgerAccount {
     }
 
 
+    public BigDecimal getBalance(Block block)
+    {
+        BlockchainImpl blockchain = (BlockchainImpl)EthereumBean.getBlockchain();
+        Repository track = blockchain.getRepository();
+
+        Repository snapshot = track.getSnapshotTo(block.getStateRoot());
+
+        BigInteger balance=BigInteger.valueOf(0);
+
+        balance=balance.add(snapshot.getBalance(this.getBytes()));
+
+        return new BigDecimal(balance);
+    }
 }

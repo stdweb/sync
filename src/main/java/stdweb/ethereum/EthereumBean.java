@@ -37,7 +37,7 @@ public class EthereumBean {
 
     private static BlockchainImpl blockchain;
 
-    public EthereumListener getListener()
+    public static EthereumListener getListener()
     {
         return  listener;
     }
@@ -73,7 +73,7 @@ public class EthereumBean {
         //printCP();
 //        AzureSql();
         ethereum = EthereumFactory.createEthereum();
-        //ethereum.stopPeerDiscovery();
+        ethereum.stopPeerDiscovery();
 
         this.listener=new EthereumListener(ethereum);
         this.ethereum.addListener(this.listener);
@@ -151,8 +151,9 @@ public class EthereumBean {
         long height =toplistblock.getNumber();// ethereum.getBlockchain().getBestBlock().getNumber();
         ArrayList<Block> blocks = new ArrayList<>();
 
+        long endHeight=Math.max(height-40,0);
 
-        for (long i=height;i>=height-40;--i) {
+        for (long i=height;i>=endHeight;--i) {
             Block block=ethereum.getBlockchain().getBlockByNumber(i);
             blocks.add(block);
         }

@@ -48,10 +48,6 @@ public class MyRestController {
 //    }
 
 
-
-
-
-
     public String checkDelta(Block block) throws InterruptedException, SQLException {
         LedgerStore ledgerStore = LedgerStore.getLedgerStore(ethereumBean.getListener());
         BlockchainImpl blockchain = (BlockchainImpl)ethereumBean.getEthereum().getBlockchain();
@@ -59,7 +55,7 @@ public class MyRestController {
         long stopOn = blockchain.getStopOn();
         blockchain.setStopOn(0);
         Thread.sleep(500);
-        BigDecimal trieDelta = ledgerStore.getTrieDelta(block);
+        BigDecimal trieDelta = BlockchainQuery.getTrieDelta(block);
         BigDecimal ledgerBlockDelta = ledgerStore.getQuery().getLedgerBlockDelta(block);
 
         long number = block.getNumber();
@@ -130,7 +126,7 @@ public class MyRestController {
             Block block=ethereumBean.getBlock(blockId);
             LedgerQuery ledgerQuery = LedgerStore.getLedgerStore(ethereumBean.getListener()).getQuery();
 
-            String s = ledgerQuery.LedgerSelectByBlock(String.valueOf(block.getNumber()));
+            String s = ledgerQuery.LedgerSelectByBlock(block.getNumber());
 
             s=s.replace(":"," ");
             return s;

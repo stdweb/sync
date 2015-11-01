@@ -11,6 +11,7 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.HashMap;
 
 /**
  * Created by bitledger on 27.10.15.
@@ -69,6 +70,46 @@ public class LedgerQuery {
         return jsonArray;
     }
 
+    public HashMap<LedgerAccount, BigDecimal> getLedgerBalancesOnBlock(Block block,boolean checkAll) throws SQLException {
+
+        if (block==null)
+            block=EthereumBean.getBlockchain().getBlockByNumber(getSqlTopBlock());
+        ResultSet rs;
+        Statement statement = conn.createStatement();
+        String sql;
+
+            sql="select  address,sum(grossamount) amo, count(*) c from ledger  where block<="+block.getNumber() ;
+        if (!checkAll)
+            sql+=" and address in (select address from ledger where block="+block.getNumber()+" ) ";
+
+        sql+=" group by address";
+
+        rs = statement.executeQuery(sql);
+
+        HashMap<LedgerAccount,BigDecimal> account_balances =new HashMap<>();
+        rs.first();
+        while (rs.next())
+        {
+            LedgerAccount account = new LedgerAccount(rs.getBytes("ADDRESS"));
+            BigDecimal amo = rs.getBigDecimal("AMO");
+            account_balances.put(account,amo);
+        }
+
+        return account_balances;
+    }
+
+    public BigDecimal getLedgerBlockBalance(Block block) throws SQLException {
+        ResultSet rs;
+        Statement statement = conn.createStatement();
+
+        //String accStr = Hex.toHexString(account);
+        //'f0134ff161a5c8f7c4f8cc33d3e1a7ae088594a9'
+        String sql="select  sum(grossamount) amo, count(*) c from ledger  where block<="+block.getNumber();
+        rs = statement.executeQuery(sql);
+        rs.first();
+
+        return rs.getBigDecimal(1);
+    }
 
     public int getSqlTopBlock() throws SQLException {
         ResultSet rs;
@@ -142,10 +183,9 @@ public class LedgerQuery {
         }
     }
 
-    public String LedgerSelectByBlock(String blockStr) throws SQLException {
+    public String LedgerSelectByBlock(long blockNumber) throws SQLException {
 
-        if (blockStr.startsWith("0x"))
-            blockStr=blockStr.substring(2);
+        String blockStr=String.valueOf(blockNumber);
 
         ResultSet rs;
         Statement statement = conn.createStatement();
@@ -157,15 +197,28 @@ public class LedgerQuery {
                 " and entryType in ("+EntryType.FeeReward.ordinal()+","+EntryType.CoinbaseReward.ordinal()+", "+EntryType.UncleReward.ordinal()+")"+
                 " order by id";
 
-
-        String sql1="select  id   , tx ,address sender,abs(amount) amount ,block ,blocktimestamp ,depth ,gasused ,fee ,entryType , offsetaccount receiver, descr ," +
+        String sql1="";
+        if (blockNumber!=0) //not genesis
+            sql1="select  id   , tx ,address sender,abs(amount) amount ,block ,blocktimestamp ,depth ,gasused ,fee ,entryType , offsetaccount receiver, descr ," +
+                    " GrossAmount from ledger  where block =" +blockStr+
+                    " and entryType  in ("+EntryType.Send.ordinal()+","
+                    +EntryType.InternalCall.ordinal()
+                    +","+EntryType.Call.ordinal()
+                    +","+EntryType.NA.ordinal()
+                    +","+EntryType.Genesis.ordinal()
+                    +", "+EntryType.ContractCreation.ordinal()+")"+
+                    " order by id";
+        else //genesis
+            sql1="select  id   , tx ,address Receiver,abs(amount) amount ,block ,blocktimestamp ,depth ,gasused ,fee ,entryType , offsetaccount sender, descr ," +
                 " GrossAmount from ledger  where block =" +blockStr+
                 " and entryType  in ("+EntryType.Send.ordinal()+","
                 +EntryType.InternalCall.ordinal()
                 +","+EntryType.Call.ordinal()
                 +","+EntryType.NA.ordinal()
+                +","+EntryType.Genesis.ordinal()
                 +", "+EntryType.ContractCreation.ordinal()+")"+
                 " order by id";
+
         try {
 
             rs = statement.executeQuery(sql);
@@ -270,6 +323,7 @@ public class LedgerQuery {
 
     public static LedgerQuery getQuery(LedgerStore _ledg_store)
     {
+
         return new LedgerQuery(_ledg_store);
     }
 

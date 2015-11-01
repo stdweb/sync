@@ -18,7 +18,7 @@ import java.util.List;
 public class LedgerEntry {
 
     public static List<LedgerEntry> recordSet;
-    int txNo;
+    int txNumber;
     LedgerAccount Account;
     EntryType entryType;
     byte[] txhash;
@@ -83,34 +83,6 @@ public class LedgerEntry {
     public LedgerEntry(){}
 
 
-    public  String tx2json()
-    {
-        //Block bl = replayBlock.getBlock();
-
-        HashMap<String, String> hashMap = new HashMap<>();
-        String indStr=String.valueOf(this.txNo);
-
-        if (this.depth>0)
-            indStr+= " (deep " + this.depth + ")";
-
-        //hashMap.put("txno",Convert2json.addParentheses(indStr));
-        hashMap.put("TX",Convert2json.addParentheses("0x" + this.txhash));
-        hashMap.put("FEE",Convert2json.addParentheses(Convert2json.BD2ValStr(fee, true)));
-        hashMap.put("BLOCK",String.valueOf(this.blockNo) );
-        hashMap.put("GASUSED",Convert2json.addParentheses(String.valueOf(this.gasUsed)));
-        String dateStr = Convert2json.convertTimestamp2str(this.blockTimestamp);
-        hashMap.put("BLOCKTIMESTAMP",Convert2json.addParentheses(dateStr));
-
-        hashMap.put("ACCOUNT", Convert2json.addParentheses( this.Account.toString()));
-
-        hashMap.put("AMOUNT",Convert2json.addParentheses(Convert2json.BD2ValStr(amount,true)));
-
-
-
-
-
-        return Convert2json.map2json(hashMap);
-    }
     @Override
     public String toString()
     {
@@ -139,6 +111,32 @@ public class LedgerEntry {
 //        this.fee=_fee;
 //        this.offsetAccount=_offsetAcc;
 //        this.extraData=_descr;
+//    }
+
+
+//    public  String tx2json()
+//    {
+//        //Block bl = replayBlock.getBlock();
+//
+//        HashMap<String, String> hashMap = new HashMap<>();
+//        String indStr=String.valueOf(this.txNumber);
+//
+//        if (this.depth>0)
+//            indStr+= " (deep " + this.depth + ")";
+//
+//        //hashMap.put("txno",Convert2json.addParentheses(indStr));
+//        hashMap.put("TX",Convert2json.addParentheses("0x" + this.txhash));
+//        hashMap.put("FEE",Convert2json.addParentheses(Convert2json.BD2ValStr(fee, true)));
+//        hashMap.put("BLOCK",String.valueOf(this.blockNo) );
+//        hashMap.put("GASUSED",Convert2json.addParentheses(String.valueOf(this.gasUsed)));
+//        String dateStr = Convert2json.convertTimestamp2str(this.blockTimestamp);
+//        hashMap.put("BLOCKTIMESTAMP",Convert2json.addParentheses(dateStr));
+//
+//        hashMap.put("ACCOUNT", Convert2json.addParentheses( this.Account.toString()));
+//
+//        hashMap.put("AMOUNT",Convert2json.addParentheses(Convert2json.BD2ValStr(amount,true)));
+//
+//        return Convert2json.map2json(hashMap);
 //    }
 
 }

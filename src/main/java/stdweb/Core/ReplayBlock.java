@@ -10,11 +10,13 @@ import org.ethereum.vm.program.InternalTransaction;
 import org.ethereum.vm.program.ProgramResult;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
 import org.spongycastle.util.encoders.Hex;
+import org.springframework.util.Assert;
+import stdweb.ethereum.EthereumBean;
 import stdweb.ethereum.EthereumListener;
 
+import javax.transaction.NotSupportedException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -28,19 +30,31 @@ public class ReplayBlock {
     private EthereumListener listener;
     private Ethereum ethereum;
 
+    private static ReplayBlock currentReplayBlock;
+
+    public static ReplayBlock GENESIS()
+    {
+        ReplayBlock replayBlock = new ReplayBlock(EthereumBean.getListener(), 0);
+        replayBlock.loadGenesis();
+        return replayBlock;
+    }
+    public static ReplayBlock CURRENT(Block _block)  {
+
+        if (currentReplayBlock==null)
+            currentReplayBlock= new ReplayBlock(EthereumBean.getListener(), _block);
+        else
+            Assert.isTrue(currentReplayBlock.getBlock().getNumber()==_block.getNumber(),"if replayBlock is not null, then its number must be equal to param");
+
+        return currentReplayBlock;
+    }
 
     public Ethereum getEthereum()
     {
         return ethereum;
     }
     Block block;
-    List<Transaction> txlist;
-    HashMap<Transaction,Long> gasUsedList;
-    HashMap<Transaction, Long> intTxCount;
-
 
     private final List<LedgerEntry> entries=new ArrayList<>();
-
 
     public List<LedgerEntry> getLedgerEntries()
     {
@@ -83,7 +97,6 @@ public class ReplayBlock {
                 uncleEntry.extraData= Hex.toHexString(ByteUtil.ZERO_BYTE_ARRAY);
 
                 entries.add(uncleEntry);
-
             }
         }
 
@@ -104,7 +117,7 @@ public class ReplayBlock {
 
         entries.add(coinbaseEntry);
 
-        BigDecimal fee = entries.stream().map(x -> x.fee).reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal fee = entries.stream().map( x -> x.fee).reduce(BigDecimal.ZERO, BigDecimal::add);
 
         if (!fee.equals(BigDecimal.ZERO))
         {
@@ -166,7 +179,19 @@ public class ReplayBlock {
         }
     }
 
-    public void addTxEntries(Transaction tx, TransactionExecutor executor, int entryNo)
+    public void addTxEntries(TransactionExecutionSummary summary) {
+
+
+
+        Transaction tx = summary.getTransaction();
+        BigInteger gasRefund = summary.getRefund();
+        BigInteger gasUsed = summary.getGasUsed();
+
+        addTxEntries(tx,gasRefund.longValue(),gasUsed.longValue(),summary.getEntryNumber());
+
+    }
+    //public void addTxEntries(Transaction tx, TransactionExecutor executor, int entryNo)
+    public void addTxEntries(Transaction tx, long gasRefund,long gasUsed, int _txNumber)
     {
 
         LedgerEntry ledgerEntrySend = new LedgerEntry();
@@ -175,11 +200,11 @@ public class ReplayBlock {
 
         ledgerEntryRecv.tx=tx;
         ledgerEntrySend.tx=tx;
-        ledgerEntryRecv.receipt=executor.getReceipt();
-        ledgerEntrySend.receipt=executor.getReceipt();
+        //ledgerEntryRecv.receipt=receipt;
+        //ledgerEntrySend.receipt=receipt;
 
-        ledgerEntryRecv.txNo=entryNo;
-        ledgerEntrySend.txNo=entryNo;
+        ledgerEntryRecv.txNumber =_txNumber;
+        ledgerEntrySend.txNumber =_txNumber;
 
         byte[] txhash=(tx instanceof InternalTransaction)
                 ? ((InternalTransaction) tx).getParentHash() : tx.getHash();
@@ -217,8 +242,9 @@ public class ReplayBlock {
         if (tx instanceof InternalTransaction)
             ledgerEntrySend.gasUsed=0;
         else {
-            long gasRefund = Math.min(executor.getResult().getFutureRefund(), executor.getResult().getGasUsed() / 2);
-            ledgerEntrySend.gasUsed = executor.getGasUsed()-gasRefund;
+            //long gasRefund = Math.min(futureRefund, gasUsed / 2);
+            //long gasRefund = Math.min(executor.getResult().getFutureRefund(), executor.getResult().getGasUsed() / 2);
+            ledgerEntrySend.gasUsed = gasUsed-gasRefund;
         }
 
         ledgerEntryRecv.gasUsed=0;
@@ -231,7 +257,7 @@ public class ReplayBlock {
         if (tx instanceof InternalTransaction)
             ledgerEntrySend.fee= BigDecimal.valueOf(0);
         else
-            ledgerEntrySend.fee=new BigDecimal((new BigInteger( tx.getGasPrice())).multiply(BigInteger.valueOf(ledgerEntrySend.gasUsed)));
+            ledgerEntrySend.fee=new BigDecimal((new BigInteger(1, tx.getGasPrice())).multiply(BigInteger.valueOf(ledgerEntrySend.gasUsed)));
 
         ledgerEntryRecv.grossAmount=ledgerEntryRecv.amount;
         ledgerEntrySend.grossAmount=ledgerEntrySend.amount.subtract(ledgerEntrySend.fee);
@@ -272,23 +298,7 @@ public class ReplayBlock {
         if (tx instanceof InternalTransaction)
             return EntryType.CallReceive;
 
-
         return entry_type;
-    }
-
-
-
-    public HashMap<Transaction, Long> getInternalTxCount() {
-        return intTxCount;
-    }
-
-    public List<Transaction> getTxList()
-    {
-        return txlist;
-    }
-    public HashMap<Transaction,Long> getTxGasUsedList()
-    {
-        return gasUsedList;
     }
 
     public ReplayBlock(EthereumListener _listener, Block _block) {
@@ -297,6 +307,11 @@ public class ReplayBlock {
         this.block=_block;
     }
 
+    public ReplayBlock(EthereumListener _listener) {
+        this.listener=_listener;
+        this.ethereum=_listener.getEthereum();
+
+    }
     public ReplayBlock(EthereumListener _listener, long blockNo) {
         this.listener=_listener;
         this.ethereum=_listener.getEthereum();
@@ -304,9 +319,6 @@ public class ReplayBlock {
         if (block==null)
             System.out.println("Replayblock ctor. BlockNo not found:"+blockNo);
 
-
-        //this.block.getCoinbase();
-        //this.block.getUncleList();
     }
 
     public ReplayBlock(EthereumListener _listener, byte[] blockHash) {
@@ -314,8 +326,6 @@ public class ReplayBlock {
         this.ethereum=_listener.getEthereum();
         this.block=ethereum.getBlockchain().getBlockByHash(blockHash);;
     }
-
-
 
     public BigInteger getCoinbaseDelta()
     {
@@ -369,7 +379,6 @@ public class ReplayBlock {
         for (byte[] account : accountsKeys)
         {
 
-
             LedgerEntry entry = new LedgerEntry();
             ++entryNo;
 
@@ -377,7 +386,7 @@ public class ReplayBlock {
 
             System.out.println("acc "+entryNo+":"+Hex.toHexString(account)+" = "+Convert2json.BD2ValStr(balance,false));
 
-            entry.txNo=entryNo;
+            entry.txNumber =entryNo;
             entry.Account=new LedgerAccount(account);
             entry.txhash= HashUtil.EMPTY_DATA_HASH;
             entry.offsetAccount=LedgerAccount.GenesisAccount();
@@ -394,7 +403,6 @@ public class ReplayBlock {
 
             entries.add(entry);
         }
-
     }
 
     public void   run()  {
@@ -407,12 +415,6 @@ public class ReplayBlock {
             loadGenesis();
             return;
         }
-
-
-        txlist = new ArrayList<>();
-        gasUsedList=new HashMap<>();
-        intTxCount = new HashMap<Transaction,Long>();
-        //EthereumListener listener = new EthereumListener(ethereum);
 
         BlockchainImpl blockchain = (BlockchainImpl) ethereum.getBlockchain();
 
@@ -427,12 +429,10 @@ public class ReplayBlock {
         else
             snapshot = track.getSnapshotTo(blockchain.getBlockByHash(block.getParentHash()).getStateRoot());
 
-        int entryNo=0;
+        int txNumber=0;
         long totalGasUsed = 0;
 
-
         for (Transaction tx : block.getTransactionsList()) {
-
 
             TransactionExecutor executor = new TransactionExecutor(tx, block.getCoinbase(),
                     snapshot, blockStore,
@@ -445,39 +445,45 @@ public class ReplayBlock {
 
             executor.finalization();
 
-            //executor.getResult().refundGas();
-
             totalGasUsed += executor.getGasUsed();
             ProgramResult result = executor.getResult();
             long gasRefund = Math.min(result.getFutureRefund(), result.getGasUsed() / 2);
-            gasUsedList.put(tx,executor.getGasUsed()-gasRefund);
 
-            ++entryNo;
-            txlist.add(tx);
-            this.addTxEntries(tx,executor,entryNo);
-            final int f_entryNo=entryNo;
+            ++txNumber;
 
-            txlist.addAll(executor.getResult().getInternalTransactions());//call before executor.finalization
-
-//            for (InternalTransaction t : executor.getResult().getInternalTransactions())
-//            {
-//                addTxEntries(t,executor,f_entryNo);
-//            }
-
-
+            this.addTxEntries(tx,executor.getResult().getFutureRefund(),executor.getResult().getGasUsed(), txNumber);
+            final int f_txNumber=txNumber;
 
             executor.getResult().getInternalTransactions()
-                    .forEach(t -> addTxEntries(t, executor, f_entryNo));
+                    .forEach(t -> addTxEntries(t,
 
-            intTxCount.put(tx,Long.valueOf(executor.getResult().getInternalTransactions().size()));
-
+                            executor.getResult().getFutureRefund(),
+                            executor.getResult().getGasUsed(),
+                            f_txNumber));
         }
-
-        addRewardEntries();
+        //addRewardEntries();
         //printEntries();
     }
 
     public Block getBlock() {
         return this.block;
     }
+
+    public static void setNullCurrent() {
+        currentReplayBlock=null;
+    }
+
+
+    //    public HashMap<Transaction, Long> getInternalTxCount() {
+//        return intTxCount;
+//    }
+
+//    public List<Transaction> getTxList()
+//    {
+//        return txlist;
+//    }
+//    public HashMap<Transaction,Long> getTxGasUsedList()
+//    {
+//        return gasUsedList;
+//    }
 }
