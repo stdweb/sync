@@ -64,6 +64,10 @@ public class TestBalances {
         LedgerStore ledgerStore = LedgerStore.getLedgerStore(EthereumBean.getListener());
         BlockchainImpl blockchain = (BlockchainImpl)EthereumBean.getBlockchain();
 
+        long stopOn = blockchain.getStopOn();
+        blockchain.setStopOn(0);
+        Thread.sleep(500);
+
         LedgerQuery query = LedgerQuery.getQuery(LedgerStore.getLedgerStore(EthereumBean.getListener()));
 
 
@@ -92,6 +96,8 @@ public class TestBalances {
                 result+="\n";
             }
         }
+
+        blockchain.setStopOn(stopOn);
         return result;
     }
 }

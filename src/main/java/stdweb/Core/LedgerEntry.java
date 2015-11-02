@@ -31,13 +31,12 @@ public class LedgerEntry {
 
     BigDecimal fee;
     BigDecimal grossAmount;
+    EntryResult entryResult;
 
     LedgerAccount offsetAccount;
     String extraData;
     public Transaction tx;
     public TransactionReceipt receipt;
-
-
 
     public BigDecimal getTotalFee()
     {

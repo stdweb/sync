@@ -194,6 +194,16 @@ public class MyRestController {
 
             JSONArray jsonArray = ledgerQuery.LedgerSelect(accountId, offset);
             JSONObject entriesJson=ledgerQuery.acc_entry_count(accountId,offset);
+
+
+            if(accountId.startsWith("0x"))
+                accountId=accountId.substring(2);
+
+
+            byte[] acc=Hex.decode(accountId);
+            LedgerAccount account=new LedgerAccount(acc);
+            entriesJson.put("balance",Convert2json.BD2ValStr(account.getBalance(),true));
+
             entriesJson.put("entries",jsonArray);
             String s=entriesJson.toJSONString();
 

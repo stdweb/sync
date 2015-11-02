@@ -182,6 +182,7 @@ public class Convert2json {
         hashMap.put("timestamp",addParentheses(convertTimestamp2str(block.getTimestamp())));
 
         hashMap.put("txcount",addParentheses(Num2ValStr(block.getTransactionsList().size(),true) ));
+        hashMap.put("ENTRYRESULT",addParentheses("Ok"));
 
 //        long fee=0;
 //        for (Transaction tx : block.getTransactionsList())

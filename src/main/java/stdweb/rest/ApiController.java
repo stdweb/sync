@@ -64,8 +64,11 @@ public class ApiController {
                     ret="block deleted:"+i;
                     break;
                 case "insert":
+                    ledgerStore.setNextStatus(ledgerStore.getSyncStatus());
+                    ledgerStore.setSyncStatus(SyncStatus.stopped);
                     ledgerStore.replayAndInsertBlock(i);
-                    ret= "block inserted:"+i;
+
+                    ret= "manual block inserted:"+i;
                     break;
                 case "checkall":
                     ret=TestBalances.checkBalance(i);

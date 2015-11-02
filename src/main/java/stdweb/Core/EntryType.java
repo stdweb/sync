@@ -5,6 +5,7 @@ package stdweb.Core;
 */
 enum EntryType
 {
-    NA,Send,Receive,ContractCreation,Call,CoinbaseReward,UncleReward,FeeReward, InternalCall, Genesis, ContractCreated ,CallReceive,TxFee;
+    NA,Send,Receive,ContractCreation,Call,
+    CoinbaseReward,UncleReward,FeeReward, InternalCall, Genesis, ContractCreated ,CallReceive,TxFee;
 
 }

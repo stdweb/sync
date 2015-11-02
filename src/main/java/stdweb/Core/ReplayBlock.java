@@ -95,6 +95,7 @@ public class ReplayBlock {
                 uncleEntry.fee= BigDecimal.ZERO;
                 uncleEntry.grossAmount=uncleReward;
                 uncleEntry.extraData= Hex.toHexString(ByteUtil.ZERO_BYTE_ARRAY);
+                uncleEntry.entryResult=EntryResult.Ok;
 
                 entries.add(uncleEntry);
             }
@@ -114,6 +115,7 @@ public class ReplayBlock {
         coinbaseEntry.fee= BigDecimal.ZERO;
         coinbaseEntry.grossAmount=coinbaseEntry.amount;
         coinbaseEntry.extraData= Hex.toHexString(ByteUtil.ZERO_BYTE_ARRAY);
+        coinbaseEntry.entryResult=EntryResult.Ok;
 
         entries.add(coinbaseEntry);
 
@@ -135,6 +137,7 @@ public class ReplayBlock {
             coinbaseEntry.fee = BigDecimal.ZERO;
             coinbaseEntry.grossAmount = coinbaseEntry.amount;
             coinbaseEntry.extraData = Hex.toHexString(ByteUtil.ZERO_BYTE_ARRAY);
+            coinbaseEntry.entryResult=EntryResult.Ok;
 
             entries.add(coinbaseEntry);
         }
@@ -184,14 +187,21 @@ public class ReplayBlock {
 
 
         Transaction tx = summary.getTransaction();
-        BigInteger gasRefund = summary.getRefund();
-        BigInteger gasUsed = summary.getGasUsed();
 
-        addTxEntries(tx,gasRefund.longValue(),gasUsed.longValue(),summary.getEntryNumber());
+        //BigInteger gasRefund = summary.getGasRefund();
+        //BigInteger gasUsed = summary.getGasUsed();
+
+        long calcGasUsed = summary.getGasLimit().subtract(summary.getGasLeftover().add(summary.getGasRefund())).longValue();
+
+        addTxEntries(tx,calcGasUsed,summary.getEntryNumber(),summary.isFailed());
+
+        summary.getInternalTransactions()
+                .forEach(t -> addTxEntries(t, 0,
+                        summary.getEntryNumber(),t.isRejected()));
 
     }
     //public void addTxEntries(Transaction tx, TransactionExecutor executor, int entryNo)
-    public void addTxEntries(Transaction tx, long gasRefund,long gasUsed, int _txNumber)
+    public void addTxEntries(Transaction tx, long gasUsed, int _txNumber, boolean isFailed)
     {
 
         LedgerEntry ledgerEntrySend = new LedgerEntry();
@@ -220,8 +230,15 @@ public class ReplayBlock {
         ledgerEntryRecv.Account=new LedgerAccount(tx.getContractAddress()==null
                 ? tx.getReceiveAddress() : tx.getContractAddress());
 
-        ledgerEntrySend.amount=Convert2json.val2BigDec(tx.getValue()).negate();
-        ledgerEntryRecv.amount=Convert2json.val2BigDec(tx.getValue());
+
+        ledgerEntrySend.amount = Convert2json.val2BigDec(tx.getValue()).negate();
+        ledgerEntryRecv.amount = Convert2json.val2BigDec(tx.getValue());
+
+        EntryResult entryResult=isFailed ? EntryResult.Failed : EntryResult.Ok;
+        //EntryResult entryResult= EntryResult.Ok;
+        ledgerEntryRecv.entryResult=entryResult;
+        ledgerEntrySend.entryResult=entryResult;
+
 
         ledgerEntryRecv.block=this.block;
         ledgerEntrySend.block=this.block;
@@ -242,9 +259,8 @@ public class ReplayBlock {
         if (tx instanceof InternalTransaction)
             ledgerEntrySend.gasUsed=0;
         else {
-            //long gasRefund = Math.min(futureRefund, gasUsed / 2);
-            //long gasRefund = Math.min(executor.getResult().getFutureRefund(), executor.getResult().getGasUsed() / 2);
-            ledgerEntrySend.gasUsed = gasUsed-gasRefund;
+
+            ledgerEntrySend.gasUsed = gasUsed;
         }
 
         ledgerEntryRecv.gasUsed=0;
@@ -259,8 +275,15 @@ public class ReplayBlock {
         else
             ledgerEntrySend.fee=new BigDecimal((new BigInteger(1, tx.getGasPrice())).multiply(BigInteger.valueOf(ledgerEntrySend.gasUsed)));
 
-        ledgerEntryRecv.grossAmount=ledgerEntryRecv.amount;
-        ledgerEntrySend.grossAmount=ledgerEntrySend.amount.subtract(ledgerEntrySend.fee);
+//        if (isFailed)
+//        {
+//            ledgerEntryRecv.grossAmount=BigDecimal.ZERO;
+//            ledgerEntrySend.grossAmount=BigDecimal.ZERO.subtract(ledgerEntrySend.fee);
+//        }
+//        else {
+            ledgerEntryRecv.grossAmount = ledgerEntryRecv.amount;
+            ledgerEntrySend.grossAmount = ledgerEntrySend.amount.subtract(ledgerEntrySend.fee);
+        //}
 
         byte[] data = (tx.getData()==null)? ByteUtil.ZERO_BYTE_ARRAY : tx.getData();
         ledgerEntryRecv.extraData= Hex.toHexString(data);
@@ -279,11 +302,11 @@ public class ReplayBlock {
         if (tx.isContractCreation())
             return EntryType.ContractCreation;
 
-        if (recvAcc.isContract())
-            return EntryType.Call;
-
         if (tx instanceof InternalTransaction)
             return EntryType.InternalCall;
+
+        if (recvAcc.isContract())
+            return EntryType.Call;
 
         return entry_type;
     }
@@ -400,6 +423,7 @@ public class ReplayBlock {
             entry.fee= BigDecimal.ZERO;
             entry.grossAmount=entry.amount;
             entry.extraData= Hex.toHexString(Genesis.getInstance().getExtraData());
+            entry.entryResult=EntryResult.Ok;
 
             entries.add(entry);
         }
@@ -450,16 +474,15 @@ public class ReplayBlock {
             long gasRefund = Math.min(result.getFutureRefund(), result.getGasUsed() / 2);
 
             ++txNumber;
+            boolean isFailed=result.getException()!=null;
 
-            this.addTxEntries(tx,executor.getResult().getFutureRefund(),executor.getResult().getGasUsed(), txNumber);
+
+            this.addTxEntries(tx,executor.getResult().getGasUsed(), txNumber,isFailed);
             final int f_txNumber=txNumber;
 
             executor.getResult().getInternalTransactions()
-                    .forEach(t -> addTxEntries(t,
-
-                            executor.getResult().getFutureRefund(),
-                            executor.getResult().getGasUsed(),
-                            f_txNumber));
+                    .forEach(t -> addTxEntries(t,0,
+                            f_txNumber,t.isRejected()));
         }
         //addRewardEntries();
         //printEntries();

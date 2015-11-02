@@ -35,7 +35,9 @@ public class LedgerQuery {
             int total_cols = resultSet.getMetaData().getColumnCount();
             JSONObject obj = new JSONObject();
 
-            if (calcBalance) {
+            EntryResult result=EntryResult.values()[resultSet.getByte("ENTRYRESULT")];
+
+            if (calcBalance && result==EntryResult.Ok) {
                 balance = balance.add(resultSet.getBigDecimal("RECEIVED")).subtract(resultSet.getBigDecimal("SENT"));
                 obj.put("BALANCE", Convert2json.BI2ValStr(balance.toBigInteger(), true));
 
@@ -64,6 +66,7 @@ public class LedgerQuery {
             obj.put("SENT", Convert2json.BI2ValStr(sent.toBigInteger(), true));
             obj.put("FEE", Convert2json.BI2ValStr(fee.toBigInteger(), true));
             obj.put("BALANCE", Convert2json.BI2ValStr(balance.toBigInteger(), true));
+            obj.put("ENTRYRESULT","Total");
             jsonArray.add(obj);
         }
 
@@ -78,10 +81,11 @@ public class LedgerQuery {
         Statement statement = conn.createStatement();
         String sql;
 
-            sql="select  address,sum(grossamount) amo, count(*) c from ledger  where block<="+block.getNumber() ;
+            sql="select  address,sum(case when entryresult =0 then grossamount else grossamount-amount end) amo, count(*) c from ledger  where block<="+block.getNumber() ;
         if (!checkAll)
             sql+=" and address in (select address from ledger where block="+block.getNumber()+" ) ";
 
+       // sql+=" and entryResult="+EntryResult.Ok.ordinal();
         sql+=" group by address";
 
         rs = statement.executeQuery(sql);
@@ -104,7 +108,8 @@ public class LedgerQuery {
 
         //String accStr = Hex.toHexString(account);
         //'f0134ff161a5c8f7c4f8cc33d3e1a7ae088594a9'
-        String sql="select  sum(grossamount) amo, count(*) c from ledger  where block<="+block.getNumber();
+        String sql="select  sum(case when entryresult =0 then grossamount else grossamount-amount end) amo, count(*) c from ledger  where block<="+block.getNumber();
+        //sql+=" and entryResult="+EntryResult.Ok.ordinal();
         rs = statement.executeQuery(sql);
         rs.first();
 
@@ -134,7 +139,8 @@ public class LedgerQuery {
 
         //String accStr = Hex.toHexString(account);
         //'f0134ff161a5c8f7c4f8cc33d3e1a7ae088594a9'
-        String sql="select  sum(grossamount) amo, count(*) c from ledger  where block="+block.getNumber();
+        String sql="select  sum(case when entryresult =0 then grossamount else grossamount-amount end) amo, count(*) c from ledger  where block="+block.getNumber();
+        //sql+=" and entryResult="+EntryResult.Ok.ordinal();
         rs = statement.executeQuery(sql);
         rs.first();
 
@@ -164,7 +170,7 @@ public class LedgerQuery {
 
 
         String sql1="select  id   , tx ,address sender,abs(amount) amount ,block ,blocktimestamp ,depth ,gasused ,fee ,entryType , offsetaccount receiver, descr ," +
-                " GrossAmount from ledger  where tx =X'" +txid+"' and entryType  in ("+EntryType.Send.ordinal()+","
+                " GrossAmount,entryResult from ledger  where tx =X'" +txid+"' and entryType  in ("+EntryType.Send.ordinal()+","
                 +EntryType.InternalCall.ordinal()
                 +","+EntryType.Call.ordinal()
                 +","+EntryType.NA.ordinal()
@@ -193,14 +199,14 @@ public class LedgerQuery {
         //'f0134ff161a5c8f7c4f8cc33d3e1a7ae088594a9'
 
         String sql="select  id   , tx ,address Receiver ,amount ,block ,blocktimestamp ,depth ,gasused ,fee ,entryType , offsetaccount sender, descr ," +
-                " GrossAmount from ledger  where block =" +blockStr+
+                " GrossAmount,entryResult from ledger  where block =" +blockStr+
                 " and entryType in ("+EntryType.FeeReward.ordinal()+","+EntryType.CoinbaseReward.ordinal()+", "+EntryType.UncleReward.ordinal()+")"+
                 " order by id";
 
         String sql1="";
         if (blockNumber!=0) //not genesis
             sql1="select  id   , tx ,address sender,abs(amount) amount ,block ,blocktimestamp ,depth ,gasused ,fee ,entryType , offsetaccount receiver, descr ," +
-                    " GrossAmount from ledger  where block =" +blockStr+
+                    " GrossAmount,entryResult from ledger  where block =" +blockStr+
                     " and entryType  in ("+EntryType.Send.ordinal()+","
                     +EntryType.InternalCall.ordinal()
                     +","+EntryType.Call.ordinal()
@@ -210,7 +216,7 @@ public class LedgerQuery {
                     " order by id";
         else //genesis
             sql1="select  id   , tx ,address Receiver,abs(amount) amount ,block ,blocktimestamp ,depth ,gasused ,fee ,entryType , offsetaccount sender, descr ," +
-                " GrossAmount from ledger  where block =" +blockStr+
+                " GrossAmount,entryResult from ledger  where block =" +blockStr+
                 " and entryType  in ("+EntryType.Send.ordinal()+","
                 +EntryType.InternalCall.ordinal()
                 +","+EntryType.Call.ordinal()
@@ -262,7 +268,8 @@ public class LedgerQuery {
         try {
             JSONObject obj = new JSONObject();
             obj.put("entries_count",entries_count);
-            obj.put("page_count",entries_count%acc_page_size);
+            long page_count = entries_count / acc_page_size+1;
+            obj.put("page_count",page_count);
 
             return obj;
 
@@ -284,7 +291,7 @@ public class LedgerQuery {
         }
         catch (NumberFormatException e)
         {
-            offset=0;
+            offset=1;
         }
 
         ResultSet rs;
@@ -292,12 +299,12 @@ public class LedgerQuery {
 
         String sql="";
         sql+="select  id   , tx ,address, case when amount>0 then amount else 0 end as Received ,case when amount<0 then -amount else 0 end as sent, block ,blocktimestamp ,depth ,gasused ,fee ,entryType , offsetaccount, descr ," +
-                " GrossAmount from ledger  where address =X'" +accStr+"' "
+                " GrossAmount,entryResult from ledger  where address =X'" +accStr+"' "
                 ;//+                "order by id"; //"+EntryType.TxFee.ordinal()+" as
         sql +=" union all ";
         sql+=" select  id   , X'00' as tx ,address ,0 as received,fee as sent ,block ,blocktimestamp ,depth ,0 gasused, fee, "+EntryType.TxFee.ordinal()+" as  entryType , X'00' as offsetaccount, descr ," +
-                " GrossAmount from ledger  where fee<>0 and address =X'" +accStr+"' ";
-        sql+=                "order by id,entryType limit 25 offset "+offset*acc_page_size;
+                " GrossAmount ,0 entryResult from ledger  where fee<>0 and address =X'" +accStr+"' ";
+        sql+=                "order by id,entryType limit 25 offset "+(offset-1)*acc_page_size;
         rs = statement.executeQuery(sql);
 
         try {

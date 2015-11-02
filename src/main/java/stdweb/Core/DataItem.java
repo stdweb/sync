@@ -13,8 +13,8 @@ public class DataItem {
     String label;
     String valueStr;
     String key;
-    final HashMap<String, String> mapLabels = new HashMap<>();
-    final HashMap<String, String> mapAddressName = new HashMap<>();
+    final static HashMap<String, String> mapLabels = new HashMap<>();
+    final static HashMap<String, String> mapAddressName = new HashMap<>();
 
     public String getKey() {
         return key;
@@ -76,6 +76,14 @@ public class DataItem {
                     else
                         valueStr = EntryType.values()[((Byte) object)].toString();
                     break;
+
+                case "ENTRYRESULT":
+                    if (object instanceof Integer)
+                        valueStr = EntryResult.values()[((Integer) object)].toString();
+                    else
+                        valueStr = EntryResult.values()[((Byte) object)].toString();
+                    break;
+
                 case "DESCR":
                     valueStr = object.toString();
                     break;
@@ -98,18 +106,23 @@ public class DataItem {
     }
 
 
+    static {
+        loadLabels();
+        loadAddressNames();
+    }
+
     public  DataItem(String dataPrefix,String DataItemId, Object object) {
-        this.loadLabels();
-        this.loadAddressNames();
+        //this.loadLabels();
+        //this.loadAddressNames();
         this.callEthFunc(dataPrefix,DataItemId,object);
 
     }
 
-    private void loadAddressNames() {
+    private static  void loadAddressNames() {
         mapAddressName.put("0x0000000000000000000000000000000000000000","Genesis");
     }
 
-    private void loadLabels() {
+    private static void loadLabels() {
         mapLabels.put("ledger.id","Id");
         mapLabels.put("ledger.tx","tx hash");
         mapLabels.put("ledger.fee","tx hash");
@@ -123,5 +136,6 @@ public class DataItem {
         mapLabels.put("ledger.descr","Descr");
         mapLabels.put("ledger.gasused","Gas used");
         mapLabels.put("ledger.depth","Depth");
+        mapLabels.put("ledger.entryresult","Entry result");
     }
 }

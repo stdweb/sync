@@ -11,6 +11,7 @@ import stdweb.ethereum.EthereumBean;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.sql.SQLException;
 
 /**
  * Created by bitledger on 09.10.15.
@@ -25,6 +26,7 @@ public class LedgerAccount {
     {
         return new LedgerAccount(Hex.decode("0000000000000000000000000000000000000000"));
     }
+
 
     public LedgerAccount(byte[] _address) {
         this.addrWrapper=new ByteArrayWrapper(_address);
@@ -70,6 +72,15 @@ public class LedgerAccount {
     }
 
 
+    public BigDecimal getBalance() throws SQLException {
+        return getBalance(LedgerStore.getLedgerStore(EthereumBean.getListener()).getQuery().getSqlTopBlock());
+    }
+    public BigDecimal getBalance(long _block)
+    {
+        BlockchainImpl blockchain = (BlockchainImpl)EthereumBean.getBlockchain();
+        Block blockByNumber = blockchain.getBlockByNumber(_block);
+        return blockByNumber==null ? null : getBalance(blockByNumber);
+    }
     public BigDecimal getBalance(Block block)
     {
         BlockchainImpl blockchain = (BlockchainImpl)EthereumBean.getBlockchain();
