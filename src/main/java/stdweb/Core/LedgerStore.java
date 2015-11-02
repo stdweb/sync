@@ -150,7 +150,7 @@ public class LedgerStore {
 
     public String getBalance(Block block) throws SQLException {
 
-        BigDecimal bigDecimal = query.getLedgerBlockBalance(block);
+        BigDecimal bigDecimal = query.getLedgerBlockBalance(block.getNumber());
 
 
         BigInteger bi=BigInteger.valueOf(0);
@@ -275,7 +275,7 @@ public class LedgerStore {
         Block block = replayBlock.getBlock();
 
         trieBalance=BlockchainQuery.getTrieBalance(replayBlock.getBlock());
-        ledgerBlockBalance=query.getLedgerBlockBalance(block);
+        ledgerBlockBalance=query.getLedgerBlockBalance(block.getNumber());
         long number = block.getNumber();
 
 

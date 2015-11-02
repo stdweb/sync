@@ -265,8 +265,8 @@ public class ReplayBlock {
 
         ledgerEntryRecv.gasUsed=0;
 
-        ledgerEntryRecv.entryType=getRecvEntryType(tx);
-        ledgerEntrySend.entryType=getSendEntryType(tx);
+        ledgerEntryRecv.entryType=getRecvEntryType(tx,ledgerEntryRecv.Account);
+        ledgerEntrySend.entryType=getSendEntryType(tx,ledgerEntrySend.Account,ledgerEntrySend.offsetAccount);
 
         ledgerEntryRecv.fee= BigDecimal.valueOf(0);
 
@@ -294,34 +294,43 @@ public class ReplayBlock {
 
     }
 
-    private EntryType getSendEntryType(Transaction tx) {
-        EntryType entry_type= EntryType.Send;
+    private EntryType getSendEntryType(Transaction tx,LedgerAccount sendAcc,LedgerAccount recvAcc) {
 
-        LedgerAccount recvAcc = new LedgerAccount(tx.getReceiveAddress(),tx.getContractAddress());
+        //EntryType entry_type=
+
+        //LedgerAccount recvAcc = new LedgerAccount(tx.getReceiveAddress(),tx.getContractAddress());
 
         if (tx.isContractCreation())
             return EntryType.ContractCreation;
 
-        if (tx instanceof InternalTransaction)
-            return EntryType.InternalCall;
+//        if (tx instanceof InternalTransaction)
+//            return EntryType.InternalCall;
 
         if (recvAcc.isContract())
             return EntryType.Call;
+        else
+            return  EntryType.Send;
 
-        return entry_type;
+
+        //return entry_type;
     }
 
-    private EntryType getRecvEntryType(Transaction tx) {
-
-        EntryType entry_type= EntryType.Receive;
+    private EntryType getRecvEntryType(Transaction tx,LedgerAccount account) {
 
         if (tx.isContractCreation())
-            entry_type= EntryType.ContractCreated;
+            return EntryType.ContractCreated;
 
-        if (tx instanceof InternalTransaction)
+
+        if (account.isContract())
             return EntryType.CallReceive;
+        else
+            return EntryType.Receive;
 
-        return entry_type;
+//        EntryType entry_type;
+//        if (tx instanceof InternalTransaction)
+//            return EntryType.CallReceive;
+//
+//        return entry_type;
     }
 
     public ReplayBlock(EthereumListener _listener, Block _block) {

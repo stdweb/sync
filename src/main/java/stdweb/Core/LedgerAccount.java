@@ -32,12 +32,12 @@ public class LedgerAccount {
         this.addrWrapper=new ByteArrayWrapper(_address);
     }
 
-    public LedgerAccount(byte[] receiveAddress, byte[] contractAddress) {
-        if (receiveAddress==null)
-            this.addrWrapper=new ByteArrayWrapper(contractAddress);
-        else
-            this.addrWrapper=new ByteArrayWrapper(receiveAddress);
-    }
+//    public LedgerAccount(byte[] receiveAddress, byte[] contractAddress) {
+//        if (receiveAddress==null)
+//            this.addrWrapper=new ByteArrayWrapper(contractAddress);
+//        else
+//            this.addrWrapper=new ByteArrayWrapper(receiveAddress);
+//    }
 
     public boolean equals(Object other) {
 
@@ -75,12 +75,24 @@ public class LedgerAccount {
     public BigDecimal getBalance() throws SQLException {
         return getBalance(LedgerStore.getLedgerStore(EthereumBean.getListener()).getQuery().getSqlTopBlock());
     }
+
+    public BigDecimal getLedgerBalance(long _block)
+    {
+        return null;
+//        BlockchainImpl blockchain = (BlockchainImpl)EthereumBean.getBlockchain();
+//        Block blockByNumber = blockchain.getBlockByNumber(_block);
+//        return blockByNumber==null ? null : getBalance(blockByNumber);
+    }
+
     public BigDecimal getBalance(long _block)
     {
         BlockchainImpl blockchain = (BlockchainImpl)EthereumBean.getBlockchain();
         Block blockByNumber = blockchain.getBlockByNumber(_block);
         return blockByNumber==null ? null : getBalance(blockByNumber);
     }
+
+
+
     public BigDecimal getBalance(Block block)
     {
         BlockchainImpl blockchain = (BlockchainImpl)EthereumBean.getBlockchain();

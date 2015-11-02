@@ -102,13 +102,30 @@ public class LedgerQuery {
         return account_balances;
     }
 
-    public BigDecimal getLedgerBlockBalance(Block block) throws SQLException {
+    public BigDecimal getLedgerBlockBalance() throws SQLException {
+        return getLedgerBlockBalance(getSqlTopBlock());
+    }
+
+    public BigDecimal getLedgerAccountBalance(LedgerAccount acc,long blockNumber) throws SQLException {
         ResultSet rs;
         Statement statement = conn.createStatement();
 
         //String accStr = Hex.toHexString(account);
         //'f0134ff161a5c8f7c4f8cc33d3e1a7ae088594a9'
-        String sql="select  sum(case when entryresult =0 then grossamount else grossamount-amount end) amo, count(*) c from ledger  where block<="+block.getNumber();
+        String sql="select  sum(case when entryresult =0 then grossamount else grossamount-amount end) amo, count(*) c from ledger  where block<="+blockNumber;
+        sql+=" and address=X'"+Hex.toHexString(acc.getBytes())+"' ";
+        rs = statement.executeQuery(sql);
+        rs.first();
+
+        return rs.getBigDecimal(1);
+    }
+    public BigDecimal getLedgerBlockBalance(long blockNumber) throws SQLException {
+        ResultSet rs;
+        Statement statement = conn.createStatement();
+
+        //String accStr = Hex.toHexString(account);
+        //'f0134ff161a5c8f7c4f8cc33d3e1a7ae088594a9'
+        String sql="select  sum(case when entryresult =0 then grossamount else grossamount-amount end) amo, count(*) c from ledger  where block<="+blockNumber;
         //sql+=" and entryResult="+EntryResult.Ok.ordinal();
         rs = statement.executeQuery(sql);
         rs.first();

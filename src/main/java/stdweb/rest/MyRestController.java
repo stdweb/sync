@@ -198,11 +198,14 @@ public class MyRestController {
 
             if(accountId.startsWith("0x"))
                 accountId=accountId.substring(2);
-
-
             byte[] acc=Hex.decode(accountId);
             LedgerAccount account=new LedgerAccount(acc);
-            entriesJson.put("balance",Convert2json.BD2ValStr(account.getBalance(),true));
+
+
+            BigDecimal ledgerBlockBalance = ledgerQuery.getLedgerAccountBalance(account,ledgerQuery.getSqlTopBlock());
+
+            entriesJson.put("balance",Convert2json.BD2ValStr(ledgerBlockBalance,true));
+            entriesJson.put("addresstype",account.isContract() ? "Contract" : "Account");
 
             entriesJson.put("entries",jsonArray);
             String s=entriesJson.toJSONString();

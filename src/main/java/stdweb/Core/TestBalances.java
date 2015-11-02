@@ -35,7 +35,7 @@ public class TestBalances {
         blockchain.setStopOn(0);
         Thread.sleep(500);
         BigDecimal trieBalance = BlockchainQuery.getTrieBalance(block);
-        BigDecimal ledgerBlockBalance = ledgerStore.getQuery().getLedgerBlockBalance(block);
+        BigDecimal ledgerBlockBalance = ledgerStore.getQuery().getLedgerBlockBalance(block.getNumber());
 
         long number = block.getNumber();
         String result="";

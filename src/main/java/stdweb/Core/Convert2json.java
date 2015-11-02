@@ -35,7 +35,7 @@ public class Convert2json {
             BigDecimal dec = new BigDecimal(val);
             BigDecimal dec1 = dec.divide(BigDecimal.valueOf(Math.pow(10, 15)));
 
-            String ret = new DecimalFormat("###,###,##0.############").format(dec1);
+            String ret = new DecimalFormat("###,###,##0.##################").format(dec1);
             if (hideZero && dec1.signum() == 0)
                 ret = "";
             return ret;
@@ -153,7 +153,7 @@ public class Convert2json {
 
     public static String convertTimestamp2str(long timestamp) {
         Date d=new Date(timestamp*1000);
-        SimpleDateFormat sdf=new SimpleDateFormat("yyyy-MM-dd' 'HH:mm:ss");
+        SimpleDateFormat sdf=new SimpleDateFormat("yyyy-MM-dd' - 'HH:mm:ss");
         return sdf.format(d);
     }
 
@@ -176,10 +176,10 @@ public class Convert2json {
         hashMap.put("uncles", String.valueOf(block.getUncleList().size()));
 
 
-
-        Date d=new Date(block.getTimestamp());
-        SimpleDateFormat sdf=new SimpleDateFormat("yyyy-MM-dd' 'HH:mm:ss");
-        hashMap.put("timestamp",addParentheses(convertTimestamp2str(block.getTimestamp())));
+        //Date d=new Date(block.getTimestamp());
+        //SimpleDateFormat sdf=new SimpleDateFormat("yyyy-MM-dd' - 'HH:mm:ss");
+        hashMap.put("timestamp",addParentheses(convertTimestamp2str(
+                block.getNumber()==0 ? 1438269973 :block.getTimestamp())));
 
         hashMap.put("txcount",addParentheses(Num2ValStr(block.getTransactionsList().size(),true) ));
         hashMap.put("ENTRYRESULT",addParentheses("Ok"));
