@@ -98,7 +98,8 @@ public class MyRestController {
         }
         catch (Exception e)
         {
-            result=e.toString();
+            e.printStackTrace();
+            //result=e.toString();
         }
         //return Convert2json.BlockList2json(blocks);
         return result;

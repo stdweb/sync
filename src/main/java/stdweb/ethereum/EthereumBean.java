@@ -175,11 +175,13 @@ public class EthereumBean {
 
         catch (NumberFormatException e)
         {
-            result=e.toString();
+            e.printStackTrace();
+            //result=e.toString();
         }
         catch (Exception e)
         {
-            result=e.toString();
+            e.printStackTrace();
+            //result=e.toString();
         }
         return  result;
     }
