@@ -5,6 +5,7 @@ package stdweb.Core;
  */
 public class Utils {
     public static String TimeDiff(String descr,long t1, long t2) {
-        return descr +" time : "+(t2-t1)+" milliseconds";
+        System.out.println(descr +" time : "+(t2-t1)+" milliseconds");
+        return (descr +" time : "+(t2-t1)+" milliseconds");
     }
 }

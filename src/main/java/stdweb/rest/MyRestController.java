@@ -193,13 +193,16 @@ public class MyRestController {
             LedgerStore ledgerStore = LedgerStore.getLedgerStore(ethereumBean.getListener());
             LedgerQuery ledgerQuery = LedgerQuery.getQuery(ledgerStore);
 
+            long t1=System.currentTimeMillis();
             JSONArray jsonArray = ledgerQuery.LedgerSelect(accountId, offset);
+            long t2=System.currentTimeMillis();
+            Utils.TimeDiff("LedgerSelectSql ",t1,t2);
             //JSONObject entriesJson=new JSONObject();
 
-            long t1=System.currentTimeMillis();
+            t1=System.currentTimeMillis();
             JSONObject entriesJson=ledgerQuery.acc_entry_count(accountId,offset);
-            long t2=System.currentTimeMillis();
-            System.out.println(Utils.TimeDiff("page and entries count ",t1,t2));
+            t2=System.currentTimeMillis();
+            Utils.TimeDiff("page and entries count ", t1, t2);
 
 
             if(accountId.startsWith("0x"))
@@ -207,9 +210,12 @@ public class MyRestController {
             byte[] acc=Hex.decode(accountId);
             LedgerAccount account=new LedgerAccount(acc);
 
+            t1=System.currentTimeMillis();
+            BigDecimal ledgerBlockBalance = ledgerQuery.getLedgerAccountBalance(account,ledgerQuery.getSqlTopBlock());
+            t2=System.currentTimeMillis();
+            Utils.TimeDiff("count acc balance ", t1, t2);
 
-            //BigDecimal ledgerBlockBalance = ledgerQuery.getLedgerAccountBalance(account,ledgerQuery.getSqlTopBlock());
-            BigDecimal ledgerBlockBalance=BigDecimal.ZERO;
+            //BigDecimal ledgerBlockBalance=BigDecimal.ZERO;
             entriesJson.put("balance",Convert2json.BD2ValStr(ledgerBlockBalance,true));
             entriesJson.put("addresstype",account.isContract() ? "Contract" : "Account");
 
