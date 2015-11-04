@@ -412,7 +412,7 @@ public class LedgerStore {
         statement.execute("create index if not exists idx_ledger_address_tx on ledger(address,tx)");
 
         //statement.execute("drop index if exists idx_ledger_address_id ");
-        //statement.execute("drop index if exists idx_ledger_address ");
+        statement.execute("drop index if exists idx_ledger_address ");
         statement.execute("create index if not exists idx_ledger_address on ledger(address)");
         statement.execute("create index if not exists idx_ledger_tx on ledger(tx)");
         statement.execute("create index if not exists idx_ledger_block_id on ledger(block,id)");
