@@ -64,6 +64,6 @@ task stage {
 
 
 bootRun {
-    jvmArgs = ["-server", "-Xms1g"]
+    jvmArgs = ["-server", "-Xms3g"]
 }
 
