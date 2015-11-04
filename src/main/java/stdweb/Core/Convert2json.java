@@ -159,6 +159,7 @@ public class Convert2json {
 
     public static String block2json(Block block, EthereumListener listener) throws SQLException {
 
+
         HashMap<String, String> hashMap = new HashMap<>();
 
         hashMap.put("height",String.valueOf(block.getNumber()) );

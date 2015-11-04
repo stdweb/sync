@@ -285,8 +285,12 @@ public class LedgerQuery {
         try {
             JSONObject obj = new JSONObject();
             obj.put("entries_count",entries_count);
+
+
             long page_count = entries_count / acc_page_size+1;
-            obj.put("page_count",page_count);
+
+
+            obj.put("page_count", page_count);
 
             return obj;
 

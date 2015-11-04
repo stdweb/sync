@@ -194,7 +194,12 @@ public class MyRestController {
             LedgerQuery ledgerQuery = LedgerQuery.getQuery(ledgerStore);
 
             JSONArray jsonArray = ledgerQuery.LedgerSelect(accountId, offset);
+            //JSONObject entriesJson=new JSONObject();
+
+            long t1=System.currentTimeMillis();
             JSONObject entriesJson=ledgerQuery.acc_entry_count(accountId,offset);
+            long t2=System.currentTimeMillis();
+            System.out.println(Utils.TimeDiff("page and entries count ",t1,t2));
 
 
             if(accountId.startsWith("0x"))
