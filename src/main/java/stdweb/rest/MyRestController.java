@@ -203,8 +203,8 @@ public class MyRestController {
             LedgerAccount account=new LedgerAccount(acc);
 
 
-            BigDecimal ledgerBlockBalance = ledgerQuery.getLedgerAccountBalance(account,ledgerQuery.getSqlTopBlock());
-
+            //BigDecimal ledgerBlockBalance = ledgerQuery.getLedgerAccountBalance(account,ledgerQuery.getSqlTopBlock());
+            BigDecimal ledgerBlockBalance=BigDecimal.ZERO;
             entriesJson.put("balance",Convert2json.BD2ValStr(ledgerBlockBalance,true));
             entriesJson.put("addresstype",account.isContract() ? "Contract" : "Account");
 
