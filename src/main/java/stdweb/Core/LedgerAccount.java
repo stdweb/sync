@@ -73,7 +73,14 @@ public class LedgerAccount {
 
 
     public BigDecimal getBalance() throws SQLException {
-        return getBalance(LedgerStore.getLedgerStore(EthereumBean.getListener()).getQuery().getSqlTopBlock());
+        BlockchainImpl blockchain = (BlockchainImpl)EthereumBean.getBlockchain();
+        Repository track = blockchain.getRepository();
+
+        BigInteger balance=BigInteger.valueOf(0);
+
+        balance=balance.add(track.getBalance(this.getBytes()));
+
+        return new BigDecimal(balance);
     }
 
     public BigDecimal getLedgerBalance(long _block)

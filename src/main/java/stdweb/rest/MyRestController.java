@@ -211,7 +211,8 @@ public class MyRestController {
             LedgerAccount account=new LedgerAccount(acc);
 
             t1=System.currentTimeMillis();
-            BigDecimal ledgerBlockBalance = ledgerQuery.getLedgerAccountBalance(account,ledgerQuery.getSqlTopBlock());
+            //BigDecimal ledgerBlockBalance = ledgerQuery.getLedgerAccountBalance(account,ledgerQuery.getSqlTopBlock());
+            BigDecimal ledgerBlockBalance = account.getBalance();
             t2=System.currentTimeMillis();
             Utils.TimeDiff("count acc balance ", t1, t2);
 
