@@ -411,8 +411,8 @@ public class LedgerStore {
                 "depth tinyint,gasused bigint,fee decimal(31,0),entryType tinyint,entryResult tinyint,offsetaccount binary(20),descr varchar(32),GrossAmount decimal(31,0))");
         statement.execute("create index if not exists idx_ledger_address_tx on ledger(address,tx)");
 
-        statement.execute("drop index if exists idx_ledger_address_id ");
-        statement.execute("drop index if exists idx_ledger_address ");
+        //statement.execute("drop index if exists idx_ledger_address_id ");
+        //statement.execute("drop index if exists idx_ledger_address ");
         statement.execute("create index if not exists idx_ledger_address on ledger(address)");
         statement.execute("create index if not exists idx_ledger_tx on ledger(tx)");
         statement.execute("create index if not exists idx_ledger_block_id on ledger(block,id)");

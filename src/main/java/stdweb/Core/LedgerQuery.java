@@ -322,9 +322,9 @@ public class LedgerQuery {
         sql+="select  id   , tx ,address, case when amount>0 then amount else 0 end as Received ,case when amount<0 then -amount else 0 end as sent, block ,blocktimestamp ,depth ,gasused ,fee ,entryType , offsetaccount, descr ," +
                 " GrossAmount,entryResult from ledger  where address =X'" +accStr+"' "
                 ;//+                "order by id"; //"+EntryType.TxFee.ordinal()+" as
-        //sql +=" union all ";
-        //sql+=" select  id   , X'00' as tx ,address ,0 as received,fee as sent ,block ,blocktimestamp ,depth ,0 gasused, fee, "+EntryType.TxFee.ordinal()+" as  entryType , X'00' as offsetaccount, descr ," +
-        //        " GrossAmount ,0 entryResult from ledger  where fee<>0 and address =X'" +accStr+"' ";
+        sql +=" union all ";
+        sql+=" select  id   , X'00' as tx ,address ,0 as received,fee as sent ,block ,blocktimestamp ,depth ,0 gasused, fee, "+EntryType.TxFee.ordinal()+" as  entryType , X'00' as offsetaccount, descr ," +
+                " GrossAmount ,0 entryResult from ledger  where fee<>0 and address =X'" +accStr+"' ";
         sql+=                " order by id,entryType limit 25 " ;
         sql+= offset==1 ? "" : "offset "+(offset-1)*acc_page_size;
         rs = statement.executeQuery(sql);
