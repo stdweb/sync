@@ -111,7 +111,6 @@ public class LedgerStore {
         syncLedgerThread = new Thread(() -> {
             while (syncStatus==SyncStatus.bulkLoading)
             {
-
                 if (nextSyncBlock <= ethereum.getBlockchain().getBestBlock().getNumber())
                     try {
                         ledgerStore.replayAndInsertBlock(nextSyncBlock);

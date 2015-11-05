@@ -34,7 +34,7 @@ public class ApiController {
         String s="api/ledger/delete/{i} - delete blocks from i block (sql db)\n" +
                 "api/ledger/insert/{i} - insert i block into sql db\n" +
                 "api/ledger/check/{i} - compare balances for only BLOCK accounts on i block - blockchain vs sql db\n" +
-                "api/ledger/check/{i} - compare balances for ALL accounts on i block - blockchain vs sql db\n" +
+                "api/ledger/checkall/{i} - compare balances for ALL accounts on i block - blockchain vs sql db\n" +
                 "\n" +
                 "api/ledger/start - start bulk load sql from last sql block\n" +
                 "api/ledger/stop - stop bulk loading sql db\n" +
