@@ -74,7 +74,7 @@ public class LedgerQuery {
                             item= new DataItem("ledger", columnLabel, resultSet.getObject("FEE"));
                             break;
                         case "GASUSED":
-                            item= new DataItem("ledger", columnLabel, 0);
+                            item= new DataItem("ledger", columnLabel, 0l);
                             break;
                         case "ENTRYTYPE":
                             item= new DataItem("ledger", columnLabel, EntryType.TxFee.ordinal());
