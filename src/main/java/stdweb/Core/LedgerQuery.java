@@ -22,7 +22,7 @@ public class LedgerQuery {
     private final Connection conn;
     LedgerStore ledgerStore;
 
-    public static JSONArray getJson(ResultSet resultSet,boolean calcBalance) throws Exception {
+    public static JSONArray getJson(ResultSet resultSet,boolean calcBalance,boolean addFeeEntry) throws Exception {
         JSONArray jsonArray = new JSONArray();
 
         BigDecimal balance=new BigDecimal(0);
@@ -50,11 +50,48 @@ public class LedgerQuery {
             for (int i = 1; i <= total_cols; i++) {
                 //String columnTypeName = resultSet.getMetaData().getColumnTypeName(i);
                 String columnLabel = resultSet.getMetaData().getColumnLabel(i);
-
                 DataItem item= new DataItem("ledger", columnLabel, resultSet.getObject(i));
                 obj.put(item.getKey(),item.getValue());
+
             }
             jsonArray.add(obj);
+
+            if (addFeeEntry && !resultSet.getBigDecimal("FEE").equals(BigDecimal.ZERO) ) {
+                DataItem item;
+                for (int i = 1; i <= total_cols; i++) {
+                    //String columnTypeName = resultSet.getMetaData().getColumnTypeName(i);
+                    String columnLabel = resultSet.getMetaData().getColumnLabel(i);
+                    switch (columnLabel)
+                    {
+                        case "TX":
+                            item= new DataItem("ledger", columnLabel, new byte[]{0});
+                            break;
+                        case "RECEIVED":
+                            item= new DataItem("ledger", columnLabel, BigDecimal.ZERO);
+                            break;
+                        case "SENT":
+                            item= new DataItem("ledger", columnLabel, resultSet.getObject("FEE"));
+                            break;
+                        case "GASUSED":
+                            item= new DataItem("ledger", columnLabel, BigDecimal.ZERO);
+                            break;
+                        case "ENTRYTYPE":
+                            item= new DataItem("ledger", columnLabel, EntryType.TxFee.ordinal());
+                            break;
+                        case "OFFSETACCOUNT":
+                            item= new DataItem("ledger", columnLabel, new byte[]{0});
+                            break;
+                        case "ENTRYRESULT":
+                            item= new DataItem("ledger", columnLabel, 0);
+                            break;
+
+                        default:
+                            item= new DataItem("ledger", columnLabel, resultSet.getObject(i));
+
+                    }
+                    obj.put(item.getKey(),item.getValue());
+                }//for cols
+            }
         }
         //add total row to json
         if (calcBalance) {
@@ -196,7 +233,7 @@ public class LedgerQuery {
         try {
 
             rs = statement.executeQuery(sql1);
-            JSONArray jsonArray = getJson(rs,false);
+            JSONArray jsonArray = getJson(rs,false,false);
 
 
             return jsonArray.toJSONString();
@@ -245,9 +282,9 @@ public class LedgerQuery {
         try {
 
             rs = statement.executeQuery(sql);
-            JSONArray jsonArray = getJson(rs,false);
+            JSONArray jsonArray = getJson(rs,false,false);
             rs = statement.executeQuery(sql1);
-            jsonArray.addAll(getJson(rs,false));
+            jsonArray.addAll(getJson(rs,false,false));
 
             return jsonArray.toJSONString();
         } catch (Exception e) {
@@ -322,16 +359,16 @@ public class LedgerQuery {
         sql+="select  id   , tx ,address, case when amount>0 then amount else 0 end as Received ,case when amount<0 then -amount else 0 end as sent, block ,blocktimestamp ,depth ,gasused ,fee ,entryType , offsetaccount, descr ," +
                 " GrossAmount,entryResult from ledger  where address =X'" +accStr+"' "
                 ;//+                "order by id"; //"+EntryType.TxFee.ordinal()+" as
-        sql +=" union all ";
-        sql+=" select  id   , X'00' as tx ,address ,0 as received,fee as sent ,block ,blocktimestamp ,depth ,0 gasused, fee, "+EntryType.TxFee.ordinal()+" as  entryType , X'00' as offsetaccount, descr ," +
-                " GrossAmount ,0 entryResult from ledger  where fee<>0 and address =X'" +accStr+"' ";
+        //sql +=" union all ";
+        //sql+=" select  id   , X'00' as tx ,address ,0 as received,fee as sent ,block ,blocktimestamp ,depth ,0 gasused, fee, "+EntryType.TxFee.ordinal()+" as  entryType , X'00' as offsetaccount, descr ," +
+        //        " GrossAmount ,0 entryResult from ledger  where fee<>0 and address =X'" +accStr+"' ";
         sql+=                " order by id,entryType limit 25 " ;
         sql+= offset==1 ? "" : "offset "+(offset-1)*acc_page_size;
         rs = statement.executeQuery(sql);
 
         try {
 
-            JSONArray jsonArray = getJson(rs,true);
+            JSONArray jsonArray = getJson(rs,true,true);
             return jsonArray;
         } catch (Exception e) {
             //e.printStackTrace();
