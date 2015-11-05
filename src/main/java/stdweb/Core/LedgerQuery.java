@@ -58,6 +58,7 @@ public class LedgerQuery {
 
             if (addFeeEntry && !resultSet.getBigDecimal("FEE").equals(BigDecimal.ZERO) ) {
                 DataItem item;
+                obj=new JSONObject();
                 for (int i = 1; i <= total_cols; i++) {
                     //String columnTypeName = resultSet.getMetaData().getColumnTypeName(i);
                     String columnLabel = resultSet.getMetaData().getColumnLabel(i);
@@ -91,6 +92,7 @@ public class LedgerQuery {
                     }
                     obj.put(item.getKey(),item.getValue());
                 }//for cols
+                jsonArray.add(obj);
             }
         }
         //add total row to json
