@@ -40,10 +40,14 @@ public class ReplayBlock {
     }
     public static ReplayBlock CURRENT(Block _block)  {
 
-        if (currentReplayBlock==null)
-            currentReplayBlock= new ReplayBlock(EthereumBean.getListener(), _block);
-        else
-            Assert.isTrue(currentReplayBlock.getBlock().getNumber()==_block.getNumber(),"if replayBlock is not null, then its number must be equal to param");
+        if (currentReplayBlock==null) {
+            Assert.isTrue(_block!=null,"replayBlock.block cannot be null.1");
+            currentReplayBlock = new ReplayBlock(EthereumBean.getListener(), _block);
+        }
+        else {
+            Assert.isTrue(currentReplayBlock.block!=null,"replayBlock.block cannot be null.2");
+            Assert.isTrue(currentReplayBlock.getBlock().getNumber() == _block.getNumber(), "if replayBlock is not null, then its number must be equal to param");
+        }
 
         return currentReplayBlock;
     }
@@ -52,7 +56,7 @@ public class ReplayBlock {
     {
         return ethereum;
     }
-    Block block;
+    private Block block;
 
     private final List<LedgerEntry> entries=new ArrayList<>();
 
@@ -183,8 +187,6 @@ public class ReplayBlock {
     }
 
     public void addTxEntries(TransactionExecutionSummary summary) {
-
-
 
         Transaction tx = summary.getTransaction();
 
@@ -339,11 +341,11 @@ public class ReplayBlock {
         this.block=_block;
     }
 
-    public ReplayBlock(EthereumListener _listener) {
-        this.listener=_listener;
-        this.ethereum=_listener.getEthereum();
+//    public ReplayBlock(EthereumListener _listener) {
+//        this.listener=_listener;
+//        this.ethereum=_listener.getEthereum();
+//    }
 
-    }
     public ReplayBlock(EthereumListener _listener, long blockNo) {
         this.listener=_listener;
         this.ethereum=_listener.getEthereum();
@@ -486,14 +488,14 @@ public class ReplayBlock {
             boolean isFailed=result.getException()!=null;
 
 
-            this.addTxEntries(tx,executor.getResult().getGasUsed(), txNumber,isFailed);
+            //this.addTxEntries(tx,executor.getResult().getGasUsed(), txNumber,isFailed);
             final int f_txNumber=txNumber;
 
             executor.getResult().getInternalTransactions()
                     .forEach(t -> addTxEntries(t,0,
                             f_txNumber,t.isRejected()));
         }
-        //addRewardEntries();
+
         //printEntries();
     }
 

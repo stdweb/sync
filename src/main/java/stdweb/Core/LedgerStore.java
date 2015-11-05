@@ -6,6 +6,7 @@ import org.ethereum.facade.Ethereum;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.spongycastle.util.encoders.Hex;
+import org.springframework.util.Assert;
 import stdweb.ethereum.EthereumBean;
 import stdweb.ethereum.EthereumListener;
 
@@ -115,8 +116,6 @@ public class LedgerStore {
                     try {
                         ledgerStore.replayAndInsertBlock(nextSyncBlock);
                         nextSyncBlock++;
-
-
                     } catch (SQLException e) {
                         System.out.println("Error inserting  block :"+ (nextSyncBlock));
                         e.printStackTrace();
@@ -324,7 +323,14 @@ public class LedgerStore {
 
     public synchronized int replayAndInsertBlock(long blockNumber) throws SQLException {
 
+        if (ethereum.getBlockchain().getBestBlock().getNumber()<blockNumber) {
+            System.out.println("cannot insert block.Top block is: " + ethereum.getBlockchain().getBestBlock().getNumber());
+            return -1;
+        }
+
         Block blockByNumber = ethereum.getBlockchain().getBlockByNumber(blockNumber);
+        Assert.isTrue(blockByNumber!=null,"blockBy number is null");
+
         ReplayBlock current = ReplayBlock.CURRENT(blockByNumber);
         current.run();
 

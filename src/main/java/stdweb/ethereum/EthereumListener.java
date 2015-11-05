@@ -6,6 +6,7 @@ import org.ethereum.core.TransactionReceipt;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.listener.EthereumListenerAdapter;
 import org.ethereum.util.BIUtil;
+import org.springframework.util.Assert;
 import stdweb.Core.LedgerStore;
 import stdweb.Core.ReplayBlock;
 import stdweb.Core.SyncStatus;
@@ -52,11 +53,13 @@ public class EthereumListener extends EthereumListenerAdapter {
     @Override
     public void onTransactionExecuted(TransactionExecutionSummary summary)
     {
-        LedgerStore ledgerStore = LedgerStore.getLedgerStore(this);
-        if (ledgerStore.getSyncStatus()== SyncStatus.onBlockSync) {
-            ReplayBlock replayBlock ;
 
-            replayBlock = ReplayBlock.CURRENT(summary.getBlock());
+        LedgerStore ledgerStore = LedgerStore.getLedgerStore(this);
+        if (ledgerStore.getSyncStatus()== SyncStatus.onBlockSync
+                || ledgerStore.getSyncStatus()== SyncStatus.bulkLoading
+                || ledgerStore.getSyncStatus()== SyncStatus.SingleInsert) {
+
+            ReplayBlock replayBlock = ReplayBlock.CURRENT(summary.getBlock());
             replayBlock.addTxEntries(summary);
 
             //System.out.println("onTx executed:" + summary.toString());

@@ -65,7 +65,7 @@ public class ApiController {
                     break;
                 case "insert":
                     ledgerStore.setNextStatus(ledgerStore.getSyncStatus());
-                    ledgerStore.setSyncStatus(SyncStatus.stopped);
+                    ledgerStore.setSyncStatus(SyncStatus.SingleInsert);
                     ledgerStore.replayAndInsertBlock(i);
 
                     ret= "manual block inserted:"+i;
