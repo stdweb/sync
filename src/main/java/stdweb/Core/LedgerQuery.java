@@ -364,7 +364,7 @@ public class LedgerQuery {
         //sql +=" union all ";
         //sql+=" select  id   , X'00' as tx ,address ,0 as received,fee as sent ,block ,blocktimestamp ,depth ,0 gasused, fee, "+EntryType.TxFee.ordinal()+" as  entryType , X'00' as offsetaccount, descr ," +
         //        " GrossAmount ,0 entryResult from ledger  where fee<>0 and address =X'" +accStr+"' ";
-        sql+=                " order by block desc limit 25 " ;
+        sql+=                " order by block  limit 25 " ;
         sql+=  "offset "+(offset-1)*acc_page_size;
         rs = statement.executeQuery(sql);
 
