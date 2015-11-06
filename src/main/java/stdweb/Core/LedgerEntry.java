@@ -31,6 +31,9 @@ public class LedgerEntry {
 
     BigDecimal fee;
     BigDecimal grossAmount;
+
+    BigDecimal balance;
+
     EntryResult entryResult;
 
     LedgerAccount offsetAccount;

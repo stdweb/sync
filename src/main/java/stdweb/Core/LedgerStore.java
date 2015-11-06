@@ -122,7 +122,8 @@ public class LedgerStore {
                     }
                 else {
                     syncStatus = nextStatus;
-
+                    System.out.println("finished bulkloading . Block:"+ethereum.getBlockchain().getBestBlock().getNumber());
+                    System.out.println("Snc status set to: "+syncStatus);
                     break;
                 }
               }
@@ -387,7 +388,7 @@ public class LedgerStore {
     private void initMsSql() throws Exception
     {
         Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
-        String connstr="jdbc:sqlserver://ledg.database.windows.net:1433;database=ledgerdb;user=std;password={Str,.ul11};encrypt=true;trustServerCertificate=false;hostNameInCertificate=*.database.windows.net;loginTimeout=30;";
+        String connstr="jdbc:sqlserver://ledg.database.windows.net:1433;database=ledgerdb;user=std;password={};encrypt=true;trustServerCertificate=false;hostNameInCertificate=*.database.windows.net;loginTimeout=30;";
         Connection conn = DriverManager.getConnection(connstr);
 
         Statement statement = conn.createStatement();
@@ -413,7 +414,7 @@ public class LedgerStore {
         Connection conn1 = DriverManager.getConnection("jdbc:h2:~/testh2db", "sa", "");
         Statement statement = conn1.createStatement();
         statement.execute("create table if not exists ledger(id identity primary key, tx binary(32),address binary(20),amount decimal(31,0),block bigint,blocktimestamp timestamp," +
-                "depth tinyint,gasused bigint,fee decimal(31,0),entryType tinyint,entryResult tinyint,offsetaccount binary(20),descr varchar(32),GrossAmount decimal(31,0))");
+                "depth tinyint,gasused bigint,fee decimal(31,0),entryType tinyint,entryResult tinyint,offsetaccount binary(20),descr varchar(32),GrossAmount decimal(31,0) ,balance decimal(31,0))");
         statement.execute("create index if not exists idx_ledger_address_tx on ledger(address,tx)");
 
         //statement.execute("drop index if exists idx_ledger_address_id ");
