@@ -31,6 +31,7 @@ public class LedgerStore {
 
 
     long nextSyncBlock;
+    private java.lang.String connString="jdbc:h2:"+System.getProperty("user.dir")+"/database/ledger";
 
     public LedgerQuery getQuery() {
         return query;
@@ -252,7 +253,7 @@ public class LedgerStore {
     private void ensureConnection() throws SQLException {
         if (conn==null || conn.isClosed()) {
             //System.out.println("ensure connection - Restore!");
-            conn = DriverManager.getConnection("jdbc:h2:~/testh2db", "sa", "");
+            conn = DriverManager.getConnection(connString, "sa", "");
             String insEntrySql="insert into ledger (tx ,address ,amount ,block ,blocktimestamp,depth ,gasused ,fee ,entryType,offsetAccount,descr,GrossAmount,EntryResult) values(?,?,?,?,?,?,?,?,?,?,?,?,?)";
             statInsertEntry = conn.prepareStatement(insEntrySql);
         }
@@ -412,8 +413,8 @@ public class LedgerStore {
     {
 
         Class.forName("org.h2.Driver");
-        String dir=System.getProperty("user.dir");
-        Connection conn1 = DriverManager.getConnection("jdbc:h2:"+dir+"/database/ledger", "sa", "");
+
+        Connection conn1 = DriverManager.getConnection(connString, "sa", "");
         Statement statement = conn1.createStatement();
         statement.execute("create table if not exists ledger(id identity primary key, tx binary(32),address binary(20),amount decimal(31,0),block bigint,blocktimestamp timestamp," +
                 "depth tinyint,gasused bigint,fee decimal(31,0),entryType tinyint,entryResult tinyint,offsetaccount binary(20),descr varchar(32),GrossAmount decimal(31,0) ,balance decimal(31,0))");
