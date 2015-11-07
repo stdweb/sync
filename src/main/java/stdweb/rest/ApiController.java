@@ -57,15 +57,10 @@ public class ApiController {
     @ResponseBody
     public String checkBalance(@PathVariable String addr, @PathVariable String blockNumber,HttpServletRequest request) throws IOException, InterruptedException, SQLException {
 
-        logger.info("ip:"+request.getRemoteAddr());
-        logger.info("method:"+request.getMethod());
-        logger.info("servletPath:"+request.getServletPath());
-        logger.info("requestUri:"+request.getRequestURI());
+        long t1=System.currentTimeMillis();
 
         LedgerStore ledgerStore = LedgerStore.getLedgerStore(ethereumBean.getListener());
         Block block = ethereumBean.getBlock(blockNumber);
-
-        System.out.println("caller ip:" + request.getRemoteAddr());
 
         LedgerAccount acc = new LedgerAccount(addr);
 
@@ -86,12 +81,14 @@ public class ApiController {
             result+="\n";
         }
 
+        Utils.log("CheckBalance",t1,request);
         return result;
 
     }
     @RequestMapping(value = "/ledger/{cmd}/{param}", method = GET, produces = APPLICATION_JSON_VALUE)
     @ResponseBody
-    public String sql(@PathVariable String cmd, @PathVariable String param,HttpServletRequest request) throws IOException,  InterruptedException {
+    public String ledger_cmd(@PathVariable String cmd, @PathVariable String param,HttpServletRequest request) throws IOException,  InterruptedException {
+        long t1=System.currentTimeMillis();
         LedgerStore ledgerStore = LedgerStore.getLedgerStore(ethereumBean.getListener());
 
         System.out.println("caller ip:"+request.getRemoteAddr());
@@ -113,6 +110,7 @@ public class ApiController {
                     ret= "manual block inserted:"+i;
                     break;
                 case "checkall":
+
                     ret=TestBalances.checkBalance(i);
                     ret+="\n";
                     ret+=TestBalances.checkAccountsBalance(i,true);
@@ -129,6 +127,7 @@ public class ApiController {
             System.out.println(e.getMessage()+"\n");
             e.printStackTrace();
         }
+        Utils.log("ledger_cmd",t1,request);
         return  ret;
 
 

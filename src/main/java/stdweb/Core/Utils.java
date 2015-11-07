@@ -1,6 +1,7 @@
 package stdweb.Core;
 
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.Date;
@@ -20,15 +21,23 @@ public class Utils {
         return str;
     }
 
-    public static void log(String meth,long start, HttpServletRequest request)
+    private static final Logger logger = LoggerFactory.getLogger("rest");
+
+    public static void log(String meth,long start, HttpServletRequest request,boolean isInner)
     {
         String remoteAddr = request.getRemoteAddr();
         long finish=System.currentTimeMillis();
         long duration=finish-start;
         //request.getMethod()
-
+        if (isInner ) meth=" > > "+meth;
         String.format("%-43s%-40s%-40s%-40s%n","DateTime","RequestURI","ip","Duration");
-        String.format("%-43s%-40s%-40s%-40s%n",new Date(System.currentTimeMillis()),request.getRequestURI(),request.getRemoteAddr(),String.valueOf(duration));
+        String msg=String.format("%-32s%-80s%-24s%-24s%-16s%n",new Date(System.currentTimeMillis()),request.getRequestURI(),meth,request.getRemoteAddr(),String.valueOf(duration));
+        logger.info(msg);
+
+    }
+    public static void log(String meth,long start, HttpServletRequest request)
+    {
+        log(meth,start,request,false);
 
     }
 }
