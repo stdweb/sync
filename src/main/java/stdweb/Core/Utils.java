@@ -8,4 +8,10 @@ public class Utils {
         System.out.println(descr +" time : "+(t2-t1)+" milliseconds");
         return (descr +" time : "+(t2-t1)+" milliseconds");
     }
+
+    public static String remove0x(String str) {
+        if(str.startsWith("0x"))
+            str=str.substring(2);
+        return str;
+    }
 }

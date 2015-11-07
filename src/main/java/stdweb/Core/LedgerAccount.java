@@ -21,6 +21,10 @@ public class LedgerAccount {
     ByteArrayWrapper addrWrapper;
     private ContractDetails contractDetails;
 
+    public LedgerAccount(String addr) {
+        this(Hex.decode(Utils.remove0x(addr)));
+    }
+
     public byte[] getBytes() { return addrWrapper.getData(); }
     public static LedgerAccount GenesisAccount()
     {

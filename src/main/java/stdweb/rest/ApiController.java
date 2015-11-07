@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.*;
 import stdweb.Core.*;
 import stdweb.ethereum.EthereumBean;
 
+import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.sql.SQLException;
@@ -34,7 +35,7 @@ public class ApiController {
         String s="api/ledger/delete/{i} - delete blocks from i block (sql db)\n" +
                 "api/ledger/insert/{i} - insert i block into sql db\n" +
                 "api/ledger/check/{i} - compare balances for only BLOCK accounts on i block - blockchain vs sql db\n" +
-                "api/ledger/checkall/{i} - compare balances for ALL accounts on i block - blockchain vs sql db\n" +
+                "api/ledger/checkall/{i} - compare balances for ALL accounts on i  block - blockchain vs sql db\n" +
                 "\n" +
                 "api/ledger/start - start bulk load sql from last sql block\n" +
                 "api/ledger/stop - stop bulk loading sql db\n" +
@@ -49,10 +50,41 @@ public class ApiController {
         return  s;
     }
 
+    @RequestMapping(value = "/balance/{addr}/{blockNumber}", method = GET, produces = APPLICATION_JSON_VALUE)
+    @ResponseBody
+    public String checkBalance(@PathVariable String addr, @PathVariable String blockNumber) throws IOException, InterruptedException, SQLException {
+        LedgerStore ledgerStore = LedgerStore.getLedgerStore(ethereumBean.getListener());
+        Block block = ethereumBean.getBlock(blockNumber);
+
+        //System.out.println("caller ip:" + request.getRemoteAddr());
+        LedgerAccount acc = new LedgerAccount(addr);
+
+        BigDecimal trieBalance=acc.getBalance(block);
+        BigDecimal ledgBalance=ledgerStore.getQuery().getLedgerAccountBalance(acc,block.getNumber());
+
+        String result="balance for "+acc.toString()+" on block "+block.getNumber();
+
+        if (!trieBalance.equals(ledgBalance)){
+            result+=String.format("%-43s%-40s%-40s%-40s%n",
+                    acc.toString(),
+                    Convert2json.BD2ValStr(trieBalance, false),
+                    Convert2json.BD2ValStr(ledgBalance, false),
+                    Convert2json.BD2ValStr(trieBalance.subtract(ledgBalance), false)
+            );
+
+            //result+="Bl:" + block.getNumber() + ",Balance Incorrect trie - ledger: " + Convert2json.BI2ValStr(trieBalance.toBigInteger(), false) + " - " + Convert2json.BI2ValStr(ledgBalance.toBigInteger(), false);
+            result+="\n";
+        }
+
+        return result;
+
+    }
     @RequestMapping(value = "/ledger/{cmd}/{param}", method = GET, produces = APPLICATION_JSON_VALUE)
     @ResponseBody
-    public String sql(@PathVariable String cmd, @PathVariable String param) throws IOException,  InterruptedException {
+    public String sql(@PathVariable String cmd, @PathVariable String param,HttpServletRequest request) throws IOException,  InterruptedException {
         LedgerStore ledgerStore = LedgerStore.getLedgerStore(ethereumBean.getListener());
+
+        System.out.println("caller ip:"+request.getRemoteAddr());
 
         int i = Integer.parseInt(param);
 
