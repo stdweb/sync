@@ -31,7 +31,7 @@ public class Utils {
         //request.getMethod()
         if (isInner ) meth=" > > "+meth;
         String.format("%-43s%-40s%-40s%-40s%n","DateTime","RequestURI","ip","Duration");
-        String msg=String.format("%-32s%-80s%-24s%-24s%-16s%n",new Date(System.currentTimeMillis()),request.getRequestURI(),meth,request.getRemoteAddr(),String.valueOf(duration));
+        String msg=String.format("%-32s%-75s%-20s%-16s%-16s%n",new Date(System.currentTimeMillis()),request.getRequestURI(),meth,request.getRemoteAddr(),String.valueOf(duration));
         logger.info(msg);
 
     }

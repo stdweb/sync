@@ -43,6 +43,7 @@ public class LedgerQuery {
 
                 received = received.add(resultSet.getBigDecimal("RECEIVED"));
                 sent = sent.add(resultSet.getBigDecimal("SENT"));
+                sent = sent.add(resultSet.getBigDecimal("FEE"));
             }
 
             //fee

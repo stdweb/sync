@@ -213,13 +213,13 @@ public class MyRestController {
 
             JSONArray jsonArray = ledgerQuery.LedgerSelect(accountId, offset);
 
-            Utils.log("LedgerSelectSql",t1,request,true);
+            Utils.log("LedgerSql",t1,request,true);
             //JSONObject entriesJson=new JSONObject();
 
             long t2=System.currentTimeMillis();
             JSONObject entriesJson=ledgerQuery.acc_entry_count(accountId,offset);
 
-            Utils.log("page, entries count",t2,request,true);
+            Utils.log("entries count",t2,request,true);
 
             accountId=Utils.remove0x(accountId);
 
