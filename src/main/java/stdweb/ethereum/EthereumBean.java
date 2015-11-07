@@ -72,7 +72,8 @@ public class EthereumBean {
     public void start()  {
         //printCP();
 //        AzureSql();
-
+        String dir=System.getProperty("user.dir");
+        System.out.println("jdbc:h2:"+dir+"/database/ledger");
         ethereum = EthereumFactory.createEthereum();
         //ethereum.stopPeerDiscovery();
 
