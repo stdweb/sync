@@ -52,7 +52,7 @@ public class ApiController {
 
     @RequestMapping(value = "/balance/{addr}/{blockNumber}", method = GET, produces = APPLICATION_JSON_VALUE)
     @ResponseBody
-    public String checkBalance(@PathVariable String addr, @PathVariable String blockNumber,,HttpServletRequest request) throws IOException, InterruptedException, SQLException {
+    public String checkBalance(@PathVariable String addr, @PathVariable String blockNumber,HttpServletRequest request) throws IOException, InterruptedException, SQLException {
         LedgerStore ledgerStore = LedgerStore.getLedgerStore(ethereumBean.getListener());
         Block block = ethereumBean.getBlock(blockNumber);
 
