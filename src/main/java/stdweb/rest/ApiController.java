@@ -2,6 +2,8 @@ package stdweb.rest;
 
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockchainImpl;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -25,6 +27,7 @@ import static org.springframework.web.bind.annotation.RequestMethod.POST;
 @RequestMapping( value = "/api" )
 public class ApiController {
 
+    private static final Logger logger = LoggerFactory.getLogger("rest");
     @Autowired
     EthereumBean ethereumBean;
 
@@ -53,10 +56,17 @@ public class ApiController {
     @RequestMapping(value = "/balance/{addr}/{blockNumber}", method = GET, produces = APPLICATION_JSON_VALUE)
     @ResponseBody
     public String checkBalance(@PathVariable String addr, @PathVariable String blockNumber,HttpServletRequest request) throws IOException, InterruptedException, SQLException {
+
+        logger.info("ip:"+request.getRemoteAddr());
+        logger.info("method:"+request.getMethod());
+        logger.info("servletPath:"+request.getServletPath());
+        logger.info("requestUri:"+request.getRequestURI());
+
         LedgerStore ledgerStore = LedgerStore.getLedgerStore(ethereumBean.getListener());
         Block block = ethereumBean.getBlock(blockNumber);
 
         System.out.println("caller ip:" + request.getRemoteAddr());
+
         LedgerAccount acc = new LedgerAccount(addr);
 
         BigDecimal trieBalance=acc.getBalance(block);

@@ -1,5 +1,10 @@
 package stdweb.Core;
 
+import org.slf4j.Logger;
+
+import javax.servlet.http.HttpServletRequest;
+import java.util.Date;
+
 /**
  * Created by bitledger on 04.11.15.
  */
@@ -13,5 +18,17 @@ public class Utils {
         if(str.startsWith("0x"))
             str=str.substring(2);
         return str;
+    }
+
+    public static void log(String meth,long start, HttpServletRequest request)
+    {
+        String remoteAddr = request.getRemoteAddr();
+        long finish=System.currentTimeMillis();
+        long duration=finish-start;
+        //request.getMethod()
+
+        String.format("%-43s%-40s%-40s%-40s%n","DateTime","RequestURI","ip","Duration");
+        String.format("%-43s%-40s%-40s%-40s%n",new Date(System.currentTimeMillis()),request.getRequestURI(),request.getRemoteAddr(),String.valueOf(duration));
+
     }
 }

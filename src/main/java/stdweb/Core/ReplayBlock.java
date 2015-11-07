@@ -491,9 +491,9 @@ public class ReplayBlock {
             //this.addTxEntries(tx,executor.getResult().getGasUsed(), txNumber,isFailed);
             final int f_txNumber=txNumber;
 
-            executor.getResult().getInternalTransactions()
-                    .forEach(t -> addTxEntries(t,0,
-                            f_txNumber,t.isRejected()));
+//            executor.getResult().getInternalTransactions()
+//                    .forEach(t -> addTxEntries(t,0,
+//                            f_txNumber,t.isRejected()));
         }
 
         //printEntries();

@@ -58,6 +58,7 @@
     <logger level="ERROR" name="discover"/>
 
     <logger level="ERROR" name="std"/>
+    <logger level="INFO" name="rest"/>
 
 
 

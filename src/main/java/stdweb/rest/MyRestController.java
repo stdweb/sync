@@ -7,6 +7,8 @@ import org.ethereum.facade.Ethereum;
 import org.ethereum.net.eth.handler.Eth;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
 import org.springframework.web.bind.annotation.PathVariable;
 import stdweb.Core.*;
@@ -16,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.sql.SQLException;
@@ -27,12 +30,17 @@ import static org.springframework.web.bind.annotation.RequestMethod.GET;
 @RestController
 public class MyRestController {
 
+    private static final Logger logger = LoggerFactory.getLogger("rest");
     @Autowired
     EthereumBean ethereumBean;
 
     @RequestMapping(value = "/bestBlock", method = GET, produces = APPLICATION_JSON_VALUE)
     @ResponseBody
-    public String getBestBlock() throws IOException {
+    public String getBestBlock(HttpServletRequest request) throws IOException {
+        logger.info("ip:"+request.getRemoteAddr());
+        logger.info("method:"+request.getMethod());
+        logger.info("servletPath:"+request.getServletPath());
+        logger.info("requestUri:"+request.getRequestURI());
         return ethereumBean.getBestBlock();
     }
 
