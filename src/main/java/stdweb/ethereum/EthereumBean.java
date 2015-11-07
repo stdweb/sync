@@ -72,6 +72,7 @@ public class EthereumBean {
     public void start()  {
         //printCP();
 //        AzureSql();
+
         ethereum = EthereumFactory.createEthereum();
         //ethereum.stopPeerDiscovery();
 

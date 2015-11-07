@@ -410,8 +410,10 @@ public class LedgerStore {
     }
     private void initH2()  throws Exception
     {
+
         Class.forName("org.h2.Driver");
-        Connection conn1 = DriverManager.getConnection("jdbc:h2:~/testh2db", "sa", "");
+        String dir=System.getProperty("user.dir");
+        Connection conn1 = DriverManager.getConnection("jdbc:h2:"+dir+"/database/ledger", "sa", "");
         Statement statement = conn1.createStatement();
         statement.execute("create table if not exists ledger(id identity primary key, tx binary(32),address binary(20),amount decimal(31,0),block bigint,blocktimestamp timestamp," +
                 "depth tinyint,gasused bigint,fee decimal(31,0),entryType tinyint,entryResult tinyint,offsetaccount binary(20),descr varchar(32),GrossAmount decimal(31,0) ,balance decimal(31,0))");
