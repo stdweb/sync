@@ -1,5 +1,6 @@
 package stdweb.Core;
 
+import javafx.collections.transformation.SortedList;
 import org.ethereum.core.Block;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -11,7 +12,10 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 
 /**
  * Created by bitledger on 27.10.15.
@@ -113,6 +117,18 @@ public class LedgerQuery {
         return jsonArray;
     }
 
+    public List<Long> getEmptyBlockList(long i) throws SQLException {
+        String sql="select block, count (*) c from ledger where block>="+i +" group by block ";
+        Statement statement = conn.createStatement();
+        ResultSet rs = statement.executeQuery(sql);
+
+        ArrayList<Long> blocks =new ArrayList<>();
+
+        while (rs.next())
+            blocks.add(rs.getLong(1));
+
+        return blocks;
+    }
     public HashMap<LedgerAccount, BigDecimal> getLedgerBalancesOnBlock(Block block,boolean checkAll) throws SQLException {
 
         if (block==null)

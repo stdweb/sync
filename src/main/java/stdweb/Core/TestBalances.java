@@ -8,6 +8,7 @@ import stdweb.ethereum.EthereumBean;
 import java.math.BigDecimal;
 import java.sql.SQLException;
 import java.util.HashMap;
+import java.util.List;
 
 /**
  * Created by bitledger on 01.11.15.
@@ -99,5 +100,29 @@ public class TestBalances {
 
         blockchain.setStopOn(stopOn);
         return result;
+    }
+
+    public static String findEmpty(long i, boolean b) throws SQLException {
+        LedgerQuery query = LedgerQuery.getQuery(LedgerStore.getLedgerStore(EthereumBean.getListener()));
+        List<Long> emptyBlockList = query.getEmptyBlockList(i);
+
+        String ret="";
+        long prev=0;
+        for (Long block : emptyBlockList)
+        {
+            if (prev==0 && block==i) {
+                prev=block;
+                continue;
+            }
+            if (block!=prev+1) {
+                Block blockByNumber = EthereumBean.getBlockchain().getBlockByNumber(block);
+
+                ret += "Ledger empty :" + block + ((blockByNumber==null) ? "Blockchain null" : "")+"\n";
+            }
+
+            prev=block;
+        }
+
+        return ret;
     }
 }

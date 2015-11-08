@@ -120,6 +120,12 @@ public class ApiController {
                     ret+="\n";
                     ret+=TestBalances.checkAccountsBalance(i,false);
                     break;
+
+                case "findempty":
+                    //ret=TestBalances.checkBalance(i);
+                    ret+="\n";
+                    ret+=TestBalances.findEmpty(i,false);
+                    break;
             }
         }
         catch (SQLException e)
