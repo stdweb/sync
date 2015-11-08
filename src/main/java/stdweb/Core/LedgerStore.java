@@ -31,7 +31,8 @@ public class LedgerStore {
 
 
     long nextSyncBlock;
-    private java.lang.String connString="jdbc:h2:"+System.getProperty("user.dir")+"/database/ledger";
+    //"jdbc:h2:"+System.getProperty("user.dir")+"/database/ledger
+    private java.lang.String connString="jdbc:h2:tcp://bitledger.net:9092/~/git/stdweb/database/ledger";
 
     public LedgerQuery getQuery() {
         return query;

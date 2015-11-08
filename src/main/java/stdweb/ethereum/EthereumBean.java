@@ -7,8 +7,10 @@ import org.ethereum.facade.EthereumFactory;
 import org.spongycastle.util.encoders.Hex;
 import stdweb.Core.*;
 
+import java.net.InetAddress;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.net.UnknownHostException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -72,8 +74,15 @@ public class EthereumBean {
     public void start()  {
         //printCP();
 //        AzureSql();
-        String dir=System.getProperty("user.dir");
-        System.out.println("jdbc:h2:"+dir+"/database/ledger");
+        try {
+            InetAddress localHost = InetAddress.getLocalHost();
+            System.out.println("host:"+localHost.getHostName());
+            System.out.println("ip:"+localHost.getHostAddress());
+
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
+        }
+
         ethereum = EthereumFactory.createEthereum();
         //ethereum.stopPeerDiscovery();
 
@@ -83,8 +92,6 @@ public class EthereumBean {
         blockchainStopSync();
 
         LedgerStore ledgerStore = LedgerStore.getLedgerStore(listener);
-
-
 
         System.out.println("________________________________________________________________________");
         System.out.println("________________________________________________________________________");
