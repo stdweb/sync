@@ -235,6 +235,19 @@ public class LedgerStore {
         return statInsertEntry;
     }
 
+    public synchronized void deleteBlock(long blockNo) throws SQLException {
+
+        ensureConnection();
+
+        String s="delete from ledger where block="+blockNo;
+        Statement statement = conn.createStatement();
+        statement.execute(s);
+
+        s="delete from block where id="+blockNo;
+        statement = conn.createStatement();
+        statement.execute(s);
+        conn.commit();
+    }
 
     public synchronized void deleteBlocksFrom(long blockNo) throws SQLException {
 
@@ -331,7 +344,7 @@ public class LedgerStore {
         }
 
         Block blockByNumber = ethereum.getBlockchain().getBlockByNumber(blockNumber);
-        Assert.isTrue(blockByNumber!=null,"blockBy number is null");
+        Assert.isTrue(blockByNumber!=null,"blockBy number is null:"+blockNumber);
 
         ReplayBlock current = ReplayBlock.CURRENT(blockByNumber);
         current.run();
@@ -344,7 +357,8 @@ public class LedgerStore {
             //this.replayBlock = new ReplayBlock(listener, blockNo);
             //replayBlock.run();
             this.replayBlock=_replayBlock;
-            deleteBlocksFrom(replayBlock.getBlock().getNumber());
+            //deleteBlocksFrom(replayBlock.getBlock().getNumber());
+            deleteBlock(replayBlock.getBlock().getNumber());
 
             if (_replayBlock.getBlock().getNumber()!=0) //no reward entry for genesis
                 replayBlock.addRewardEntries();
