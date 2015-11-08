@@ -1,4 +1,4 @@
-package stdweb.Core;
+package stdweb.Ledger;
 
 import org.ethereum.core.*;
 import org.ethereum.crypto.HashUtil;
@@ -11,10 +11,14 @@ import org.ethereum.vm.program.ProgramResult;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
 import org.spongycastle.util.encoders.Hex;
 import org.springframework.util.Assert;
+import stdweb.Core.Convert2json;
+import stdweb.Core.EntryResult;
+import stdweb.Core.EntryType;
+import stdweb.Ledger.LedgerAccount;
+import stdweb.Ledger.LedgerEntry;
 import stdweb.ethereum.EthereumBean;
 import stdweb.ethereum.EthereumListener;
 
-import javax.transaction.NotSupportedException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -99,7 +103,7 @@ public class ReplayBlock {
                 uncleEntry.fee= BigDecimal.ZERO;
                 uncleEntry.grossAmount=uncleReward;
                 uncleEntry.extraData= Hex.toHexString(ByteUtil.ZERO_BYTE_ARRAY);
-                uncleEntry.entryResult=EntryResult.Ok;
+                uncleEntry.entryResult= EntryResult.Ok;
 
                 entries.add(uncleEntry);
             }

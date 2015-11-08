@@ -1,16 +1,13 @@
-package stdweb.Core;
+package stdweb.Ledger;
 
 import org.ethereum.core.*;
 import org.ethereum.facade.Ethereum;
 //import org.ethereum.vm.program.InternalTransaction;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-import org.spongycastle.util.encoders.Hex;
 import org.springframework.util.Assert;
+import stdweb.Core.*;
 import stdweb.ethereum.EthereumBean;
 import stdweb.ethereum.EthereumListener;
 
-import javax.transaction.NotSupportedException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.sql.*;
@@ -164,7 +161,7 @@ public class LedgerStore {
         BigInteger trieBalance = BlockchainQuery.getTrieBalance(block).toBigInteger();
 
 
-        return "{'balance' "+Convert2json.BI2ValStr(bi,false) +", count "+count+", 'triebalance'" +Convert2json.BI2ValStr(trieBalance,false)+ " }";
+        return "{'balance' "+ Convert2json.BI2ValStr(bi, false) +", count "+count+", 'triebalance'" +Convert2json.BI2ValStr(trieBalance,false)+ " }";
     }
 
 
@@ -203,7 +200,6 @@ public class LedgerStore {
 
     public void insertLedgerEntry(LedgerEntry entry) throws SQLException {
         Block block = replayBlock.getBlock();
-
 
         PreparedStatement st = getInsertEntryStatement();
 
@@ -355,6 +351,9 @@ public class LedgerStore {
 
     public synchronized int insertBlock(ReplayBlock _replayBlock) throws SQLException{
 
+
+            getOrCreateAddresses(_replayBlock);
+
             //this.replayBlock = new ReplayBlock(listener, blockNo);
             //replayBlock.run();
             this.replayBlock=_replayBlock;
@@ -399,6 +398,10 @@ public class LedgerStore {
        //checkDelta();
     }
 
+    private void getOrCreateAddresses(ReplayBlock replayBlock) {
+        List<LedgerEntry> ledgerEntries = replayBlock.getLedgerEntries();
+
+    }
 
 
     private void initMsSql() throws Exception

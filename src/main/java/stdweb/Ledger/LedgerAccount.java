@@ -1,4 +1,4 @@
-package stdweb.Core;
+package stdweb.Ledger;
 
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockchainImpl;
@@ -7,6 +7,7 @@ import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.db.ContractDetails;
 import org.ethereum.db.RepositoryImpl;
 import org.spongycastle.util.encoders.Hex;
+import stdweb.Core.Utils;
 import stdweb.ethereum.EthereumBean;
 
 import java.math.BigDecimal;

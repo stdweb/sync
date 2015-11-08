@@ -6,6 +6,8 @@ import org.ethereum.facade.Ethereum;
 import org.ethereum.facade.EthereumFactory;
 import org.spongycastle.util.encoders.Hex;
 import stdweb.Core.*;
+import stdweb.Ledger.LedgerStore;
+import stdweb.Ledger.ReplayBlock;
 
 import java.net.InetAddress;
 import java.net.URL;

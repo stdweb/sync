@@ -2,14 +2,14 @@ package stdweb.Core;
 
 import org.ethereum.core.AccountState;
 import org.ethereum.core.Block;
-import org.ethereum.core.BlockHeader;
 import org.ethereum.core.Transaction;
 import org.ethereum.db.ContractDetails;
 import org.ethereum.db.RepositoryImpl;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.vm.program.InternalTransaction;
 import org.spongycastle.util.encoders.Hex;
-import stdweb.ethereum.EthereumBean;
+import stdweb.Ledger.LedgerStore;
+import stdweb.Ledger.ReplayBlock;
 import stdweb.ethereum.EthereumListener;
 
 import java.math.BigDecimal;

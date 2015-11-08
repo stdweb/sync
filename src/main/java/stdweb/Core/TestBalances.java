@@ -3,6 +3,9 @@ package stdweb.Core;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockchainImpl;
 import org.spongycastle.util.encoders.Hex;
+import stdweb.Ledger.LedgerAccount;
+import stdweb.Ledger.LedgerQuery;
+import stdweb.Ledger.LedgerStore;
 import stdweb.ethereum.EthereumBean;
 
 import java.math.BigDecimal;

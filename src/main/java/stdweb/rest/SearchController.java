@@ -5,8 +5,8 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
-import stdweb.Core.LedgerQuery;
-import stdweb.Core.LedgerStore;
+import stdweb.Ledger.LedgerQuery;
+import stdweb.Ledger.LedgerStore;
 import stdweb.Core.Utils;
 import stdweb.ethereum.EthereumBean;
 

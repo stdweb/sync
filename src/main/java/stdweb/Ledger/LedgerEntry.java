@@ -1,14 +1,16 @@
-package stdweb.Core;
+package stdweb.Ledger;
 
 import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
 import org.ethereum.core.TransactionReceipt;
 import org.spongycastle.util.encoders.Hex;
+import stdweb.Core.Convert2json;
+import stdweb.Core.EntryResult;
+import stdweb.Core.EntryType;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 
 

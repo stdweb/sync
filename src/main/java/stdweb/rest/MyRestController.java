@@ -2,9 +2,6 @@ package stdweb.rest;
 
 
 import org.ethereum.core.Block;
-import org.ethereum.core.BlockchainImpl;
-import org.ethereum.facade.Ethereum;
-import org.ethereum.net.eth.handler.Eth;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
@@ -12,6 +9,9 @@ import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Hex;
 import org.springframework.web.bind.annotation.PathVariable;
 import stdweb.Core.*;
+import stdweb.Ledger.LedgerAccount;
+import stdweb.Ledger.LedgerQuery;
+import stdweb.Ledger.LedgerStore;
 import stdweb.ethereum.EthereumBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;

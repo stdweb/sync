@@ -6,12 +6,10 @@ import org.ethereum.core.TransactionReceipt;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.listener.EthereumListenerAdapter;
 import org.ethereum.util.BIUtil;
-import org.springframework.util.Assert;
-import stdweb.Core.LedgerStore;
-import stdweb.Core.ReplayBlock;
+import stdweb.Ledger.LedgerStore;
+import stdweb.Ledger.ReplayBlock;
 import stdweb.Core.SyncStatus;
 
-import javax.transaction.NotSupportedException;
 import java.math.BigInteger;
 import java.sql.SQLException;
 import java.util.List;

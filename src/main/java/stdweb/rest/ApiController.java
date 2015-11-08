@@ -4,10 +4,11 @@ import org.ethereum.core.Block;
 import org.ethereum.core.BlockchainImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.spongycastle.util.encoders.Hex;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import stdweb.Core.*;
+import stdweb.Ledger.LedgerAccount;
+import stdweb.Ledger.LedgerStore;
 import stdweb.ethereum.EthereumBean;
 
 import javax.servlet.http.HttpServletRequest;
@@ -17,7 +18,6 @@ import java.sql.SQLException;
 
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 import static org.springframework.web.bind.annotation.RequestMethod.GET;
-import static org.springframework.web.bind.annotation.RequestMethod.POST;
 
 /**
  * Created by bitledger on 29.10.15.
@@ -124,7 +124,7 @@ public class ApiController {
                 case "findempty":
                     //ret=TestBalances.checkBalance(i);
                     ret+="\n";
-                    ret+=TestBalances.findEmpty(i,false);
+                    ret+=TestBalances.findEmpty(i, false);
                     break;
             }
         }

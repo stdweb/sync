@@ -1,4 +1,4 @@
-package stdweb.Core;
+package stdweb.Ledger;
 
 import org.ethereum.core.Block;
 import org.ethereum.db.RepositoryImpl;
