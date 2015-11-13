@@ -16,7 +16,7 @@ public class BlockchainQuery {
 
     public static BigDecimal getTrieBalance(Block block) throws SQLException {
 
-        BlockchainImpl blockchain = (BlockchainImpl) EthereumBean.getBlockchain();
+        BlockchainImpl blockchain = (BlockchainImpl) EthereumBean.getBlockchainImpl();
         Repository track = blockchain.getRepository();
 
         Repository snapshot = track.getSnapshotTo(block.getStateRoot());
@@ -30,7 +30,7 @@ public class BlockchainQuery {
 
     public static BigDecimal getCoinbaseTrieDelta(Block block) throws SQLException {
 
-        BlockchainImpl blockchain = (BlockchainImpl) EthereumBean.getBlockchain();
+        BlockchainImpl blockchain = (BlockchainImpl) EthereumBean.getBlockchainImpl();
         Repository track = blockchain.getRepository();
 
         Repository snapshot = track.getSnapshotTo(block.getStateRoot());
@@ -55,7 +55,7 @@ public class BlockchainQuery {
     }
     public static BigDecimal getTrieDelta(Block block) throws SQLException {
 
-        BlockchainImpl blockchain = (BlockchainImpl) EthereumBean.getBlockchain();
+        BlockchainImpl blockchain = (BlockchainImpl) EthereumBean.getBlockchainImpl();
         Repository track = blockchain.getRepository();
 
         Repository snapshot = track.getSnapshotTo(block.getStateRoot());

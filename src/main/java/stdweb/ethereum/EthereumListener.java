@@ -33,12 +33,12 @@ public class EthereumListener extends EthereumListenerAdapter {
 
     @Override
     public void onBlock(Block block, List<TransactionReceipt> receipts) {
-        LedgerStore ledgerStore = LedgerStore.getLedgerStore(this);
+        LedgerStore ledgerStore = LedgerStore.getLedgerStore();
 
         if (ledgerStore.getSyncStatus()== SyncStatus.onBlockSync)
             try {
                 //ledgerStore.deleteBlocksFrom(block.getNumber());
-                ledgerStore.insertBlock(ReplayBlock.CURRENT(block));
+                ledgerStore.write(ReplayBlock.CURRENT(block));
                 if (block.getNumber() % 1 == 0)
                     System.out.println("On Block Ledger  insert:"+ block.getNumber());
             } catch (SQLException e) {
@@ -52,7 +52,7 @@ public class EthereumListener extends EthereumListenerAdapter {
     public void onTransactionExecuted(TransactionExecutionSummary summary)
     {
 
-        LedgerStore ledgerStore = LedgerStore.getLedgerStore(this);
+        LedgerStore ledgerStore = LedgerStore.getLedgerStore();
         if (ledgerStore.getSyncStatus()== SyncStatus.onBlockSync
                 || ledgerStore.getSyncStatus()== SyncStatus.bulkLoading
                 || ledgerStore.getSyncStatus()== SyncStatus.SingleInsert) {

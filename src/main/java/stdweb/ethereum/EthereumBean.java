@@ -1,18 +1,19 @@
 package stdweb.ethereum;
 
 import org.ethereum.core.Block;
+import org.ethereum.core.BlockHeader;
 import org.ethereum.core.BlockchainImpl;
+import org.ethereum.db.RepositoryImpl;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.facade.EthereumFactory;
 import org.spongycastle.util.encoders.Hex;
 import stdweb.Core.*;
-import stdweb.Ledger.LedgerStore;
-import stdweb.Ledger.ReplayBlock;
+import stdweb.Ledger.*;
 
-import java.net.InetAddress;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.net.UnknownHostException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -20,7 +21,7 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
-
+import static stdweb.Core.Utils.hash_decode;
 
 
 public class EthereumBean {
@@ -35,7 +36,7 @@ public class EthereumBean {
 
     static SyncStatus blockchainSyncStatus;
 
-    public static BlockchainImpl getBlockchain() {
+    public static BlockchainImpl getBlockchainImpl() {
         return blockchain;
     }
 
@@ -58,7 +59,9 @@ public class EthereumBean {
 //
 //    private static long ledgerSyncBlock=Long.MAX_VALUE;
 
-
+    public static RepositoryImpl getRepositoryImpl() {
+        return    (RepositoryImpl) ethereum.getRepository();
+    }
 
 
     public void printCP()
@@ -76,34 +79,84 @@ public class EthereumBean {
     public void start()  {
         //printCP();
 //        AzureSql();
-        try {
-            InetAddress localHost = InetAddress.getLocalHost();
-            System.out.println("host:"+localHost.getHostName());
-            System.out.println("ip:"+localHost.getHostAddress());
-
-        } catch (UnknownHostException e) {
-            e.printStackTrace();
-        }
 
         ethereum = EthereumFactory.createEthereum();
-        //ethereum.stopPeerDiscovery();
 
         this.listener=new EthereumListener(ethereum);
         this.ethereum.addListener(this.listener);
         blockchain = ((BlockchainImpl) ethereum.getBlockchain());
         blockchainStopSync();
 
-        LedgerStore ledgerStore = LedgerStore.getLedgerStore(listener);
+        LedgerStore ledgerStore = LedgerStore.getLedgerStore();
 
         System.out.println("________________________________________________________________________");
         System.out.println("________________________________________________________________________");
 
         //check();
+        try {
+            loadSomeAccounts();
+            testSomeBlocks();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } catch (AddressDecodeException e) {
+            e.printStackTrace();
+        } catch (HashDecodeException e) {
+            e.printStackTrace();
+        }
 
     }
 
-    private void check() {
-        ReplayBlock replayBlock = new ReplayBlock(listener, 181692);
+    private void testSomeBlocks() throws SQLException {
+        LedgerBlockStore blockStore = LedgerBlockStore.getInstance();
+        BlockchainImpl blockchain = EthereumBean.getBlockchainImpl();
+
+        for (int b=170001;b<=180000;++b)
+        {
+
+            Block blockByNumber = blockchain.getBlockByNumber(b);
+
+
+            BigDecimal balance=BigDecimal.ZERO;
+            BigDecimal reward=BigDecimal.ZERO;
+            BigDecimal fee=BigDecimal.ZERO;
+//
+            LedgerBlock ledgerBlock = blockStore.create(blockByNumber, fee, reward, balance);
+            blockStore.write(ledgerBlock);
+            System.out.println("insert block:"+ledgerBlock.getNumber());
+//            System.out.println("block sql insert:"+b);
+        }
+    }
+
+    private void loadSomeAccounts() throws SQLException, AddressDecodeException, HashDecodeException {
+        String a="0xde0b295669a9fd93d5f28d9ec85e40f4cb697bae";
+        String b="0x18edbb78c987efd0ef489359ed253b672298596b";
+        String c="0x18edbb78c987efd0ef489359ed253b67229859aa";
+
+        LedgerStore ledgerStore = LedgerStore.getLedgerStore();
+        AccountStore accountStore=AccountStore.getInstance();
+
+        LedgerAccount ledgerAccount=accountStore.get(a);
+        ledgerAccount.setName("n aaa");
+        accountStore.write(ledgerAccount);
+
+        ledgerAccount=accountStore.get(b);
+        ledgerAccount.setName("n bbb");
+        accountStore.write(ledgerAccount);
+
+        ledgerAccount=accountStore.get(c);
+        ledgerAccount.setName("n cccc");
+        accountStore.write(ledgerAccount);
+
+
+        ledgerAccount=accountStore.get("0x18edbb78c987efd0ef489359ed253b67229859aa");
+        ledgerAccount.setName("bb cc cc");
+
+        accountStore.write(ledgerAccount);
+
+    }
+
+    private void check() throws HashDecodeException, AddressDecodeException {
+        ReplayBlock replayBlock = new ReplayBlock( 181692);
 
         replayBlock.run();
 
@@ -152,50 +205,10 @@ public class EthereumBean {
 
     }
 
-
     public String getDifficulty(){
         return "" + ethereum.getBlockchain().getTotalDifficulty().toString();
     }
 
-    public List<Block> getBlockList(Block toplistblock)
-    {
-        long height =toplistblock.getNumber();// ethereum.getBlockchain().getBestBlock().getNumber();
-        ArrayList<Block> blocks = new ArrayList<>();
-
-        long endHeight=Math.max(height-40,0);
-
-        for (long i=height;i>=endHeight;--i) {
-            Block block=ethereum.getBlockchain().getBlockByNumber(i);
-            blocks.add(block);
-        }
-
-        return  blocks;
-    }
-
-    public String getBestBlock(){
-        return "" + ethereum.getBlockchain().getBestBlock().getNumber();
-    }
-
-    public String getBlockStr(String blockId) {
-
-        String result = "";
-        try {
-            Block block = getBlock(blockId);
-            result = Convert2json.block2json(block, listener);
-        }
-
-        catch (NumberFormatException e)
-        {
-            e.printStackTrace();
-            //result=e.toString();
-        }
-        catch (Exception e)
-        {
-            e.printStackTrace();
-            //result=e.toString();
-        }
-        return  result;
-    }
 
     public Block getBlock(String blockId) {
         Block block;
@@ -216,11 +229,55 @@ public class EthereumBean {
         return block;
     }
 
+    public String getBestBlock(){
+        return "" + ethereum.getBlockchain().getBestBlock().getNumber();
+    }
+
+//    public String getBlockStr(String blockId) {
+//
+//        String result = "";
+//        try {
+//            Block block = getBlock(blockId);
+//            result = Convert2json.block2json(block, listener);
+//        }
+//
+//        catch (NumberFormatException e)
+//        {
+//            e.printStackTrace();
+//            //result=e.toString();
+//        }
+//        catch (Exception e)
+//        {
+//            e.printStackTrace();
+//            //result=e.toString();
+//        }
+//        return  result;
+//    }
 
 
-    public String getBalance(String blockId) throws SQLException {
-        LedgerStore ledgerStore = LedgerStore.getLedgerStore(listener);
-        String b=ledgerStore.getBalance(getBlock(blockId));
+
+
+    public String getBalance(Block block) throws SQLException {
+
+        BigDecimal bigDecimal =LedgerStore.getLedgerStore().getQuery().getLedgerBlockBalance(block.getNumber());
+
+
+        BigInteger bi=BigInteger.valueOf(0);
+
+        if (bigDecimal!= null)
+            bi = bigDecimal.toBigInteger();
+
+        //Long count=rs.getLong(2);
+
+        BigInteger trieBalance = BlockchainQuery.getTrieBalance(block).toBigInteger();
+
+
+        return "{'balance' "+ Convert2json.BI2ValStr(bi, false) +", 'triebalance'" +Convert2json.BI2ValStr(trieBalance,false)+ " }";
+    }
+
+    public String getBalance(String blockId) throws SQLException, HashDecodeException  {
+        LedgerStore ledgerStore = LedgerStore.getLedgerStore();
+        String b=getBalance(getBlock(blockId));
 
         return b;
     }
@@ -237,7 +294,7 @@ public class EthereumBean {
             ret="blockchain sync is started";
         }
         blockchainSyncStatus=SyncStatus.onBlockSync;
-        LedgerStore ledgerStore = LedgerStore.getLedgerStore(listener);
+        LedgerStore ledgerStore = LedgerStore.getLedgerStore();
         //ledgerStore.setSyncStatus(ledgerStore.getNextStatus());
         System.out.println(ret);
     }
@@ -261,6 +318,9 @@ public class EthereumBean {
         System.out.println(ret);
     }
 
+    public static Block getBlockByNumber(long blockNo) {
+        return getBlockchainImpl().getBlockByNumber(blockNo);
+    }
 
 
 //    public void ledgerStopSync() {
@@ -298,12 +358,12 @@ public class EthereumBean {
 //        try {
 //            LedgerStore ledgerStore = LedgerStore.getLedgerStore(listener);
 //
-//            ledgerStore.insertBlock(89789);
-//            ledgerStore.insertBlock(89906);
-//            ledgerStore.insertBlock(94665);
-//            ledgerStore.insertBlock(94783);
-//            ledgerStore.insertBlock(114958);
-//            ledgerStore.insertBlock(115844);
+//            ledgerStore.write(89789);
+//            ledgerStore.write(89906);
+//            ledgerStore.write(94665);
+//            ledgerStore.write(94783);
+//            ledgerStore.write(114958);
+//            ledgerStore.write(115844);
 //
 //        } catch (Exception e) {
 //            e.printStackTrace();

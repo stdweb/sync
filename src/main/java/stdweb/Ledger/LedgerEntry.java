@@ -9,6 +9,7 @@ import stdweb.Core.EntryResult;
 import stdweb.Core.EntryType;
 
 import java.math.BigDecimal;
+import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -19,7 +20,7 @@ import java.util.List;
  */
 public class LedgerEntry {
 
-    public static List<LedgerEntry> recordSet;
+    //public static List<LedgerEntry> recordSet;
     int txNumber;
     LedgerAccount Account;
     EntryType entryType;
@@ -43,50 +44,12 @@ public class LedgerEntry {
     public Transaction tx;
     public TransactionReceipt receipt;
 
-    public BigDecimal getTotalFee()
-    {
-        return recordSet.stream()
-                .map(x -> x.fee)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-    }
-
-    public BigDecimal getTotalFee(org.ethereum.core.Account acc,EntryType _entryType)
-    {
-        //LedgerStore.EntryType.values().
-        final List<EntryType> et=new ArrayList<>();
-
-        if (_entryType!=null)
-            et.add(_entryType);
-        else
-            et .addAll( Arrays.asList(EntryType.values()));
-
-        return recordSet.stream()
-                .filter(r -> r.Account.equals(acc))
-                .filter( e -> et.contains( e ))
-                .map(x -> x.fee)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-    }
-
-    public BigDecimal getTotalGrossAmount(org.ethereum.core.Account acc,EntryType _entryType)
-    {
-        //LedgerStore.EntryType.values().
-        final List<EntryType> et=new ArrayList<>();
-
-        if (_entryType!=null)
-            et.add(_entryType);
-        else
-            et .addAll( Arrays.asList(EntryType.values()));
-
-        return recordSet.stream()
-                .filter(r -> r.Account.equals(acc))
-                .filter( e -> et.contains( e ))
-                .map(x -> x.grossAmount)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-    }
-
     public LedgerEntry(){}
 
+    public LedgerEntry(ResultSet rs)
+    {
 
+    }
     @Override
     public String toString()
     {
@@ -98,6 +61,49 @@ public class LedgerEntry {
                 Convert2json.BD2ValStr(grossAmount,true),
                 offsetAccount);
     }
+
+//    public BigDecimal getTotalFee()
+//    {
+//        return recordSet.stream()
+//                .map(x -> x.fee)
+//                .reduce(BigDecimal.ZERO, BigDecimal::add);
+//    }
+
+//    public BigDecimal getTotalFee(org.ethereum.core.Account acc,EntryType _entryType)
+//    {
+//        //LedgerStore.EntryType.values().
+//        final List<EntryType> et=new ArrayList<>();
+//
+//        if (_entryType!=null)
+//            et.add(_entryType);
+//        else
+//            et .addAll( Arrays.asList(EntryType.values()));
+//
+//        return recordSet.stream()
+//                .filter(r -> r.Account.equals(acc))
+//                .filter( e -> et.contains( e ))
+//                .map(x -> x.fee)
+//                .reduce(BigDecimal.ZERO, BigDecimal::add);
+//    }
+
+//    public BigDecimal getTotalGrossAmount(org.ethereum.core.Account acc,EntryType _entryType)
+//    {
+//        //LedgerStore.EntryType.values().
+//        final List<EntryType> et=new ArrayList<>();
+//
+//        if (_entryType!=null)
+//            et.add(_entryType);
+//        else
+//            et .addAll( Arrays.asList(EntryType.values()));
+//
+//        return recordSet.stream()
+//                .filter(r -> r.Account.equals(acc))
+//                .filter( e -> et.contains( e ))
+//                .map(x -> x.grossAmount)
+//                .reduce(BigDecimal.ZERO, BigDecimal::add);
+//    }
+
+
 
 
     //    public LedgerEntry(LedgerAccount _acc,EntryType _entryType,byte[] _txhash, BigDecimal _amount,

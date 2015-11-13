@@ -3,21 +3,14 @@ package stdweb.Ledger;
 import org.ethereum.core.*;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.db.BlockStore;
-import org.ethereum.db.RepositoryImpl;
-import org.ethereum.facade.Ethereum;
 import org.ethereum.util.ByteUtil;
 import org.ethereum.vm.program.InternalTransaction;
 import org.ethereum.vm.program.ProgramResult;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
 import org.spongycastle.util.encoders.Hex;
 import org.springframework.util.Assert;
-import stdweb.Core.Convert2json;
-import stdweb.Core.EntryResult;
-import stdweb.Core.EntryType;
-import stdweb.Ledger.LedgerAccount;
-import stdweb.Ledger.LedgerEntry;
+import stdweb.Core.*;
 import stdweb.ethereum.EthereumBean;
-import stdweb.ethereum.EthereumListener;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -26,19 +19,23 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
 
+import static stdweb.Core.Utils.hash_decode;
+
 /**
  * Created by bitledger on 24.09.15.
  */
 public class ReplayBlock {
 
-    private EthereumListener listener;
-    private Ethereum ethereum;
+
+    BlockHeader header;
+
+
+    //////////////////////////////////////////////////////////////////
 
     private static ReplayBlock currentReplayBlock;
 
-    public static ReplayBlock GENESIS()
-    {
-        ReplayBlock replayBlock = new ReplayBlock(EthereumBean.getListener(), 0);
+    public static ReplayBlock GENESIS() throws AddressDecodeException, HashDecodeException {
+        ReplayBlock replayBlock = new ReplayBlock( 0);
         replayBlock.loadGenesis();
         return replayBlock;
     }
@@ -46,7 +43,7 @@ public class ReplayBlock {
 
         if (currentReplayBlock==null) {
             Assert.isTrue(_block!=null,"replayBlock.block cannot be null.1");
-            currentReplayBlock = new ReplayBlock(EthereumBean.getListener(), _block);
+            currentReplayBlock = new ReplayBlock( _block);
         }
         else {
             Assert.isTrue(currentReplayBlock.block!=null,"replayBlock.block cannot be null.2");
@@ -56,10 +53,10 @@ public class ReplayBlock {
         return currentReplayBlock;
     }
 
-    public Ethereum getEthereum()
-    {
-        return ethereum;
-    }
+//    public Ethereum getEthereum()
+//    {
+//        return ethereum;
+//    }
     private Block block;
 
     private final List<LedgerEntry> entries=new ArrayList<>();
@@ -194,9 +191,6 @@ public class ReplayBlock {
 
         Transaction tx = summary.getTransaction();
 
-        //BigInteger gasRefund = summary.getGasRefund();
-        //BigInteger gasUsed = summary.getGasUsed();
-
         long calcGasUsed = summary.getGasLimit().subtract(summary.getGasLeftover().add(summary.getGasRefund())).longValue();
 
         addTxEntries(tx,calcGasUsed,summary.getEntryNumber(),summary.isFailed());
@@ -206,7 +200,7 @@ public class ReplayBlock {
                         summary.getEntryNumber(),t.isRejected()));
 
     }
-    //public void addTxEntries(Transaction tx, TransactionExecutor executor, int entryNo)
+
     public void addTxEntries(Transaction tx, long gasUsed, int _txNumber, boolean isFailed)
     {
 
@@ -281,15 +275,9 @@ public class ReplayBlock {
         else
             ledgerEntrySend.fee=new BigDecimal((new BigInteger(1, tx.getGasPrice())).multiply(BigInteger.valueOf(ledgerEntrySend.gasUsed)));
 
-//        if (isFailed)
-//        {
-//            ledgerEntryRecv.grossAmount=BigDecimal.ZERO;
-//            ledgerEntrySend.grossAmount=BigDecimal.ZERO.subtract(ledgerEntrySend.fee);
-//        }
-//        else {
-            ledgerEntryRecv.grossAmount = ledgerEntryRecv.amount;
-            ledgerEntrySend.grossAmount = ledgerEntrySend.amount.subtract(ledgerEntrySend.fee);
-        //}
+        ledgerEntryRecv.grossAmount = ledgerEntryRecv.amount;
+        ledgerEntrySend.grossAmount = ledgerEntrySend.amount.subtract(ledgerEntrySend.fee);
+
 
         byte[] data = (tx.getData()==null)? ByteUtil.ZERO_BYTE_ARRAY : tx.getData();
         ledgerEntryRecv.extraData= Hex.toHexString(data);
@@ -302,23 +290,12 @@ public class ReplayBlock {
 
     private EntryType getSendEntryType(Transaction tx,LedgerAccount sendAcc,LedgerAccount recvAcc) {
 
-        //EntryType entry_type=
-
-        //LedgerAccount recvAcc = new LedgerAccount(tx.getReceiveAddress(),tx.getContractAddress());
-
         if (tx.isContractCreation())
             return EntryType.ContractCreation;
-
-//        if (tx instanceof InternalTransaction)
-//            return EntryType.InternalCall;
-
         if (recvAcc.isContract())
             return EntryType.Call;
         else
             return  EntryType.Send;
-
-
-        //return entry_type;
     }
 
     private EntryType getRecvEntryType(Transaction tx,LedgerAccount account) {
@@ -326,22 +303,15 @@ public class ReplayBlock {
         if (tx.isContractCreation())
             return EntryType.ContractCreated;
 
-
         if (account.isContract())
             return EntryType.CallReceive;
         else
             return EntryType.Receive;
-
-//        EntryType entry_type;
-//        if (tx instanceof InternalTransaction)
-//            return EntryType.CallReceive;
-//
-//        return entry_type;
     }
 
-    public ReplayBlock(EthereumListener _listener, Block _block) {
-        this.listener=_listener;
-        this.ethereum=_listener.getEthereum();
+    public ReplayBlock( Block _block) {
+       // this.listener=_listener;
+        //this.ethereum=_listener.getEthereum();
         this.block=_block;
     }
 
@@ -350,66 +320,68 @@ public class ReplayBlock {
 //        this.ethereum=_listener.getEthereum();
 //    }
 
-    public ReplayBlock(EthereumListener _listener, long blockNo) {
-        this.listener=_listener;
-        this.ethereum=_listener.getEthereum();
-        this.block = ethereum.getBlockchain().getBlockByNumber(blockNo);
+    public ReplayBlock( long blockNo) {
+       // this.listener=_listener;
+        //this.ethereum=_listener.getEthereum();
+
+        this.block = EthereumBean.getBlockByNumber(blockNo);;
         if (block==null)
             System.out.println("Replayblock ctor. BlockNo not found:"+blockNo);
 
     }
 
-    public ReplayBlock(EthereumListener _listener, byte[] blockHash) {
-        this.listener=_listener;
-        this.ethereum=_listener.getEthereum();
-        this.block=ethereum.getBlockchain().getBlockByHash(blockHash);;
-    }
+//    public ReplayBlock(EthereumListener _listener, byte[] blockHash) {
+//        this.listener=_listener;
+//        this.ethereum=_listener.getEthereum();
+//        this.block=ethereum.getBlockchainImpl().getBlockByHash(blockHash);;
+//    }
 
-    public BigInteger getCoinbaseDelta()
-    {
-        byte[] coinbase = block.getCoinbase();
+//    public BigInteger getCoinbaseDelta()
+//    {
+//        byte[] coinbase = block.getCoinbase();
+//
+//        return getAccountDelta(coinbase);
+//
+//    }
 
-        return getAccountDelta(coinbase);
+//    public BigInteger getUnclesDelta()
+//    {
+//        BigInteger delta = BigInteger.valueOf(0);
+//        for (BlockHeader uncleHeader : block.getUncleList()) {
+//            BigInteger accountDelta = getAccountDelta(uncleHeader.getCoinbase());
+//            delta=delta.add(accountDelta);
+//        }
+//        return delta;
+//    }
 
-    }
-
-    public BigInteger getUnclesDelta()
-    {
-        BigInteger delta = BigInteger.valueOf(0);
-        for (BlockHeader uncleHeader : block.getUncleList()) {
-            BigInteger accountDelta = getAccountDelta(uncleHeader.getCoinbase());
-            delta=delta.add(accountDelta);
-        }
-        return delta;
-    }
-
-    public BigInteger getAccountDelta(byte[] coinbase) {
-
-        BlockchainImpl blockchain = (BlockchainImpl) ethereum.getBlockchain();
-        Repository track = blockchain.getRepository();
-
-        Repository snapshot = track.getSnapshotTo(block.getStateRoot());
-        BigInteger balance = snapshot.getBalance(coinbase);
-
-        Block blockPrev = blockchain.getBlockByHash(block.getParentHash());
-
-        //block.getTransactionsList().get(block.getTransactionsList().size()-1)
-        BlockHeader header = block.getHeader();
-
-        Repository snapshotPrev = track.getSnapshotTo(blockPrev.getStateRoot());
-        BigInteger balancePrev = snapshotPrev.getBalance(coinbase);
-
-        if (balancePrev==null)
-            return  balance;
-        else
-            return  balance.subtract(balancePrev);
-    }
+//    public BigInteger getAccountDelta(byte[] coinbase) {
+//
+//        BlockchainImpl blockchain = (BlockchainImpl) ethereum.getBlockchainImpl();
+//        Repository track = blockchain.getRepository();
+//
+//        Repository snapshot = track.getSnapshotTo(block.getStateRoot());
+//        BigInteger balance = snapshot.getBalance(coinbase);
+//
+//        Block blockPrev = blockchain.getBlockByHash(block.getParentHash());
+//
+//        //block.getTransactionsList().get(block.getTransactionsList().size()-1)
+//        BlockHeader header = block.getHeader();
+//
+//        Repository snapshotPrev = track.getSnapshotTo(blockPrev.getStateRoot());
+//        BigInteger balancePrev = snapshotPrev.getBalance(coinbase);
+//
+//        if (balancePrev==null)
+//            return  balance;
+//        else
+//            return  balance.subtract(balancePrev);
+//    }
 
 
-    private void loadGenesis()  {
+    private void loadGenesis() throws AddressDecodeException, HashDecodeException {
 
-        org.ethereum.core.Repository snapshot = ((RepositoryImpl) ethereum.getRepository()).getSnapshotTo(Hex.decode("d7f8974fb5ac78d9ac099b9ad5018bedc2ce0a72dad1827a1709da30580f0544"));
-        Block block = ethereum.getBlockchain().getBlockByNumber(0);
+
+        org.ethereum.core.Repository snapshot = EthereumBean.getRepositoryImpl().getSnapshotTo(hash_decode("d7f8974fb5ac78d9ac099b9ad5018bedc2ce0a72dad1827a1709da30580f0544"));
+        Block block = EthereumBean.getBlockByNumber(0);
 
         Set<byte[]> accountsKeys = snapshot.getAccountsKeys();
 
@@ -444,7 +416,7 @@ public class ReplayBlock {
         }
     }
 
-    public void   run()  {
+    public void   run() throws HashDecodeException, AddressDecodeException {
         if (block==null) {
 
             return;
@@ -455,7 +427,7 @@ public class ReplayBlock {
             return;
         }
 
-        BlockchainImpl blockchain = (BlockchainImpl) ethereum.getBlockchain();
+        BlockchainImpl blockchain = EthereumBean.getBlockchainImpl();
 
         BlockStore blockStore = blockchain.getBlockStore();
         ProgramInvokeFactory programInvokeFactory = blockchain.getProgramInvokeFactory();
@@ -475,7 +447,7 @@ public class ReplayBlock {
 
             TransactionExecutor executor = new TransactionExecutor(tx, block.getCoinbase(),
                     snapshot, blockStore,
-                    programInvokeFactory, block, listener, totalGasUsed);
+                    programInvokeFactory, block, EthereumBean.getListener(), totalGasUsed);
 
             executor.setLocalCall(false);
             executor.init();

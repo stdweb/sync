@@ -5,6 +5,8 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
+import stdweb.Core.AddressDecodeException;
+import stdweb.Core.HashDecodeException;
 import stdweb.Ledger.LedgerQuery;
 import stdweb.Ledger.LedgerStore;
 import stdweb.Core.Utils;
@@ -28,9 +30,9 @@ public class SearchController {
 
     @RequestMapping(value = "/search/{search_string}", method = GET, produces = APPLICATION_JSON_VALUE)
     @ResponseBody
-    public String ledger(@PathVariable String search_string,HttpServletRequest request) throws IOException, SQLException, InterruptedException {
+    public String ledger(@PathVariable String search_string,HttpServletRequest request) throws IOException, SQLException, InterruptedException, HashDecodeException, AddressDecodeException {
         long t1=System.currentTimeMillis();
-        LedgerQuery query = LedgerStore.getLedgerStore(ethereumBean.getListener()).getQuery();
+        LedgerQuery query = LedgerStore.getLedgerStore().getQuery();
         String s = query.search(search_string).toJSONString();
         s=s.replace(":"," ");
         Utils.log("Search",t1,request);

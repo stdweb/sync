@@ -16,6 +16,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import static stdweb.Core.Utils.address_decode;
+import static stdweb.Core.Utils.hash_decode;
+
 /**
  * Created by bitledger on 27.10.15.
  */
@@ -131,7 +134,7 @@ public class LedgerQuery {
     public HashMap<LedgerAccount, BigDecimal> getLedgerBalancesOnBlock(Block block,boolean checkAll) throws SQLException {
 
         if (block==null)
-            block=EthereumBean.getBlockchain().getBlockByNumber(getSqlTopBlock());
+            block=EthereumBean.getBlockchainImpl().getBlockByNumber(getSqlTopBlock());
         ResultSet rs;
         Statement statement = conn.createStatement();
         String sql;
@@ -168,7 +171,7 @@ public class LedgerQuery {
         //String accStr = Hex.toHexString(account);
         //'f0134ff161a5c8f7c4f8cc33d3e1a7ae088594a9'
         String sql="select  sum(case when entryresult =0 then grossamount else grossamount-amount end) amo, count(*) c from ledger  where block<="+blockNumber;
-        sql+=" and address=X'"+Hex.toHexString(acc.getBytes())+"' ";
+        sql+=" and address=X'"+Hex.toHexString(acc.getAddress())+"' ";
         rs = statement.executeQuery(sql);
         rs.first();
 
@@ -356,10 +359,7 @@ public class LedgerQuery {
         }
     }
 
-    public JSONArray LedgerSelect(String accStr,String offsetStr) throws SQLException {
-
-        if (accStr.startsWith("0x"))
-            accStr=accStr.substring(2);
+    public JSONArray LedgerSelect(String accStr,String offsetStr) throws SQLException, AddressDecodeException {
 
         int offset;
         try {
@@ -369,6 +369,8 @@ public class LedgerQuery {
         {
             offset=1;
         }
+
+        accStr=Hex.toHexString(address_decode(accStr));
 
         ResultSet rs;
         Statement statement = conn.createStatement();
@@ -412,12 +414,12 @@ public class LedgerQuery {
     }
 
 
-    public JSONObject search(String search_string) throws SQLException {
+    public JSONObject search(String search_string) throws SQLException, AddressDecodeException, HashDecodeException {
         JSONObject jsonObject = new JSONObject();
 
         try {
             long blockNo=Long.parseLong(search_string);
-            Block block = EthereumBean.getBlockchain().getBlockByNumber(blockNo);
+            Block block = EthereumBean.getBlockchainImpl().getBlockByNumber(blockNo);
             if (block!=null) {
                 jsonObject.put("resulttype","block");
                 jsonObject.put("blocknumber", String.valueOf(block.getNumber()));
@@ -454,7 +456,7 @@ public class LedgerQuery {
                 break;
             case 64:
 
-                Block block = EthereumBean.getBlockchain().getBlockByHash(Hex.decode(search_string));
+                Block block = EthereumBean.getBlockchainImpl().getBlockByHash(hash_decode(search_string));
                 if (block!=null) {
                     jsonObject.put("resulttype","block");
                     jsonObject.put("blocknumber", String.valueOf(block.getNumber()));

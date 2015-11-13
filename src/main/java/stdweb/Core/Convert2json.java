@@ -10,6 +10,7 @@ import org.ethereum.vm.program.InternalTransaction;
 import org.spongycastle.util.encoders.Hex;
 import stdweb.Ledger.LedgerStore;
 import stdweb.Ledger.ReplayBlock;
+import stdweb.ethereum.EthereumBean;
 import stdweb.ethereum.EthereumListener;
 
 import java.math.BigDecimal;
@@ -123,9 +124,9 @@ public class Convert2json {
 
     }
 
-    public static boolean isContract(byte[] address,Ethereum ethereum)
+    public static boolean isContract(byte[] address)
     {
-        RepositoryImpl repository = (RepositoryImpl)ethereum.getRepository();
+        RepositoryImpl repository = EthereumBean.getRepositoryImpl();
         AccountState accountState = repository.getAccountState(address);
         ContractDetails contractDetails = repository.getContractDetails(address);
 
@@ -140,7 +141,7 @@ public class Convert2json {
         if (tx instanceof InternalTransaction)
             return "Nested Call "+(((InternalTransaction) tx).getDeep()>0 ? ((InternalTransaction) tx).getDeep() : "");
 
-        if (isContract(tx.getReceiveAddress(),replayBlock.getEthereum()))
+        if (isContract(tx.getReceiveAddress()))
             return "ContractCall";
 
         if (tx.getReceiveAddress()!=null)
@@ -155,81 +156,6 @@ public class Convert2json {
         Date d=new Date(timestamp*1000);
         SimpleDateFormat sdf=new SimpleDateFormat("yyyy-MM-dd' - 'HH:mm:ss");
         return sdf.format(d);
-    }
-
-    public static String block2json(Block block, EthereumListener listener) throws SQLException {
-
-
-        HashMap<String, String> hashMap = new HashMap<>();
-
-        hashMap.put("height",String.valueOf(block.getNumber()) );
-        hashMap.put("hash",addParentheses("0x"+Hex.toHexString(block.getHash())));
-        hashMap.put("parenthash",addParentheses("0x"+Hex.toHexString(block.getParentHash())));
-        hashMap.put("stateroot",addParentheses("0x"+Hex.toHexString(block.getStateRoot())));
-        hashMap.put("receiptroot",addParentheses("0x"+Hex.toHexString(block.getReceiptsRoot())));
-        hashMap.put("txtrieroot",addParentheses("0x"+Hex.toHexString(block.getTxTrieRoot())));
-
-        hashMap.put("difficulty",String.valueOf(new BigInteger(block.getDifficulty()) ));
-        hashMap.put("coinbase",addParentheses("0x"+Hex.toHexString(block.getCoinbase())));
-
-
-        hashMap.put("gasused",addParentheses(Num2ValStr(block.getGasUsed(),true )));
-        hashMap.put("uncles", String.valueOf(block.getUncleList().size()));
-
-
-        //Date d=new Date(block.getTimestamp());
-        //SimpleDateFormat sdf=new SimpleDateFormat("yyyy-MM-dd' - 'HH:mm:ss");
-        hashMap.put("timestamp",addParentheses(convertTimestamp2str(
-                block.getNumber()==0 ? 1438269973 :block.getTimestamp())));
-
-        hashMap.put("txcount",addParentheses(Num2ValStr(block.getTransactionsList().size(),true) ));
-        hashMap.put("ENTRYRESULT",addParentheses("Ok"));
-
-//        long fee=0;
-//        for (Transaction tx : block.getTransactionsList())
-//        {
-//            if (tx.getGasPrice()==null)
-//                continue;
-//            fee+=tx.transactionCost()*(new BigInteger(1,tx.getGasPrice()).longValue());
-//        }
-
-        //BigInteger blockFee = new ReplayBlock(listener, block).getBlockFee();
-        BigDecimal ledgerBlockTxFee = LedgerStore.getLedgerStore(listener).getLedgerBlockTxFee(block);
-
-        hashMap.put("txfee",addParentheses(BD2ValStr(ledgerBlockTxFee, true)));
-
-        ReplayBlock replayBlock = new ReplayBlock(listener, block);
-        BigInteger blockReward = replayBlock.getBlockReward();
-        BigInteger totalUncleReward = replayBlock.getTotalUncleReward();
-
-
-        hashMap.put("reward",addParentheses(BI2ValStr(blockReward,true)));
-        hashMap.put("UncleReward",addParentheses(BI2ValStr(totalUncleReward,true)));
-
-        return map2json(hashMap);
-    }
-
-
-
-
-    public static String BlockList2json(List<Block> blockList, EthereumListener listener)
-    {
-        String result="[";
-        for (Block block : blockList)
-        {
-            try {
-                result += block2json(block,listener) + ",";
-            }
-            catch (Exception e)
-            {
-                result="Err in block:"+String.valueOf(block.getNumber());
-            }
-        }
-        if (result.endsWith(","))
-            result=result.substring(0,result.length()-1);
-
-        result+="]";
-        return result;
     }
 
     public static String map2json(HashMap<String, String> hashMap) {

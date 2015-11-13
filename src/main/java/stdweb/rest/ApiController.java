@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import stdweb.Core.*;
+import stdweb.Ledger.AccountStore;
 import stdweb.Ledger.LedgerAccount;
 import stdweb.Ledger.LedgerStore;
 import stdweb.ethereum.EthereumBean;
@@ -55,14 +56,14 @@ public class ApiController {
 
     @RequestMapping(value = "/balance/{addr}/{blockNumber}", method = GET, produces = APPLICATION_JSON_VALUE)
     @ResponseBody
-    public String checkBalance(@PathVariable String addr, @PathVariable String blockNumber,HttpServletRequest request) throws IOException, InterruptedException, SQLException {
+    public String checkBalance(@PathVariable String addr, @PathVariable String blockNumber,HttpServletRequest request) throws IOException, InterruptedException, SQLException, HashDecodeException, AddressDecodeException {
 
         long t1=System.currentTimeMillis();
 
-        LedgerStore ledgerStore = LedgerStore.getLedgerStore(ethereumBean.getListener());
+        LedgerStore ledgerStore = LedgerStore.getLedgerStore();
         Block block = ethereumBean.getBlock(blockNumber);
 
-        LedgerAccount acc = new LedgerAccount(addr);
+        LedgerAccount acc = AccountStore.getInstance().create(addr);
 
         BigDecimal trieBalance=acc.getBalance(block);
         BigDecimal ledgBalance=ledgerStore.getQuery().getLedgerAccountBalance(acc,block.getNumber());
@@ -89,7 +90,7 @@ public class ApiController {
     @ResponseBody
     public String ledger_cmd(@PathVariable String cmd, @PathVariable String param,HttpServletRequest request) throws IOException,  InterruptedException {
         long t1=System.currentTimeMillis();
-        LedgerStore ledgerStore = LedgerStore.getLedgerStore(ethereumBean.getListener());
+        LedgerStore ledgerStore = LedgerStore.getLedgerStore();
 
         System.out.println("caller ip:"+request.getRemoteAddr());
 
@@ -132,6 +133,10 @@ public class ApiController {
         {
             System.out.println(e.getMessage()+"\n");
             e.printStackTrace();
+        } catch (AddressDecodeException e) {
+            e.printStackTrace();
+        } catch (HashDecodeException e) {
+            e.printStackTrace();
         }
         Utils.log("ledger_cmd",t1,request);
         return  ret;
@@ -144,7 +149,7 @@ public class ApiController {
     public String ledger(@PathVariable String cmd) throws IOException, SQLException, InterruptedException {
 
         BlockchainImpl blockchain = (BlockchainImpl)ethereumBean.getEthereum().getBlockchain();
-        LedgerStore ledgerStore = LedgerStore.getLedgerStore(ethereumBean.getListener());
+        LedgerStore ledgerStore = LedgerStore.getLedgerStore();
         switch (cmd.toLowerCase())
         {
             case "stop":
@@ -183,7 +188,7 @@ public class ApiController {
     public String blockchain(@PathVariable String cmd) throws IOException, SQLException, InterruptedException {
 
         BlockchainImpl blockchain = (BlockchainImpl)ethereumBean.getEthereum().getBlockchain();
-        LedgerStore ledgerStore = LedgerStore.getLedgerStore(ethereumBean.getListener());
+        LedgerStore ledgerStore = LedgerStore.getLedgerStore();
         String result = blockchainStatus( );
         switch (cmd.toLowerCase())
         {
@@ -219,11 +224,11 @@ public class ApiController {
             result+=String.format("Top block %s, Blockchain is loading\n",String.valueOf(blockchain.getBestBlock().getNumber()));
 
         try {
-            result+=String.format("Ledger sql Top block: %s\n", LedgerStore.getLedgerStore(ethereumBean.getListener()).getQuery().getSqlTopBlock());
+            result+=String.format("Ledger sql Top block: %s\n", LedgerStore.getLedgerStore().getQuery().getSqlTopBlock());
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        LedgerStore ledgerStore = LedgerStore.getLedgerStore(ethereumBean.getListener());
+        LedgerStore ledgerStore = LedgerStore.getLedgerStore();
         result+="Ledger syncStatus:"+ledgerStore.getSyncStatus()+"\n";
         result+="Ledger nextStatus:"+ledgerStore.getNextStatus()+"\n";
         //result+="Ledger sql top block:"+ledgerStore.getSqlTopBlock()+"\n";

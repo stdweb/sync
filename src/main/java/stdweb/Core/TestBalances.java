@@ -19,21 +19,21 @@ import java.util.List;
 public class TestBalances {
 
     public static String checkBalance() throws InterruptedException, SQLException {
-        long number = EthereumBean.getBlockchain().getBestBlock().getNumber();
+        long number = EthereumBean.getBlockchainImpl().getBestBlock().getNumber();
         return checkBalance(number);
     }
     public static  String checkBalance(long number) throws InterruptedException, SQLException {
 
-        LedgerStore ledgerStore = LedgerStore.getLedgerStore(EthereumBean.getListener());
+        LedgerStore ledgerStore = LedgerStore.getLedgerStore();
         int sqlTopBlock = ledgerStore.getQuery().getSqlTopBlock();
-        Block blockByNumber = EthereumBean.getBlockchain().getBlockByNumber(Math.min(number, sqlTopBlock));
+        Block blockByNumber = EthereumBean.getBlockchainImpl().getBlockByNumber(Math.min(number, sqlTopBlock));
         return checkBalance(blockByNumber);
     }
 
     public static String checkBalance(Block block) throws InterruptedException, SQLException {
 
-        LedgerStore ledgerStore = LedgerStore.getLedgerStore(EthereumBean.getListener());
-        BlockchainImpl blockchain = (BlockchainImpl)EthereumBean.getBlockchain();
+        LedgerStore ledgerStore = LedgerStore.getLedgerStore();
+        BlockchainImpl blockchain = (BlockchainImpl)EthereumBean.getBlockchainImpl();
 
         long stopOn = blockchain.getStopOn();
         blockchain.setStopOn(0);
@@ -58,21 +58,21 @@ public class TestBalances {
     }
 
     public static String checkAccountsBalance(long blockNumber,boolean checkAll) throws InterruptedException, SQLException {
-        return checkAccountsBalance(EthereumBean.getBlockchain().getBlockByNumber(blockNumber), checkAll);
+        return checkAccountsBalance(EthereumBean.getBlockchainImpl().getBlockByNumber(blockNumber), checkAll);
     }
 
 
 
     public static String checkAccountsBalance(Block block,boolean checkAll) throws InterruptedException, SQLException {
 
-        LedgerStore ledgerStore = LedgerStore.getLedgerStore(EthereumBean.getListener());
-        BlockchainImpl blockchain = (BlockchainImpl)EthereumBean.getBlockchain();
+        LedgerStore ledgerStore = LedgerStore.getLedgerStore();
+        BlockchainImpl blockchain = (BlockchainImpl)EthereumBean.getBlockchainImpl();
 
         long stopOn = blockchain.getStopOn();
         blockchain.setStopOn(0);
         Thread.sleep(500);
 
-        LedgerQuery query = LedgerQuery.getQuery(LedgerStore.getLedgerStore(EthereumBean.getListener()));
+        LedgerQuery query = LedgerQuery.getQuery(LedgerStore.getLedgerStore());
 
 
         long l1 = System.currentTimeMillis();
@@ -106,7 +106,7 @@ public class TestBalances {
     }
 
     public static String findEmpty(long i, boolean b) throws SQLException {
-        LedgerQuery query = LedgerQuery.getQuery(LedgerStore.getLedgerStore(EthereumBean.getListener()));
+        LedgerQuery query = LedgerQuery.getQuery(LedgerStore.getLedgerStore());
         List<Long> emptyBlockList = query.getEmptyBlockList(i);
 
         String ret="";
@@ -118,7 +118,7 @@ public class TestBalances {
                 continue;
             }
             if (block!=prev+1) {
-                Block blockByNumber = EthereumBean.getBlockchain().getBlockByNumber(block);
+                Block blockByNumber = EthereumBean.getBlockchainImpl().getBlockByNumber(block);
 
                 ret += "Ledger empty :" + block + ((blockByNumber==null) ? "Blockchain null" : "")+"\n";
             }

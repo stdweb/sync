@@ -6,9 +6,9 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.spongycastle.util.encoders.Hex;
 import org.springframework.web.bind.annotation.PathVariable;
 import stdweb.Core.*;
+import stdweb.Ledger.AccountStore;
 import stdweb.Ledger.LedgerAccount;
 import stdweb.Ledger.LedgerQuery;
 import stdweb.Ledger.LedgerStore;
@@ -26,6 +26,7 @@ import java.util.List;
 
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 import static org.springframework.web.bind.annotation.RequestMethod.GET;
+import static stdweb.Core.Utils.address_decode;
 
 @RestController
 public class MyRestController {
@@ -34,16 +35,7 @@ public class MyRestController {
     @Autowired
     EthereumBean ethereumBean;
 
-    @RequestMapping(value = "/bestBlock", method = GET, produces = APPLICATION_JSON_VALUE)
-    @ResponseBody
-    public String getBestBlock(HttpServletRequest request) throws IOException {
-        logger.info("ip:"+request.getRemoteAddr());
-        logger.info("method:"+request.getMethod());
-        logger.info("servletPath:"+request.getServletPath());
-        logger.info("requestUri:"+request.getRequestURI());
 
-        return ethereumBean.getBestBlock();
-    }
 
 //    @RequestMapping(value = "/test",method = GET, produces = APPLICATION_JSON_VALUE)
 //    @ResponseBody
@@ -59,7 +51,7 @@ public class MyRestController {
 //
 //    public String checkDelta(Block block) throws InterruptedException, SQLException {
 //        LedgerStore ledgerStore = LedgerStore.getLedgerStore(ethereumBean.getListener());
-//        BlockchainImpl blockchain = (BlockchainImpl)ethereumBean.getEthereum().getBlockchain();
+//        BlockchainImpl blockchain = (BlockchainImpl)ethereumBean.getEthereum().getBlockchainImpl();
 //
 //        long stopOn = blockchain.getStopOn();
 //        blockchain.setStopOn(0);
@@ -87,74 +79,25 @@ public class MyRestController {
 //    public String getDifficulty() throws IOException {
 //
 //        Ethereum ethereum = ethereumBean.getEthereum();
-//        BlockchainImpl blockchain = (BlockchainImpl) ethereum.getBlockchain();
+//        BlockchainImpl blockchain = (BlockchainImpl) ethereum.getBlockchainImpl();
 //
 //        return ethereumBean.getDifficulty();
 //    }
 
 
-    @RequestMapping(value = "/blocks/{blockId}", method = GET, produces = APPLICATION_JSON_VALUE)
-    @ResponseBody
-    public String getBlockList(@PathVariable String blockId,HttpServletRequest request) throws IOException {
-        long t1=System.currentTimeMillis();
-        String result="no err";
-        try {
 
-            Block block=ethereumBean.getBlock(blockId);
-            List<Block> blocks = ethereumBean.getBlockList(block);
+//
 
-            result= Convert2json.BlockList2json(blocks, ethereumBean.getListener());
-            //result=ethereumBean.checkBlocks();
-        }
-        catch (Exception e)
-        {
-            e.printStackTrace();
-            //result=e.toString();
-        }
-        //return Convert2json.BlockList2json(blocks);
-        Utils.log("blocks",t1,request);
-        return result;
-    }
-
-    @RequestMapping(value = "/block/{blockId}", method = GET, produces = APPLICATION_JSON_VALUE)
-    @ResponseBody
-    public String getBlock(@PathVariable String blockId,HttpServletRequest request) throws IOException {
-
-        long t1=System.currentTimeMillis();
-        String ret=ethereumBean.getBlockStr(blockId);
-        Utils.log("block",t1,request);
-        return ret;
-    }
 
     @RequestMapping(value = "/balance/{blockId}", method = GET, produces = APPLICATION_JSON_VALUE)
     @ResponseBody
-    public String getBalance(@PathVariable String blockId) throws IOException, SQLException {
+    public String getBalance(@PathVariable String blockId) throws IOException, SQLException, HashDecodeException {
 
         long t1=System.currentTimeMillis();
         return ethereumBean.getBalance(blockId);
     }
 
-    @RequestMapping(value = "/txs/{blockId}", method = GET, produces = APPLICATION_JSON_VALUE)
-    @ResponseBody
-    public String getTxList(@PathVariable String blockId,HttpServletRequest request) throws IOException {
-        long t1=System.currentTimeMillis();
-        try {
-            Block block=ethereumBean.getBlock(blockId);
-            LedgerQuery ledgerQuery = LedgerStore.getLedgerStore(ethereumBean.getListener()).getQuery();
 
-            String s = ledgerQuery.LedgerSelectByBlock(block.getNumber());
-
-            s=s.replace(":"," ");
-            Utils.log("TxList",t1,request);
-            return s;
-
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-
-        return  null;
-    }
 
 //    @RequestMapping(value = "/txs/{blockId}", method = GET, produces = APPLICATION_JSON_VALUE)
 //    @ResponseBody
@@ -182,74 +125,6 @@ public class MyRestController {
 //        return result;
 //    }
 
-    @RequestMapping(value = "/tx/{txId}", method = GET, produces = APPLICATION_JSON_VALUE)
-    @ResponseBody
-    public String gettx(@PathVariable String txId,HttpServletRequest request) throws IOException {
-        long t1=System.currentTimeMillis();
-        try {
-            LedgerQuery ledgerQuery = LedgerStore.getLedgerStore(ethereumBean.getListener()).getQuery();
-            String s = ledgerQuery.LedgerSelectByTx(txId);
 
-            s=s.replace(":"," ");
-            Utils.log("tx",t1,request);
-            return s;
-
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-
-        return  "error";
-
-    }
-    @RequestMapping(value = "/account/{accountId}/{offset}", method = GET, produces = APPLICATION_JSON_VALUE)
-    @ResponseBody
-    public String getAccountLedger(@PathVariable String accountId,@PathVariable String offset,HttpServletRequest request) throws IOException {
-
-        try {
-            long t1=System.currentTimeMillis();
-            LedgerStore ledgerStore = LedgerStore.getLedgerStore(ethereumBean.getListener());
-            LedgerQuery ledgerQuery = LedgerQuery.getQuery(ledgerStore);
-
-            JSONArray jsonArray = ledgerQuery.LedgerSelect(accountId, offset);
-
-            Utils.log("LedgerSql",t1,request,true);
-            //JSONObject entriesJson=new JSONObject();
-
-            long t2=System.currentTimeMillis();
-            JSONObject entriesJson=ledgerQuery.acc_entry_count(accountId,offset);
-
-            Utils.log("entries count",t2,request,true);
-
-            accountId=Utils.remove0x(accountId);
-
-            byte[] acc=Hex.decode(accountId);
-            LedgerAccount account=new LedgerAccount(acc);
-
-            t2=System.currentTimeMillis();
-            //BigDecimal ledgerBlockBalance = ledgerQuery.getLedgerAccountBalance(account,ledgerQuery.getSqlTopBlock());
-            BigDecimal ledgerBlockBalance = account.getBalance();
-
-            //Utils.log("acc balance",t2,request,true);
-
-
-            //BigDecimal ledgerBlockBalance=BigDecimal.ZERO;
-            entriesJson.put("balance",Convert2json.BD2ValStr(ledgerBlockBalance,true));
-            entriesJson.put("addresstype",account.isContract() ? "Contract" : "Account");
-
-            entriesJson.put("entries",jsonArray);
-            String s=entriesJson.toJSONString();
-
-
-
-            s=s.replace(":"," ");
-            Utils.log("AccountLedger",t1,request);
-            return s;
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return  e.toString();
-        }
-    }
 
 }
