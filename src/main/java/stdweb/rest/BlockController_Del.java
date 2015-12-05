@@ -1,18 +1,15 @@
 package stdweb.rest;
 
-import org.ethereum.core.Block;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.bind.annotation.RestController;
-import stdweb.Core.Convert2json;
 import stdweb.Core.HashDecodeException;
 import stdweb.Core.Utils;
-import stdweb.Ledger.Ledger;
-import stdweb.Ledger.LedgerBlock;
-import stdweb.Ledger.LedgerBlockStore;
-import stdweb.ethereum.EthereumBean;
+import stdweb.Ledger_DEL.LedgerBlockStore;
+import stdweb.Ledger_DEL.del_LBlock;
+import stdweb.ethereum.EthereumBean_DEL;
 import stdweb.ethereum.EthereumListener;
 
 import javax.servlet.http.HttpServletRequest;
@@ -23,16 +20,15 @@ import java.util.List;
 
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 import static org.springframework.web.bind.annotation.RequestMethod.GET;
-import static stdweb.Core.Utils.hash_decode;
 
 /**
  * Created by bitledger on 12.11.15.
  */
-@RestController
-public class BlockController {
+//@RestController
+public class BlockController_Del {
 
-    @Autowired
-    EthereumBean ethereumBean;
+    //@Autowired
+    EthereumBean_DEL ethereumBean;
 
     LedgerBlockStore bstore;
 
@@ -49,7 +45,7 @@ public class BlockController {
 
         long t1=System.currentTimeMillis();
         String ret=getBlockStr(blockId);
-        Utils.log("block",t1,request);
+        Utils.log("block",t1,request,new ResponseEntity(null, HttpStatus.NOT_IMPLEMENTED));
         return ret;
     }
 
@@ -60,8 +56,8 @@ public class BlockController {
         String result="no err";
         try {
 
-            LedgerBlock block=getBlockObject(blockId);
-            List<LedgerBlock> blocks = getList(block);
+            del_LBlock block=getBlockObject(blockId);
+            List<del_LBlock> blocks = getList(block);
 
             result= BlockList2json(blocks, ethereumBean.getListener());
             //result=ethereumBean.checkBlocks();
@@ -72,13 +68,13 @@ public class BlockController {
             //result=e.toString();
         }
         //return Convert2json.BlockList2json(blocks);
-        Utils.log("blocks", t1, request);
+        Utils.log("blocks", t1, request,new ResponseEntity(null, HttpStatus.NOT_IMPLEMENTED));
         return result;
     }
 
-    public LedgerBlock getBlockObject(String blockId) throws HashDecodeException, SQLException {
+    public del_LBlock getBlockObject(String blockId) throws HashDecodeException, SQLException {
         long t1=System.currentTimeMillis();
-        LedgerBlock block;
+        del_LBlock block;
         if (blockId.equals("top"))
             //block=ethereum.getBlockchain().getBestBlock();
             block=bstore.getTopBlock();
@@ -101,7 +97,7 @@ public class BlockController {
 
         String result = "";
         try {
-            LedgerBlock block = getBlockObject(blockId);
+            del_LBlock block = getBlockObject(blockId);
             if(block!=null)
                 result = block.toJSON();
             else{}
@@ -119,10 +115,10 @@ public class BlockController {
         return  result;
     }
 
-    public static String BlockList2json(List<LedgerBlock> blockList, EthereumListener listener)
+    public static String BlockList2json(List<del_LBlock> blockList, EthereumListener listener)
     {
         String result="[";
-        for (LedgerBlock block : blockList)
+        for (del_LBlock block : blockList)
         {
             try {
                 result += block.toJSON() + ",";
@@ -139,15 +135,15 @@ public class BlockController {
         return result;
     }
 
-    public List<LedgerBlock> getList(LedgerBlock toplistblock) throws SQLException {
+    public List<del_LBlock> getList(del_LBlock toplistblock) throws SQLException {
         long height =toplistblock.getNumber();// ethereum.getBlockchainImpl().getBestBlock().getNumber();
-        ArrayList<LedgerBlock> blocks = new ArrayList<>();
+        ArrayList<del_LBlock> blocks = new ArrayList<>();
 
         long endHeight=Math.max(height-40,0);
 
         for (long i=height;i>=endHeight;--i) {
             //Block block=ethereum.getBlockchain().getBlockByNumber(i);
-            LedgerBlock block = bstore.get(i);
+            del_LBlock block = bstore.get(i);
             blocks.add(block);
         }
 
@@ -156,7 +152,7 @@ public class BlockController {
 
 
 
-    BlockController() throws SQLException {
+    BlockController_Del() throws SQLException {
         bstore=LedgerBlockStore.getInstance();
     }
 

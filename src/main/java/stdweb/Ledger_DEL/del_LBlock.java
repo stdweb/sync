@@ -1,13 +1,8 @@
-package stdweb.Ledger;
+package stdweb.Ledger_DEL;
 
-import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
-import org.ethereum.core.Transaction;
-import org.ethereum.crypto.HashUtil;
-import org.ethereum.db.ByteArrayWrapper;
 import org.spongycastle.util.encoders.Hex;
 import stdweb.Core.Sha3Hash;
-import stdweb.ethereum.EthereumListener;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -19,7 +14,7 @@ import static stdweb.Core.Convert2json.*;
 /**
  * Created by bitledger on 08.11.15.
  */
-public class LedgerBlock extends BlockHeader {
+public class del_LBlock extends BlockHeader {
     private Sha3Hash hash;
     private BigDecimal fee;
     private BigDecimal balance;
@@ -56,11 +51,11 @@ public class LedgerBlock extends BlockHeader {
 
     private int txcount;
 
-    protected LedgerBlock(byte[] parentHash, byte[] unclesHash, byte[] coinbase,
-                       byte[] logsBloom, byte[] difficulty, long number,
-                       long gasLimit, long gasUsed, long timestamp,
-                       byte[] extraData, byte[] mixHash, byte[] nonce) {
-        super(parentHash,unclesHash,coinbase,logsBloom,difficulty,number,gasLimit,gasUsed,timestamp,extraData,mixHash,nonce);
+    protected del_LBlock(byte[] parentHash, byte[] unclesHash, byte[] coinbase,
+                         byte[] logsBloom, byte[] difficulty, long number,
+                         long gasLimit, long gasUsed, long timestamp,
+                         byte[] extraData, byte[] mixHash, byte[] nonce) {
+        super(parentHash,unclesHash,coinbase,logsBloom,difficulty,number,BigInteger.valueOf(gasLimit).toByteArray(),gasUsed,timestamp,extraData,mixHash,nonce);
 //        this.parentHash = parentHash;
 //        this.unclesHash = unclesHash;
 //        this.coinbase = coinbase;
@@ -83,8 +78,8 @@ public class LedgerBlock extends BlockHeader {
         throw new UnsupportedClassVersionError("parent hash cannot be changed");
     }
 
-    public static LedgerBlock reload(ResultSet rs) throws SQLException {
-        LedgerBlock lb = new LedgerBlock(
+    public static del_LBlock reload(ResultSet rs) throws SQLException {
+        del_LBlock lb = new del_LBlock(
 //rs.getLong(1, header.getNumber());
 //rs.getBytes(2, blockHash.getBytes());
 //ID,HASH, PARENTHASH, UNCLESHASH, COINBASE, STATEROOT, TXTRIEROOT,
@@ -119,40 +114,10 @@ public class LedgerBlock extends BlockHeader {
         return lb;
     }
 
-//    public   BigInteger getTotalUncleReward() {
-//        BigInteger totalUncleReward=BigInteger.ZERO;
-//        for (BlockHeader blockHeader : this.getBlock().getUncleList()) {
-//            totalUncleReward=totalUncleReward.add(this.getUncleReward(blockHeader).toBigInteger());
-//        }
-//        return totalUncleReward;
-//    }
-    public BigDecimal getUncleReward(BlockHeader uncle) {
-        BigDecimal uncleReward;
-        uncleReward= new BigDecimal(Block.BLOCK_REWARD)
-                .multiply(BigDecimal.valueOf(8 + uncle.getNumber() - this.getNumber()).divide(new BigDecimal(8)));
-        return uncleReward;
-    }
-
-//    public BigInteger getBlockFee() {
-//
-//        BigInteger fee = BigInteger.ZERO;
-//        for (Transaction tx : block.getTransactionsList()) {
-//            if (tx.getGasPrice() == null)
-//                continue;
-//            fee = fee.add(BigInteger.valueOf(tx.transactionCost()) .multiply (new BigInteger(1, tx.getGasPrice())));
-//        }
-//        return  fee;
-//    }
-
-//    public BigInteger getBlockReward() {
-//        BigInteger totalBlockReward = Block.BLOCK_REWARD;
-//        totalBlockReward = totalBlockReward.add(Block.INCLUSION_REWARD.multiply(BigInteger.valueOf(block.getUncleList().size() )));
-//        return totalBlockReward;
-//    }
 
     public String toJSON() throws SQLException {
 
-        LedgerBlock block=this;
+        del_LBlock block=this;
         HashMap<String, String> hashMap = new HashMap<>();
 
         hashMap.put("height",String.valueOf(block.getNumber()) );
@@ -193,17 +158,6 @@ public class LedgerBlock extends BlockHeader {
     }
 
 
-//    public LedgerBlock(ResultSet rs) {
-//
-//    }
-//
-//    public LedgerBlock() {
-//
-//    }
-
-//    public boolean isNew() {
-//        return aNew;
-//    }
 
     public void setHash(Sha3Hash hash) {
         this.hash = hash;

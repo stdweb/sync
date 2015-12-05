@@ -1,4 +1,4 @@
-package stdweb.Ledger;
+package stdweb.Ledger_DEL;
 
 import org.ethereum.core.Block;
 import org.ethereum.db.RepositoryImpl;
@@ -23,17 +23,17 @@ public class Ledger {
     }
 
 
-    public BigDecimal getBalanceOnBlock(LedgerAccount acc,Block block){ return BigDecimal.ZERO;}
-    public BigDecimal getBalanceOnDate(LedgerAccount acc, Date date){ return BigDecimal.ZERO;}
+    public BigDecimal getBalanceOnBlock(LedgerAccount_del acc, Block block){ return BigDecimal.ZERO;}
+    public BigDecimal getBalanceOnDate(LedgerAccount_del acc, Date date){ return BigDecimal.ZERO;}
 
     public BigDecimal getTotal(){ return BigDecimal.ZERO;}
 
-    public BigDecimal getAccountLedger(LedgerAccount acc){ return BigDecimal.ZERO;}
+    public BigDecimal getAccountLedger(LedgerAccount_del acc){ return BigDecimal.ZERO;}
 
     public BigDecimal getEntriesByFilter(){ return BigDecimal.ZERO;}
 
 
-    public void Materialize(LedgerAccount vertex, String filter)
+    public void Materialize(LedgerAccount_del vertex, String filter)
     {
         //get triples
         //convert to table
@@ -41,7 +41,7 @@ public class Ledger {
         //materialize to local datomic database
     }
 
-    public void SqlMaterialize(LedgerAccount vertex, String filter)
+    public void SqlMaterialize(LedgerAccount_del vertex, String filter)
     {
         //get triples
         //convert to table

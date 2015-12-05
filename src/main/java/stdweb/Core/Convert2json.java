@@ -5,22 +5,17 @@ import org.ethereum.core.Block;
 import org.ethereum.core.Transaction;
 import org.ethereum.db.ContractDetails;
 import org.ethereum.db.RepositoryImpl;
-import org.ethereum.facade.Ethereum;
 import org.ethereum.vm.program.InternalTransaction;
 import org.spongycastle.util.encoders.Hex;
-import stdweb.Ledger.LedgerStore;
-import stdweb.Ledger.ReplayBlock;
-import stdweb.ethereum.EthereumBean;
-import stdweb.ethereum.EthereumListener;
+import stdweb.Ledger_DEL.ReplayBlock_DEL;
+import stdweb.ethereum.EthereumBean_DEL;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.sql.SQLException;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
 
 /**
  * Created by bitledger on 20.09.15.
@@ -126,14 +121,14 @@ public class Convert2json {
 
     public static boolean isContract(byte[] address)
     {
-        RepositoryImpl repository = EthereumBean.getRepositoryImpl();
+        RepositoryImpl repository = EthereumBean_DEL.getRepositoryImpl();
         AccountState accountState = repository.getAccountState(address);
         ContractDetails contractDetails = repository.getContractDetails(address);
 
         return  (contractDetails.getCode().length>0);
     }
 
-    private static String getTxType(ReplayBlock replayBlock, Transaction tx) {
+    private static String getTxType(ReplayBlock_DEL replayBlock, Transaction tx) {
 
         if (tx.getReceiveAddress()==null)
             return "ContractCreation";

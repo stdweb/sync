@@ -5,13 +5,16 @@ buildscript {
 
 
     dependencies {
-        classpath("org.springframework.boot:spring-boot-gradle-plugin:1.2.2.RELEASE")
+        classpath("org.springframework.boot:spring-boot-gradle-plugin:1.3.0.RELEASE")
+        //classpath("org.springframework.boot:spring-boot-gradle-plugin:1.2.2.RELEASE")
+        classpath 'org.jetbrains.kotlin:kotlin-gradle-plugin:1.0.0-beta-2423'
     }
 }
 
 apply plugin: 'java'
 apply plugin: 'maven'
 apply plugin: 'spring-boot'
+apply plugin: 'kotlin'
 
 repositories {
 
@@ -22,7 +25,6 @@ repositories {
         url "http://dl.bintray.com/ethereum/maven"
     }
 }
-
 configurations.all {
     // check for updates every build
     resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
@@ -33,14 +35,18 @@ dependencies {
     //compile("com.microsoft.sqlserver:sqljdbc42")
 
     compile "com.google.guava:guava:18.0"
+
+    //compile "io.datafx:samples:8.0.1"
+
+    compile 'org.jetbrains.kotlin:kotlin-stdlib:1.0.0-beta-2423'
+    compile("org.springframework.boot:spring-boot-starter-data-jpa")
+    compile("com.h2database:h2")
     compile ("org.ethereum:ethereumj-core:1.0.0-std"){
 
         exclude group: "log4j"
         exclude group: "org.slf4j", module: "log4j-over-slf4j"
         exclude group: "org.slf4j", module: "slf4j-log4j12"
-
     }
-
 }
 
 sourceSets {
@@ -62,6 +68,24 @@ task stage {
     dependsOn bootRepackage
 }
 
+//buildscript {
+//    dependencies {
+//        classpath "io.spring.gradle:dependency-management-plugin:0.4.0.RELEASE"
+//    }
+//}
+
+apply plugin: "io.spring.dependency-management"
+
+dependencyManagement {
+    imports {
+        mavenBom 'org.springframework.data:spring-data-releasetrain:Gosling-SR1'
+    }
+}
+
+//dependencies {
+//    compile 'org.springframework.data:spring-data-jpa'
+//    compile 'org.springframework.data:spring-data-rest'
+//}
 
 bootRun {
     jvmArgs = ["-server", "-Xms3g"]

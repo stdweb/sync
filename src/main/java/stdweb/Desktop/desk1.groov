@@ -1,0 +1,173 @@
+import com.simpleplugin.PanelGroovyScript
+import groovy.swing.SwingBuilder
+import net.miginfocom.swing.MigLayout
+//import stdweb.Ledger_DEL.LedgerEntry
+//import stdweb.Ledger_DEL.LedgerEntryStore
+
+import javax.swing.JMenuBar
+import javax.swing.JMenuItem
+import javax.swing.JSeparator
+import javax.swing.JTextField
+import javax.swing.JTree
+import javax.swing.tree.DefaultMutableTreeNode
+import javax.swing.tree.DefaultTreeModel
+import javax.swing.tree.TreeSelectionModel
+import java.awt.Panel
+import java.awt.ScrollPane
+
+//import stdweb.Ledger_DEL.SqlDb;
+
+
+/**
+ * Created by bitledger on 14.11.15.
+ */
+class desk2 extends PanelGroovyScript {
+
+    def swing = new SwingBuilder()
+    def treemodel()
+    {
+        def rootNode = new DefaultMutableTreeNode("Wallet");
+
+        def blocksNode =new DefaultMutableTreeNode("Blocks");
+        def sendNode =new DefaultMutableTreeNode("Send");
+        def historyNode =new DefaultMutableTreeNode("History");
+        def addressesNode =new DefaultMutableTreeNode("Addresses");
+        def contractsNode =new DefaultMutableTreeNode("Contracts");
+        def SendtoContactsNode =new DefaultMutableTreeNode("My Contacts");
+
+        rootNode.add(blocksNode)
+        rootNode.add(sendNode)
+        rootNode.add(historyNode)
+        rootNode.add(addressesNode)
+        rootNode.add(contractsNode)
+        rootNode.add(SendtoContactsNode)
+
+
+
+        def model = new DefaultTreeModel(rootNode)
+    }
+    def tree() {
+
+        def scrollPane = new ScrollPane()
+        def jtree = new JTree()
+        jtree.getSelectionModel().setSelectionMode (TreeSelectionModel.SINGLE_TREE_SELECTION);
+
+        //jtree.addTreeSelectionListener( new MyTreeSelectionListener() )
+
+        jtree.setModel(treemodel())
+
+        scrollPane.add(jtree)
+        scrollPane
+    }
+    def toolbar(param)
+    {
+//        swing.menuBar(param)  {
+//
+//            menu (text:'File')
+//                    {
+//                        menuItem() {
+//                            action(name:'New', closure:{ this.showAbout() })
+//                        }
+//                        menuItem() {
+//                            action(name:'Open2', closure:{ this.showAbout() })
+//                        }
+//
+//                    }
+//            menu(text:'Help') {
+//                menuItem() {
+//                    action(name:'About', closure:{ this.showAbout() })
+//                }
+//            }
+//            button(text:"butt")
+//            text()
+//        }
+
+        def toolbar = new JMenuBar()
+
+        def fileMenuItem = new JMenuItem("File")
+
+        //fileMenuItem.setText("File")
+        toolbar.add(fileMenuItem)
+
+        //toolbar.add search
+
+        def menuPanel = new Panel()
+        menuPanel.setLayout(new MigLayout())
+
+        menuPanel.add(toolbar,"dock west")
+
+        //def search = new JTextField("text")
+       // menuPanel.add search,"dock east"
+
+        menuPanel
+    }
+
+    void createContent ()
+    {
+        this.panel.setLayout new MigLayout("wrap 3")
+        //panel.add(toolbar(),"dock north,wrap")
+        this.panel.add(tree(),"dock west,w 300!")
+
+        panel.add(new JSeparator())
+        panel.add(blockListModel(),"dock center")
+    }
+    def blockDataPipe()
+    {
+        def d=
+                [
+                        ['height':100,
+                         'age':100 ,'txs':100 ,
+                         'miner':100 ,
+                         'difficulty':100 ,
+                         'hashrate':100 ,
+                         'reward':222 ],
+
+                        ['height':1200,
+                         'age':100 ,'txs':100 ,
+                         'miner':100 ,
+                         'difficulty':100 ,
+                         'hashrate':100 ,
+                         'reward':222 ],
+
+                        ['height':300,
+                         'age':100 ,'txs':100 ,
+                         'miner':100 ,
+                         'difficulty':100 ,
+                         'hashrate':100 ,
+                         'reward':222 ]
+                ]
+    }
+
+    def blockListModel(param)
+    {
+        swing.scrollPane(param) {
+            table() {
+                def model = blockDataPipe()
+                tableModel(list: model) {
+                    closureColumn(header: 'Height', read: { row -> return row.height })
+                    closureColumn(header: 'Age', read: { row -> return row.age })
+                    closureColumn(header: 'Txs', read: { row -> return row.txs })
+                    closureColumn(header: 'Miner', read: { row -> return row.miner })
+                    closureColumn(header: 'Difficulty', read: { row -> return row.difficulty })
+                    closureColumn(header: 'HashRate', read: { row -> return row.hashrate })
+                    closureColumn(header: 'Reward', read: { row -> return row.reward })
+                }
+            }
+        }
+    }
+    //def SqlDb sqlDb
+    void run()
+    {
+
+        this.panel.clear()
+        this.createContent()
+//        sqlDb=SqlDb.getSqlDb()
+//
+//        LedgerEntry entry= new LedgerEntry()
+//
+//        def store = sqlDb.getLedgerStore()
+
+
+        //this.runEth()
+    }
+}

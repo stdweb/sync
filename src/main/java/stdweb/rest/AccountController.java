@@ -1,19 +1,19 @@
 package stdweb.rest;
 
-import org.ethereum.core.Account;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.bind.annotation.RestController;
 import stdweb.Core.AddressDecodeException;
 import stdweb.Core.Convert2json;
 import stdweb.Core.Utils;
-import stdweb.Ledger.AccountStore;
-import stdweb.Ledger.LedgerAccount;
-import stdweb.Ledger.LedgerQuery;
-import stdweb.Ledger.LedgerStore;
+import stdweb.Ledger_DEL.AccountStore;
+import stdweb.Ledger_DEL.LedgerAccount_del;
+import stdweb.Ledger_DEL.LedgerQuery;
+import stdweb.Ledger_DEL.SqlDb;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
@@ -28,10 +28,10 @@ import static stdweb.Core.Utils.address_decode;
  * Created by bitledger on 13.11.15.
  */
 
-@RestController
+//@RestController
 public class AccountController {
 
-    AccountStore astore;
+    AccountStore store;
     @RequestMapping(value = "/account/{accountId}/{offset}", method = GET, produces = APPLICATION_JSON_VALUE)
     @ResponseBody
 
@@ -39,21 +39,21 @@ public class AccountController {
 
         try {
             long t1=System.currentTimeMillis();
-            LedgerStore ledgerStore = LedgerStore.getLedgerStore();
-            LedgerQuery ledgerQuery = LedgerQuery.getQuery(ledgerStore);
+            SqlDb sqlDb = SqlDb.getSqlDb();
+            LedgerQuery ledgerQuery = LedgerQuery.getQuery(sqlDb);
 
             JSONArray jsonArray = ledgerQuery.LedgerSelect(accountId, offset);
 
-            Utils.log("LedgerSql", t1, request, true);
+            Utils.log("LedgerSql", t1, request, new ResponseEntity(null, HttpStatus.NOT_IMPLEMENTED),true);
             //JSONObject entriesJson=new JSONObject();
 
             long t2=System.currentTimeMillis();
             JSONObject entriesJson=ledgerQuery.acc_entry_count(accountId,offset);
 
-            Utils.log("entries count",t2,request,true);
+            Utils.log("entries count",t2,request,new ResponseEntity(null, HttpStatus.NOT_IMPLEMENTED),true);
 
             byte[] acc=address_decode(accountId);
-            LedgerAccount account=astore.get(acc);
+            LedgerAccount_del account= store.get(acc);
 
             t2=System.currentTimeMillis();
             //BigDecimal ledgerBlockBalance = ledgerQuery.getLedgerAccountBalance(account,ledgerQuery.getSqlTopBlock());
@@ -74,7 +74,7 @@ public class AccountController {
 
 
             s=s.replace(":"," ");
-            Utils.log("AccountLedger",t1,request);
+            Utils.log("AccountLedger",t1,request,new ResponseEntity(null, HttpStatus.NOT_IMPLEMENTED));
             return s;
 
         } catch (SQLException e) {
@@ -87,6 +87,6 @@ public class AccountController {
     }
 
     public AccountController() throws SQLException {
-        astore=AccountStore.getInstance();
+        store =AccountStore.getInstance();
     }
 }

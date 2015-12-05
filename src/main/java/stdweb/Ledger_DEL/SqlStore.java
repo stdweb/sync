@@ -1,4 +1,4 @@
-package stdweb.Ledger;
+package stdweb.Ledger_DEL;
 
 import stdweb.Core.AddressDecodeException;
 import stdweb.Core.HashDecodeException;
@@ -15,6 +15,9 @@ public abstract class SqlStore<T> {
 
 
     protected Connection conn;
+    public void commit() throws SQLException {
+        conn.commit();
+    }
     PreparedStatement st_ins;
 
 
@@ -32,7 +35,7 @@ public abstract class SqlStore<T> {
     public abstract T get(Long id) throws SQLException;
     public abstract T get(byte[] id)throws SQLException;
 
-    protected abstract ResultSet get_rs(byte[] b)   throws SQLException;
+    protected abstract ResultSet get_rs(byte[] b) throws SQLException, AddressDecodeException;
     protected abstract ResultSet get_rs(Long id)    throws SQLException;
     protected abstract ResultSet get_rs(String id) throws SQLException, AddressDecodeException, HashDecodeException;
 

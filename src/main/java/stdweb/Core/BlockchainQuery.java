@@ -3,7 +3,7 @@ package stdweb.Core;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockchainImpl;
 import org.ethereum.core.Repository;
-import stdweb.ethereum.EthereumBean;
+import stdweb.ethereum.EthereumBean_DEL;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -16,7 +16,7 @@ public class BlockchainQuery {
 
     public static BigDecimal getTrieBalance(Block block) throws SQLException {
 
-        BlockchainImpl blockchain = (BlockchainImpl) EthereumBean.getBlockchainImpl();
+        BlockchainImpl blockchain = (BlockchainImpl) EthereumBean_DEL.getBlockchainImpl();
         Repository track = blockchain.getRepository();
 
         Repository snapshot = track.getSnapshotTo(block.getStateRoot());
@@ -30,7 +30,7 @@ public class BlockchainQuery {
 
     public static BigDecimal getCoinbaseTrieDelta(Block block) throws SQLException {
 
-        BlockchainImpl blockchain = (BlockchainImpl) EthereumBean.getBlockchainImpl();
+        BlockchainImpl blockchain = (BlockchainImpl) EthereumBean_DEL.getBlockchainImpl();
         Repository track = blockchain.getRepository();
 
         Repository snapshot = track.getSnapshotTo(block.getStateRoot());
@@ -55,7 +55,7 @@ public class BlockchainQuery {
     }
     public static BigDecimal getTrieDelta(Block block) throws SQLException {
 
-        BlockchainImpl blockchain = (BlockchainImpl) EthereumBean.getBlockchainImpl();
+        BlockchainImpl blockchain = (BlockchainImpl) EthereumBean_DEL.getBlockchainImpl();
         Repository track = blockchain.getRepository();
 
         Repository snapshot = track.getSnapshotTo(block.getStateRoot());

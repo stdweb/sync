@@ -1,11 +1,11 @@
-package stdweb.Ledger;
+package stdweb.Ledger_DEL;
 
 import org.ethereum.core.Block;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.spongycastle.util.encoders.Hex;
 import stdweb.Core.*;
-import stdweb.ethereum.EthereumBean;
+import stdweb.ethereum.EthereumBean_DEL;
 
 import java.math.BigDecimal;
 import java.sql.Connection;
@@ -26,7 +26,7 @@ public class LedgerQuery {
 
 
     private final Connection conn;
-    LedgerStore ledgerStore;
+    SqlDb sqlDb;
 
     public static JSONArray getJson(ResultSet resultSet,boolean calcBalance,boolean addFeeEntry) throws Exception {
         JSONArray jsonArray = new JSONArray();
@@ -131,10 +131,10 @@ public class LedgerQuery {
 
         return blocks;
     }
-    public HashMap<LedgerAccount, BigDecimal> getLedgerBalancesOnBlock(Block block,boolean checkAll) throws SQLException {
+    public HashMap<LedgerAccount_del, BigDecimal> getLedgerBalancesOnBlock(Block block, boolean checkAll) throws SQLException {
 
         if (block==null)
-            block=EthereumBean.getBlockchainImpl().getBlockByNumber(getSqlTopBlock());
+            block= EthereumBean_DEL.getBlockchainImpl().getBlockByNumber(getSqlTopBlock());
         ResultSet rs;
         Statement statement = conn.createStatement();
         String sql;
@@ -148,11 +148,11 @@ public class LedgerQuery {
 
         rs = statement.executeQuery(sql);
 
-        HashMap<LedgerAccount,BigDecimal> account_balances =new HashMap<>();
+        HashMap<LedgerAccount_del,BigDecimal> account_balances =new HashMap<>();
         rs.first();
         while (rs.next())
         {
-            LedgerAccount account = new LedgerAccount(rs.getBytes("ADDRESS"));
+            LedgerAccount_del account = new LedgerAccount_del(rs.getBytes("ADDRESS"));
             BigDecimal amo = rs.getBigDecimal("AMO");
             account_balances.put(account,amo);
         }
@@ -164,7 +164,7 @@ public class LedgerQuery {
         return getLedgerBlockBalance(getSqlTopBlock());
     }
 
-    public BigDecimal getLedgerAccountBalance(LedgerAccount acc,long blockNumber) throws SQLException {
+    public BigDecimal getLedgerAccountBalance(LedgerAccount_del acc, long blockNumber) throws SQLException {
         ResultSet rs;
         Statement statement = conn.createStatement();
 
@@ -402,12 +402,12 @@ public class LedgerQuery {
     }
 
 
-    private LedgerQuery(LedgerStore ledg_store) {
-        this.ledgerStore=ledg_store;
-        this.conn=this.ledgerStore.getConn();
+    private LedgerQuery(SqlDb ledg_store) {
+        this.sqlDb =ledg_store;
+        this.conn=this.sqlDb.getConn();
     }
 
-    public static LedgerQuery getQuery(LedgerStore _ledg_store)
+    public static LedgerQuery getQuery(SqlDb _ledg_store)
     {
 
         return new LedgerQuery(_ledg_store);
@@ -419,7 +419,7 @@ public class LedgerQuery {
 
         try {
             long blockNo=Long.parseLong(search_string);
-            Block block = EthereumBean.getBlockchainImpl().getBlockByNumber(blockNo);
+            Block block = EthereumBean_DEL.getBlockchainImpl().getBlockByNumber(blockNo);
             if (block!=null) {
                 jsonObject.put("resulttype","block");
                 jsonObject.put("blocknumber", String.valueOf(block.getNumber()));
@@ -456,7 +456,7 @@ public class LedgerQuery {
                 break;
             case 64:
 
-                Block block = EthereumBean.getBlockchainImpl().getBlockByHash(hash_decode(search_string));
+                Block block = EthereumBean_DEL.getBlockchainImpl().getBlockByHash(hash_decode(search_string));
                 if (block!=null) {
                     jsonObject.put("resulttype","block");
                     jsonObject.put("blocknumber", String.valueOf(block.getNumber()));

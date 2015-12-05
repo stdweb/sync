@@ -1,16 +1,17 @@
 package stdweb.rest;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.bind.annotation.RestController;
 import stdweb.Core.AddressDecodeException;
 import stdweb.Core.HashDecodeException;
-import stdweb.Ledger.LedgerQuery;
-import stdweb.Ledger.LedgerStore;
 import stdweb.Core.Utils;
-import stdweb.ethereum.EthereumBean;
+import stdweb.Ledger_DEL.LedgerQuery;
+import stdweb.Ledger_DEL.SqlDb;
+import stdweb.ethereum.EthereumBean_DEL;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
@@ -22,20 +23,20 @@ import static org.springframework.web.bind.annotation.RequestMethod.GET;
 /**
  * Created by bitledger on 28.10.15.
  */
-@RestController
+//@RestController
 public class SearchController {
 
     @Autowired
-    EthereumBean ethereumBean;
+    EthereumBean_DEL ethereumBean;
 
     @RequestMapping(value = "/search/{search_string}", method = GET, produces = APPLICATION_JSON_VALUE)
     @ResponseBody
     public String ledger(@PathVariable String search_string,HttpServletRequest request) throws IOException, SQLException, InterruptedException, HashDecodeException, AddressDecodeException {
         long t1=System.currentTimeMillis();
-        LedgerQuery query = LedgerStore.getLedgerStore().getQuery();
+        LedgerQuery query = SqlDb.getSqlDb().getQuery();
         String s = query.search(search_string).toJSONString();
         s=s.replace(":"," ");
-        Utils.log("Search",t1,request);
+        Utils.log("Search",t1,request,new ResponseEntity(null, HttpStatus.NOT_IMPLEMENTED));
         return  s;
     }
 }

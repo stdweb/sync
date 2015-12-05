@@ -1,28 +1,30 @@
-package stdweb.Ledger;
+package stdweb.Ledger_DEL;
 
-import org.ethereum.core.*;
-//import org.ethereum.vm.program.InternalTransaction;
-import org.ethereum.db.BlockStore;
+import org.ethereum.core.Block;
 import org.springframework.util.Assert;
-import stdweb.Core.*;
-import stdweb.ethereum.EthereumBean;
+import stdweb.Core.AddressDecodeException;
+import stdweb.Core.EntryType;
+import stdweb.Core.HashDecodeException;
+import stdweb.Core.SyncStatus;
+import stdweb.ethereum.EthereumBean_DEL;
 
 import java.math.BigDecimal;
-import java.math.BigInteger;
 import java.sql.*;
 import java.util.Arrays;
 import java.util.List;
 
+//import org.ethereum.vm.program.InternalTransaction;
+
 /**
  * Created by bitledger on 28.09.15.
  */
-public class LedgerStore {
+public class SqlDb {
 
-    private static LedgerStore ledgerStore;
+    private static SqlDb sqlDb;
     //private final Ethereum ethereum;
     //private final EthereumListener listener;
     private int count;
-    private ReplayBlock replayBlock;
+    private ReplayBlock_DEL replayBlock;
     private PreparedStatement statInsertEntry;
     private PreparedStatement statInsertBlockHeader;
     //private PreparedStatement statInsertAccount;
@@ -37,8 +39,25 @@ public class LedgerStore {
         return query;
     }
     private final LedgerQuery query;
+
+    public AccountStore getAccountStore() {
+        return accountStore;
+    }
+
     private final AccountStore accountStore;
+
+    public LedgerBlockStore getBlockStore() {
+        return blockStore;
+    }
+
     private final LedgerBlockStore blockStore;
+
+    public LedgerEntryStore getLedgerStore() {
+        return ledgerStore;
+    }
+
+    private final LedgerEntryStore ledgerStore;
+
 
     public SyncStatus getSyncStatus() {
         return syncStatus;
@@ -49,7 +68,7 @@ public class LedgerStore {
     SyncStatus syncStatus;
     public void setNextStatus(SyncStatus nextStatus) {
         this.nextStatus = nextStatus;
-        if (EthereumBean.getBlockchainSyncStatus()==SyncStatus.stopped)
+        if (EthereumBean_DEL.getBlockchainSyncStatus()==SyncStatus.stopped)
             this.syncStatus=nextStatus;
 
     }
@@ -66,7 +85,7 @@ public class LedgerStore {
 
     public void ledgerBulkLoad(long _block) throws SQLException, InterruptedException {
 
-        System.out.println("Ledger Start BulkLoad from :"+_block);
+        System.out.println("Ledger_DEL Start BulkLoad from :"+_block);
         syncStatus=SyncStatus.bulkLoading;
 
         this.nextSyncBlock =_block;
@@ -86,17 +105,17 @@ public class LedgerStore {
     }
     public synchronized  void  createSyncLedgerThread() throws SQLException, InterruptedException {
 
-        System.out.println("create Ledger BulkLoadThread");
-        EthereumBean.blockchainStopSync();
-        LedgerStore ledgerStore = LedgerStore.getLedgerStore();
+        System.out.println("create Ledger_DEL BulkLoadThread");
+        EthereumBean_DEL.blockchainStopSync();
+        SqlDb sqlDb = SqlDb.getSqlDb();
 
         syncLedgerThread = new Thread(() -> {
             while (syncStatus==SyncStatus.bulkLoading)
             {
-                if (nextSyncBlock <= EthereumBean.getBlockchainImpl().getBestBlock().getNumber())
+                if (nextSyncBlock <= EthereumBean_DEL.getBlockchainImpl().getBestBlock().getNumber())
                     try {
                         try {
-                            ledgerStore.replayAndInsertBlock(nextSyncBlock);
+                            sqlDb.replayAndInsertBlock(nextSyncBlock);
                         } catch (HashDecodeException e) {
                             e.printStackTrace();
                         } catch (AddressDecodeException e) {
@@ -109,7 +128,7 @@ public class LedgerStore {
                     }
                 else {
                     syncStatus = nextStatus;
-                    System.out.println("finished bulkloading . Block:"+EthereumBean.getBlockchainImpl().getBestBlock().getNumber());
+                    System.out.println("finished bulkloading . Block:"+ EthereumBean_DEL.getBlockchainImpl().getBestBlock().getNumber());
                     System.out.println("Snc status set to: "+syncStatus);
                     break;
                 }
@@ -135,7 +154,6 @@ public class LedgerStore {
         rs = statement.executeQuery(sql);
         rs.first();
 
-
         return rs.getBigDecimal(1);
     }
 
@@ -145,121 +163,8 @@ public class LedgerStore {
     }
 
     private Connection conn;
-//    private PreparedStatement stat;
-
-//    public void write(LedgerAccount account) throws SQLException {
-//
-//        if (account.isNew()) {
-//            ResultSet rs = getAccountRs(account.getBytes());
-//            if (!rs.isFirst())
-//                createAccount(account.getBytes());
-//
-//            account.load(rs);
-//            return;
-//        }
-//
-//        String sql="UPDATE account set name=?, nonce=?,isContract=?,lastblock=?,balance=?,txstateroot=? " +
-//                "where id="+ account.Id;
-//
-//        PreparedStatement st=conn.prepareStatement(sql);
-//
-//        st.setString(1,account.name);
-//        st.setLong(2, account.nonce);
-//        st.setBoolean(3,account.isContract);
-//        st.setLong(4,account.lastBlockNumber);
-//        st.setBigDecimal(5, account.balance);
-//        st.setBytes(6,account.txStateRoot);
-//        st.executeUpdate();
-//
-//        conn.commit();
-//
-//        account.load(getAccountRs(account.getBytes()));
-//    }
-//
-//    public  LedgerAccount getOrCreateLedgerAccount(byte[] address) throws SQLException {
-//        ResultSet rs = getAccountRs(address);
-//        if (rs.isFirst())
-//            return new LedgerAccount(rs);
-//
-//            //INSERT INTO ACCOUNT (ADDRESS, NAME, NONCE, ISCONTRACT, LASTBLOCK, BALANCE, TXSTATEROOT) VALUES (?,?,?,?,?,?,?);
-//        else {
-//            return createAccount(address);
-//
-//        }
-//    }
-//
-//    public  LedgerAccount getOrCreateLedgerAccount(String accStr) throws SQLException {
-//
-//        accStr=Utils.remove0x(accStr);
-//        byte[] decode = Hex.decode(accStr);
-//        return getOrCreateLedgerAccount(decode);
-//
-//    }
-//
-//    private LedgerAccount createAccount(byte[] addr) throws SQLException {
-//
-//        PreparedStatement stat=statInsertAccount;
-//        RepositoryImpl repo = EthereumBean.getRepositoryImpl();
-//        String accStr=Hex.toHexString(addr);
-//
-//        String name="";
-//        long nonce = repo.getNonce(Hex.decode(accStr)).longValue();
-//
-//        stat.setBytes(1,addr);
-//        stat.setString(2, name);
-//        stat.setLong(3,nonce);
-//        stat.setBoolean(4, LedgerAccount.isContract(addr));
-//        stat.setLong(5,0);
-//        stat.setBigDecimal(6, BigDecimal.ZERO);
-//        stat.setBytes(7, ByteUtil.EMPTY_BYTE_ARRAY);
-//
-//        stat.executeUpdate();
-//        conn.commit();
-//        return new LedgerAccount(getAccountRs(addr));
-//    }
-//
-//    ResultSet getAccountRs(byte[] addr) throws SQLException {
-//
-//        String accStr=Hex.toHexString(addr);
-//
-//        String sql="select ID,ADDRESS, NAME, NONCE, ISCONTRACT, LASTBLOCK, BALANCE, TXSTATEROOT from Account where address =X'" +accStr+"' ";
-//        Statement st = conn.createStatement();
-//        ResultSet rs = st.executeQuery(sql);
-//        rs.first();
-//        return rs;
-//    }
 
 
-    public void write(LedgerEntry entry) throws SQLException {
-        write_sql(entry);
-    }
-    public void write_sql(LedgerEntry entry) throws SQLException {
-        Block block = replayBlock.getBlock();
-
-        PreparedStatement st = getInsertEntryStatement();
-
-        //String insEntrySql="insert into ledger
-        // (tx ,address ,amount ,block ,blocktimestamp,depth ,gasused ,fee ,entryType,offsetAccount,descr,GrossAmount)
-        // values(?,?,?,?,?,?,?,?,?,?,?,?)";
-
-        st.setBytes(1, entry.txhash);
-        st.setBytes(2, entry.Account.getAddress());
-        st.setBigDecimal(3, entry.amount);
-        st.setLong(4,block.getNumber());
-        st.setTimestamp(5, new Timestamp(block.getTimestamp() * 1000));
-        st.setByte(6, entry.depth);
-        st.setLong(7, entry.gasUsed);
-        st.setBigDecimal(8, entry.fee);
-        st.setByte(9, (byte) entry.entryType.ordinal());
-        st.setBytes(10,entry.offsetAccount.getAddress());
-        //st.setString(11, entry.extraData);
-        st.setString(11, "");
-        st.setBigDecimal(12, entry.grossAmount);
-        st.setByte(13,(byte) entry.entryResult.ordinal());
-
-        count+= st.executeUpdate();
-
-    }
 
     private PreparedStatement getInsertEntryStatement() throws SQLException {
         ensureConnection();
@@ -371,64 +276,37 @@ public class LedgerStore {
         if (blockCount2flush>=n) {
             conn.commit();
             blockCount2flush=0;
-            //System.out.println("Ledger - block inserted:"+query.getSqlTopBlock());
+            //System.out.println("Ledger_DEL - block inserted:"+query.getSqlTopBlock());
         }
     }
 
     public synchronized int replayAndInsertBlock(long blockNumber) throws SQLException, HashDecodeException, AddressDecodeException {
 
-        if (EthereumBean.getBlockchainImpl().getBestBlock().getNumber()<blockNumber) {
-            System.out.println("cannot insert block.Top block is: " + EthereumBean.getBlockchainImpl().getBestBlock().getNumber());
+        if (EthereumBean_DEL.getBlockchainImpl().getBestBlock().getNumber()<blockNumber) {
+            System.out.println("cannot insert block.Top block is: " + EthereumBean_DEL.getBlockchainImpl().getBestBlock().getNumber());
             return -1;
         }
 
-        Block blockByNumber = EthereumBean.getBlockchainImpl().getBlockByNumber(blockNumber);
+        Block blockByNumber = EthereumBean_DEL.getBlockchainImpl().getBlockByNumber(blockNumber);
         Assert.isTrue(blockByNumber!=null,"blockBy number is null:"+blockNumber);
 
-        ReplayBlock current = ReplayBlock.CURRENT(blockByNumber);
+        ReplayBlock_DEL current = new ReplayBlock_DEL(blockByNumber);
+        //ReplayBlock current = ReplayBlock.CURRENT(blockByNumber);
         current.run();
 
         return  write(current);
     }
 
 
-    public  void insertBlockHeader(BlockHeader header,Sha3Hash blockHash,BigDecimal fee, BigDecimal reward, BigDecimal trieBalance) throws SQLException {
-        ensureConnection();
-        PreparedStatement st = statInsertBlockHeader;
-        //ID,HASH, PARENTHASH, UNCLESHASH, COINBASE, STATEROOT, TXTRIEROOT,
-        // RECEIPTTRIEROOT, LOGSBLOOM, DIFFICULTY, TIMESTAMP, GASLIMIT, GASUSED, MIXHASH, EXTRADATA, NONCE, FEE, TRIEBALANCE
-        st.setLong(1,header.getNumber());
-        st.setBytes(2,blockHash.getBytes());
-        st.setBytes(3,header.getParentHash());
-        st.setBytes(4,header.getUnclesHash());
-        st.setBytes(5,header.getCoinbase());
-        st.setBytes(6,header.getStateRoot());
 
-        st.setBytes(7,header.getTxTrieRoot());
-        st.setBytes(8,header.getReceiptsRoot());
-        st.setBytes(9,header.getLogsBloom());
-        st.setLong(10, new BigInteger(1,header.getDifficulty()).longValue());
-        st.setTimestamp(11, new Timestamp(header.getTimestamp()*1000));
-        st.setLong(12, header.getGasLimit());
-        st.setLong(13,header.getGasUsed());
-        st.setBytes(14,header.getMixHash());
-        st.setBytes(15,header.getExtraData());
-        st.setLong(16,new BigInteger(1,header.getNonce()).longValue());
-        st.setBigDecimal(17,fee);
 
-        st.setBigDecimal(18,trieBalance);
-        st.setBigDecimal(19,reward);
+    public synchronized int write(ReplayBlock_DEL _replayBlock) throws SQLException{
 
-        count+= st.executeUpdate();
+            //getOrCreateAddresses(_replayBlock);
 
-    }
-
-    public synchronized int write(ReplayBlock _replayBlock) throws SQLException{
-
-            getOrCreateAddresses(_replayBlock);
-
-            //this.replayBlock = new ReplayBlock(listener, blockNo);
+            //this.replayBlock = new ReplayBlock(listener, blockNumber);
             //replayBlock.run();
+
             this.replayBlock=_replayBlock;
             //deleteBlocksFrom(replayBlock.getBlock().getNumber());
             deleteBlock(replayBlock.getBlock().getNumber());
@@ -440,20 +318,20 @@ public class LedgerStore {
 
             //reward entries first
             replayBlock.getLedgerEntries()
-                    .stream().filter(e -> rewardEntryTypes.contains(e.entryType))
+                    .stream().filter(e -> rewardEntryTypes.contains(e.getEntryType()))
                     .forEach(e -> {
                         try {
-                            write(e);
+                            ledgerStore.write(e);
                         } catch (SQLException e1) {
                             e1.printStackTrace();
                         }
                     });
 
             replayBlock.getLedgerEntries()
-                    .stream().filter(e -> !rewardEntryTypes.contains(e.entryType))
+                    .stream().filter(e -> !rewardEntryTypes.contains(e.getEntryType()))
                     .forEach(e -> {
                         try {
-                            write(e);
+                            ledgerStore.write(e);
                         } catch (SQLException e1) {
                             e1.printStackTrace();
                         }
@@ -462,7 +340,7 @@ public class LedgerStore {
         flush(1);
         this.replayBlock=null;
 
-        ReplayBlock.setNullCurrent();
+        ReplayBlock_DEL.setNullCurrent();
 
         int sqlTopBlock = query.getSqlTopBlock();
 
@@ -470,10 +348,7 @@ public class LedgerStore {
 
     }
 
-    private void getOrCreateAddresses(ReplayBlock replayBlock) {
-        List<LedgerEntry> ledgerEntries = replayBlock.getLedgerEntries();
 
-    }
 
 
     private void initMsSql() throws Exception
@@ -544,18 +419,18 @@ public class LedgerStore {
         if (query.getSqlTopBlock()==0 && query.ledgerCount(0)==0)
         {
             //deleteBlocksFrom(0);
-            write(ReplayBlock.GENESIS());
+            write(ReplayBlock_DEL.GENESIS());
             conn.commit();
             //flush(1);
         }
     }
 
-    public static LedgerStore getLedgerStore()
+    public static SqlDb getSqlDb()
     {
 
-        if (ledgerStore==null)
+        if (sqlDb ==null)
             try {
-                ledgerStore=new LedgerStore();
+                sqlDb =new SqlDb();
 
             } catch (SQLException e) {
                 e.printStackTrace();
@@ -564,10 +439,10 @@ public class LedgerStore {
             } catch (AddressDecodeException e) {
                 e.printStackTrace();
             }
-        return ledgerStore;
+        return sqlDb;
     }
 
-    private LedgerStore() throws Exception, AddressDecodeException {
+    private SqlDb() throws Exception, AddressDecodeException {
         //this.listener=EthereumBean.getListener();
         //this.ethereum=listener.getEthereum();
         init("h2");
@@ -584,6 +459,9 @@ public class LedgerStore {
 
         blockStore= LedgerBlockStore.getInstance();
         blockStore.setConnection(conn);
+
+        ledgerStore= new LedgerEntryStore();
+        //ledgerStore.setConnection(conn);
 
         ensureGenesis();
     }
@@ -1076,5 +954,158 @@ public class LedgerStore {
 //        return jsonArray;
 //
 //    }
+    //    public  void insertBlockHeader(BlockHeader header,Sha3Hash blockHash,BigDecimal fee, BigDecimal reward, BigDecimal trieBalance) throws SQLException {
+//        ensureConnection();
+//        PreparedStatement st = statInsertBlockHeader;
+//        //ID,HASH, PARENTHASH, UNCLESHASH, COINBASE, STATEROOT, TXTRIEROOT,
+//        // RECEIPTTRIEROOT, LOGSBLOOM, DIFFICULTY, TIMESTAMP, GASLIMIT, GASUSED, MIXHASH, EXTRADATA, NONCE, FEE, TRIEBALANCE
+//        st.setLong(1,header.getNumber());
+//        st.setBytes(2,blockHash.getBytes());
+//        st.setBytes(3,header.getParentHash());
+//        st.setBytes(4,header.getUnclesHash());
+//        st.setBytes(5,header.getCoinbase());
+//        st.setBytes(6,header.getStateRoot());
+//
+//        st.setBytes(7,header.getTxTrieRoot());
+//        st.setBytes(8,header.getReceiptsRoot());
+//        st.setBytes(9,header.getLogsBloom());
+//        st.setLong(10, new BigInteger(1,header.getDifficulty()).longValue());
+//        st.setTimestamp(11, new Timestamp(header.getTimestamp()*1000));
+//        st.setLong(12, header.getGasLimit());
+//        st.setLong(13,header.getGasUsed());
+//        st.setBytes(14,header.getMixHash());
+//        st.setBytes(15,header.getExtraData());
+//        st.setLong(16,new BigInteger(1,header.getNonce()).longValue());
+//        st.setBigDecimal(17,fee);
+//
+//        st.setBigDecimal(18,trieBalance);
+//        st.setBigDecimal(19,reward);
+//
+//        count+= st.executeUpdate();
+//
+//    }
 
-    }
+    //    private void getOrCreateAddresses(ReplayBlock replayBlock) {
+//        List<LedgerEntry> ledgerEntries = replayBlock.getLedgerEntries();
+//
+//    }
+
+
+    //    private PreparedStatement stat;
+
+//    public void write(LedgerAccount account) throws SQLException {
+//
+//        if (account.isNew()) {
+//            ResultSet rs = getAccountRs(account.getBytes());
+//            if (!rs.isFirst())
+//                createAccount(account.getBytes());
+//
+//            account.load(rs);
+//            return;
+//        }
+//
+//        String sql="UPDATE account set name=?, nonce=?,isContract=?,lastblock=?,balance=?,txstateroot=? " +
+//                "where id="+ account.Id;
+//
+//        PreparedStatement st=conn.prepareStatement(sql);
+//
+//        st.setString(1,account.name);
+//        st.setLong(2, account.nonce);
+//        st.setBoolean(3,account.isContract);
+//        st.setLong(4,account.lastBlockNumber);
+//        st.setBigDecimal(5, account.balance);
+//        st.setBytes(6,account.txStateRoot);
+//        st.executeUpdate();
+//
+//        conn.commit();
+//
+//        account.load(getAccountRs(account.getBytes()));
+//    }
+//
+//    public  LedgerAccount getOrCreateLedgerAccount(byte[] address) throws SQLException {
+//        ResultSet rs = getAccountRs(address);
+//        if (rs.isFirst())
+//            return new LedgerAccount(rs);
+//
+//            //INSERT INTO ACCOUNT (ADDRESS, NAME, NONCE, ISCONTRACT, LASTBLOCK, BALANCE, TXSTATEROOT) VALUES (?,?,?,?,?,?,?);
+//        else {
+//            return createAccount(address);
+//
+//        }
+//    }
+//
+//    public  LedgerAccount getOrCreateLedgerAccount(String accStr) throws SQLException {
+//
+//        accStr=Utils.remove0x(accStr);
+//        byte[] decode = Hex.decode(accStr);
+//        return getOrCreateLedgerAccount(decode);
+//
+//    }
+//
+//    private LedgerAccount createAccount(byte[] addr) throws SQLException {
+//
+//        PreparedStatement stat=statInsertAccount;
+//        RepositoryImpl repo = EthereumBean.getRepositoryImpl();
+//        String accStr=Hex.toHexString(addr);
+//
+//        String name="";
+//        long nonce = repo.getNonce(Hex.decode(accStr)).longValue();
+//
+//        stat.setBytes(1,addr);
+//        stat.setString(2, name);
+//        stat.setLong(3,nonce);
+//        stat.setBoolean(4, LedgerAccount.isContract(addr));
+//        stat.setLong(5,0);
+//        stat.setBigDecimal(6, BigDecimal.ZERO);
+//        stat.setBytes(7, ByteUtil.EMPTY_BYTE_ARRAY);
+//
+//        stat.executeUpdate();
+//        conn.commit();
+//        return new LedgerAccount(getAccountRs(addr));
+//    }
+//
+//    ResultSet getAccountRs(byte[] addr) throws SQLException {
+//
+//        String accStr=Hex.toHexString(addr);
+//
+//        String sql="select ID,ADDRESS, NAME, NONCE, ISCONTRACT, LASTBLOCK, BALANCE, TXSTATEROOT from Account where address =X'" +accStr+"' ";
+//        Statement st = conn.createStatement();
+//        ResultSet rs = st.executeQuery(sql);
+//        rs.first();
+//        return rs;
+//    }
+
+
+//    public void write(LedgerEntry entry) throws SQLException {
+//        write_sql(entry);
+//    }
+//    public void write_sql(LedgerEntry entry) throws SQLException {
+//        Block block = replayBlock.getBlock();
+//
+//        PreparedStatement st = getInsertEntryStatement();
+//
+//        //String insEntrySql="insert into ledger
+//        // (tx ,address ,amount ,block ,blocktimestamp,depth ,gasused ,fee ,entryType,offsetAccount,descr,GrossAmount)
+//        // values(?,?,?,?,?,?,?,?,?,?,?,?)";
+//
+//        st.setBytes(1, entry.txhash);
+//        st.setBytes(2, entry.Account.getAddress());
+//        st.setBigDecimal(3, entry.amount);
+//        st.setLong(4,block.getNumber());
+//        st.setTimestamp(5, new Timestamp(block.getTimestamp() * 1000));
+//        st.setByte(6, entry.depth);
+//        st.setLong(7, entry.gasUsed);
+//        st.setBigDecimal(8, entry.fee);
+//        st.setByte(9, (byte) entry.entryType.ordinal());
+//        st.setBytes(10,entry.offsetAccount.getAddress());
+//        //st.setString(11, entry.extraData);
+//        st.setString(11, "");
+//        st.setBigDecimal(12, entry.grossAmount);
+//        st.setByte(13,(byte) entry.entryResult.ordinal());
+//
+//        count+= st.executeUpdate();
+//
+//    }
+
+
+}

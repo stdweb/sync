@@ -1,30 +1,24 @@
 package stdweb.ethereum;
 
 import org.ethereum.core.Block;
-import org.ethereum.core.BlockHeader;
 import org.ethereum.core.BlockchainImpl;
 import org.ethereum.db.RepositoryImpl;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.facade.EthereumFactory;
-import org.spongycastle.util.encoders.Hex;
+import org.springframework.beans.factory.annotation.Autowired;
 import stdweb.Core.*;
-import stdweb.Ledger.*;
+import stdweb.Ledger_DEL.*;
+import stdweb.Repository.LedgerAccountRepository;
+import stdweb.Repository.LedgerBlockRepository;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.List;
-
-import static stdweb.Core.Utils.hash_decode;
 
 
-public class EthereumBean {
+public class EthereumBean_DEL {
 
     public static Ethereum ethereum;
     static EthereumListener listener;
@@ -63,52 +57,116 @@ public class EthereumBean {
         return    (RepositoryImpl) ethereum.getRepository();
     }
 
-
-    public void printCP()
-    {
-        ClassLoader cl = ClassLoader.getSystemClassLoader();
-
-        URL[] urls = ((URLClassLoader)cl).getURLs();
-
-        for(URL url: urls){
-            System.out.println(url.getFile());
-        }
+    public LedgerBlockRepository getBlockRepo() {
+        return blockRepo;
     }
+
+    @Autowired
+    LedgerBlockRepository blockRepo;
+    @Autowired
+    LedgerAccountRepository accRepo;
 
 
     public void start()  {
+        ethereum = EthereumFactory.createEthereum();
+        System.out.println( "ethBean hashcode:"+ethereum.hashCode());
+
+        this.listener=new EthereumListener(ethereum);
+        this.ethereum.addListener(this.listener);
+
+        blockchain = ((BlockchainImpl) ethereum.getBlockchain());
+
+        blockchainStopSync();
+        //blockchainStartSync();
+
+        System.out.println("ethBean.start - block repo is null = "+(blockRepo==null));
+        System.out.println("________________________________________________________________________");
+        System.out.println("________________________________________________________________________");
+
+    }
+    public void start_old()  {
         //printCP();
 //        AzureSql();
+
 
         ethereum = EthereumFactory.createEthereum();
 
         this.listener=new EthereumListener(ethereum);
         this.ethereum.addListener(this.listener);
         blockchain = ((BlockchainImpl) ethereum.getBlockchain());
-        blockchainStopSync();
+        //blockchainStopSync();
+        blockchainStartSync();
 
-        LedgerStore ledgerStore = LedgerStore.getLedgerStore();
+        SqlDb sqlDb = SqlDb.getSqlDb();
 
         System.out.println("________________________________________________________________________");
         System.out.println("________________________________________________________________________");
 
+        //SpringTransaction springTransaction = new SpringTransaction();
+        //springTransaction.loadBlockRepo();
         //check();
-        try {
-            loadSomeAccounts();
-            testSomeBlocks();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        } catch (AddressDecodeException e) {
-            e.printStackTrace();
-        } catch (HashDecodeException e) {
-            e.printStackTrace();
-        }
+//        try {
 
+//            loadSomeAccounts();
+//            testSomeBlocks();
+//            testSomeEntries();
+//
+//
+//        } catch (SQLException e) {
+//            e.printStackTrace();
+//        } catch (AddressDecodeException e) {
+//            e.printStackTrace();
+//        } catch (HashDecodeException e) {
+//            e.printStackTrace();
+//        }
+
+    }
+
+
+
+
+    public void printCP()
+    {
+        ClassLoader cl = ClassLoader.getSystemClassLoader();
+        URL[] urls = ((URLClassLoader)cl).getURLs();
+        for(URL url: urls){
+            System.out.println(url.getFile());
+        }
+    }
+
+    private void testSomeEntries() throws SQLException, HashDecodeException {
+
+        SqlDb sqlDb = SqlDb.getSqlDb();
+        LedgerEntryStore ledgerStore = sqlDb.getLedgerStore();
+        AccountStore accountStore = sqlDb.getAccountStore();
+
+        LedgerAccount_del acc1 = accountStore.get(1l);
+        LedgerAccount_del acc2 = accountStore.get(2l);
+
+        Tx tx = new Tx();
+        tx.setTxhash(Utils.hash_decode("0xa535fdbb19975f664ed8c359d6c80e86634e249bdc2da53370e7a20ccf89ff69"));
+        tx.setId(100);
+
+        LedgerEntry ledgerEntry = new LedgerEntry();
+        //ledgerEntry.setId(10);
+        ledgerEntry.setAccountDel(acc1);
+        ledgerEntry.setOffsetAccountDel(acc2);
+        ledgerEntry.setTx(tx);
+        ledgerEntry.setAmount(BigDecimal.TEN);
+        ledgerEntry.setFee(BigDecimal.TEN);
+        ledgerEntry.setGrossAmount(BigDecimal.TEN);
+        ledgerEntry.setEntryType(EntryType.ContractCreated);
+        ledgerStore.write(ledgerEntry);
+
+        String s=ledgerEntry.toString();
+        System.out.println(s);
+
+        ledgerStore.commit();
     }
 
     private void testSomeBlocks() throws SQLException {
         LedgerBlockStore blockStore = LedgerBlockStore.getInstance();
-        BlockchainImpl blockchain = EthereumBean.getBlockchainImpl();
+        BlockchainImpl blockchain = EthereumBean_DEL.getBlockchainImpl();
 
         for (int b=170001;b<=180000;++b)
         {
@@ -120,9 +178,9 @@ public class EthereumBean {
             BigDecimal reward=BigDecimal.ZERO;
             BigDecimal fee=BigDecimal.ZERO;
 //
-            LedgerBlock ledgerBlock = blockStore.create(blockByNumber, fee, reward, balance);
-            blockStore.write(ledgerBlock);
-            System.out.println("insert block:"+ledgerBlock.getNumber());
+            del_LBlock ledgerBlockDel = blockStore.create(blockByNumber, fee, reward, balance);
+            blockStore.write(ledgerBlockDel);
+            System.out.println("insert block:"+ ledgerBlockDel.getNumber());
 //            System.out.println("block sql insert:"+b);
         }
     }
@@ -132,10 +190,10 @@ public class EthereumBean {
         String b="0x18edbb78c987efd0ef489359ed253b672298596b";
         String c="0x18edbb78c987efd0ef489359ed253b67229859aa";
 
-        LedgerStore ledgerStore = LedgerStore.getLedgerStore();
+        SqlDb sqlDb = SqlDb.getSqlDb();
         AccountStore accountStore=AccountStore.getInstance();
 
-        LedgerAccount ledgerAccount=accountStore.get(a);
+        LedgerAccount_del ledgerAccount=accountStore.get(a);
         ledgerAccount.setName("n aaa");
         accountStore.write(ledgerAccount);
 
@@ -156,53 +214,8 @@ public class EthereumBean {
     }
 
     private void check() throws HashDecodeException, AddressDecodeException {
-        ReplayBlock replayBlock = new ReplayBlock( 181692);
-
+        ReplayBlock_DEL replayBlock = new ReplayBlock_DEL( 181692);
         replayBlock.run();
-
-    }
-
-    private void AzureSql() {
-        try {
-
-            Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
-            String connstr="jdbc:sqlserver://ledg.database.windows.net:1433;database=ledgerdb;user=std;password={Str,.ul11};encrypt=true;trustServerCertificate=false;hostNameInCertificate=*.database.windows.net;loginTimeout=30;";
-            Connection conn = DriverManager.getConnection(connstr);
-
-            Statement statement = conn.createStatement();
-
-            //stat.execute("drop table if exists LEDGER");
-            String delTable=
-            "IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[ledger]') AND type in (N'U')) "+
-            "DROP TABLE [dbo].[ledger]";
-            String createTable="CREATE TABLE [dbo].[ledger]" +
-                    "( [id] [bigint] IDENTITY(1,1) NOT NULL, " +
-                    "  [tx] [binary](50) NULL," +
-                    " CONSTRAINT [PK_ledger] PRIMARY KEY CLUSTERED " +
-                    "( [id] ASC )" +
-                    "WITH (PAD_INDEX  = OFF, STATISTICS_NORECOMPUTE  = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS  = ON, ALLOW_PAGE_LOCKS  = ON) ON [PRIMARY]            ) ON [PRIMARY]";
-            String dropInd="IF  EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[ledger]') AND name = N'IX_ledger')\n" +
-                    "DROP INDEX [IX_ledger] ON [dbo].[ledger] WITH ( ONLINE = OFF )";
-
-            String createInd="CREATE NONCLUSTERED INDEX [IX_ledger] ON [dbo].[ledger] ( [tx] ASC )";
-
-
-            statement.execute(delTable);
-            statement.execute(createTable);
-            statement.execute(dropInd);
-            statement.execute(createInd);
-            //statement.execute("create index if not exists idx_ledger_address_tx on ledger(address,tx)");
-            //statement.execute("create index if not exists idx_ledger_tx on ledger(tx)");
-            //statement.execute("create index if not exists idx_ledger_block_id on ledger(block,id)");
-
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
-            System.exit(0);
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-
-
     }
 
     public String getDifficulty(){
@@ -210,28 +223,27 @@ public class EthereumBean {
     }
 
 
-    public Block getBlock(String blockId) {
-        Block block;
-        if (blockId.equals("top"))
-            block=ethereum.getBlockchain().getBestBlock();
-        else  if (blockId.length() >= 64) {
-            if(blockId.startsWith("0x"))
-                blockId=blockId.substring(2);
-
-            block=ethereum.getBlockchain().getBlockByHash(Hex.decode(blockId));
-
-        }
-        else {
-            Long blockNo = Long.parseLong(blockId);
-            block = ethereum.getBlockchain().getBlockByNumber(blockNo);
-
-        }
-        return block;
-    }
-
-    public String getBestBlock(){
-        return "" + ethereum.getBlockchain().getBestBlock().getNumber();
-    }
+//    public Block getBlock(String blockId) {
+//        Block block;
+//        if (blockId.equals("top"))
+//            block=ethereum.getBlockchain().getBestBlock();
+//        else  if (blockId.length() >= 64) {
+//            if(blockId.startsWith("0x"))
+//                blockId=blockId.substring(2);
+//
+//            block=ethereum.getBlockchain().getBlockByHash(Hex.decode(blockId));
+//
+//        }
+//        else {
+//            Long blockNo = Long.parseLong(blockId);
+//            block = ethereum.getBlockchain().getBlockByNumber(blockNo);
+//
+//        }
+//        return block;
+//    }
+//    public String getBestBlock(){
+//        return "" + ethereum.getBlockchain().getBestBlock().getNumber();
+//    }
 
 //    public String getBlockStr(String blockId) {
 //
@@ -259,7 +271,7 @@ public class EthereumBean {
 
     public String getBalance(Block block) throws SQLException {
 
-        BigDecimal bigDecimal =LedgerStore.getLedgerStore().getQuery().getLedgerBlockBalance(block.getNumber());
+        BigDecimal bigDecimal = SqlDb.getSqlDb().getQuery().getLedgerBlockBalance(block.getNumber());
 
 
         BigInteger bi=BigInteger.valueOf(0);
@@ -275,12 +287,12 @@ public class EthereumBean {
         return "{'balance' "+ Convert2json.BI2ValStr(bi, false) +", 'triebalance'" +Convert2json.BI2ValStr(trieBalance,false)+ " }";
     }
 
-    public String getBalance(String blockId) throws SQLException, HashDecodeException  {
-        LedgerStore ledgerStore = LedgerStore.getLedgerStore();
-        String b=getBalance(getBlock(blockId));
-
-        return b;
-    }
+//    public String getBalance(String blockId) throws SQLException, HashDecodeException  {
+//        SqlDb sqlDb = SqlDb.getSqlDb();
+//        String b=getBalance(getBlock(blockId));
+//
+//        return b;
+//    }
 
 
 
@@ -294,7 +306,7 @@ public class EthereumBean {
             ret="blockchain sync is started";
         }
         blockchainSyncStatus=SyncStatus.onBlockSync;
-        LedgerStore ledgerStore = LedgerStore.getLedgerStore();
+        SqlDb sqlDb = SqlDb.getSqlDb();
         //ledgerStore.setSyncStatus(ledgerStore.getNextStatus());
         System.out.println(ret);
     }

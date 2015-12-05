@@ -1,20 +1,20 @@
-package stdweb.rest;
+package stdweb.Data;
 
-import org.ethereum.core.Block;
 import org.ethereum.core.BlockchainImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
 import stdweb.Core.*;
-import stdweb.Ledger.AccountStore;
-import stdweb.Ledger.LedgerAccount;
-import stdweb.Ledger.LedgerStore;
-import stdweb.ethereum.EthereumBean;
+import stdweb.Ledger_DEL.SqlDb;
+import stdweb.ethereum.EthereumBean_DEL;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
-import java.math.BigDecimal;
 import java.sql.SQLException;
 
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
@@ -24,13 +24,14 @@ import static org.springframework.web.bind.annotation.RequestMethod.GET;
  * Created by bitledger on 29.10.15.
  */
 
-@RestController
+//@RestController
 @RequestMapping( value = "/api" )
 public class ApiController {
 
     private static final Logger logger = LoggerFactory.getLogger("rest");
     @Autowired
-    EthereumBean ethereumBean;
+    EthereumBean_DEL ethereumBean;
+
 
     @RequestMapping(value = "/help", method = GET, produces = APPLICATION_JSON_VALUE)
     @ResponseBody
@@ -54,43 +55,42 @@ public class ApiController {
         return  s;
     }
 
-    @RequestMapping(value = "/balance/{addr}/{blockNumber}", method = GET, produces = APPLICATION_JSON_VALUE)
-    @ResponseBody
-    public String checkBalance(@PathVariable String addr, @PathVariable String blockNumber,HttpServletRequest request) throws IOException, InterruptedException, SQLException, HashDecodeException, AddressDecodeException {
+//    @RequestMapping(value = "/balance/{addr}/{blockNumber}", method = GET, produces = APPLICATION_JSON_VALUE)
+//    @ResponseBody
+//    public String checkBalance(@PathVariable String addr, @PathVariable String blockNumber,HttpServletRequest request) throws IOException, InterruptedException, SQLException, HashDecodeException, AddressDecodeException {
+//
+//        long t1=System.currentTimeMillis();
+//
+//        SqlDb sqlDb = SqlDb.getSqlDb();
+//        Block block = ethereumBean.getBlock(blockNumber);
+//
+//        LedgerAccount acc = AccountStore.getInstance().create(addr);
+//
+//        BigDecimal trieBalance=acc.getBalance(block);
+//        BigDecimal ledgBalance= sqlDb.getQuery().getLedgerAccountBalance(acc,block.getNumber());
+//
+//        String result="balance for "+acc.toString()+" on block "+block.getNumber();
+//
+//        if (!trieBalance.equals(ledgBalance)){
+//            result+=String.format("%-43s%-40s%-40s%-40s%n",
+//                    acc.toString(),
+//                    Convert2json.BD2ValStr(trieBalance, false),
+//                    Convert2json.BD2ValStr(ledgBalance, false),
+//                    Convert2json.BD2ValStr(trieBalance.subtract(ledgBalance), false)
+//            );
+//
+//            //result+="Bl:" + block.getNumber() + ",Balance Incorrect trie - ledger: " + Convert2json.BI2ValStr(trieBalance.toBigInteger(), false) + " - " + Convert2json.BI2ValStr(ledgBalance.toBigInteger(), false);
+//            result+="\n";
+//        }
+//        Utils.log("CheckBalance",t1,request);
+//        return result;
+//    }
 
-        long t1=System.currentTimeMillis();
-
-        LedgerStore ledgerStore = LedgerStore.getLedgerStore();
-        Block block = ethereumBean.getBlock(blockNumber);
-
-        LedgerAccount acc = AccountStore.getInstance().create(addr);
-
-        BigDecimal trieBalance=acc.getBalance(block);
-        BigDecimal ledgBalance=ledgerStore.getQuery().getLedgerAccountBalance(acc,block.getNumber());
-
-        String result="balance for "+acc.toString()+" on block "+block.getNumber();
-
-        if (!trieBalance.equals(ledgBalance)){
-            result+=String.format("%-43s%-40s%-40s%-40s%n",
-                    acc.toString(),
-                    Convert2json.BD2ValStr(trieBalance, false),
-                    Convert2json.BD2ValStr(ledgBalance, false),
-                    Convert2json.BD2ValStr(trieBalance.subtract(ledgBalance), false)
-            );
-
-            //result+="Bl:" + block.getNumber() + ",Balance Incorrect trie - ledger: " + Convert2json.BI2ValStr(trieBalance.toBigInteger(), false) + " - " + Convert2json.BI2ValStr(ledgBalance.toBigInteger(), false);
-            result+="\n";
-        }
-
-        Utils.log("CheckBalance",t1,request);
-        return result;
-
-    }
     @RequestMapping(value = "/ledger/{cmd}/{param}", method = GET, produces = APPLICATION_JSON_VALUE)
     @ResponseBody
     public String ledger_cmd(@PathVariable String cmd, @PathVariable String param,HttpServletRequest request) throws IOException,  InterruptedException {
         long t1=System.currentTimeMillis();
-        LedgerStore ledgerStore = LedgerStore.getLedgerStore();
+        SqlDb sqlDb = SqlDb.getSqlDb();
 
         System.out.println("caller ip:"+request.getRemoteAddr());
 
@@ -100,13 +100,13 @@ public class ApiController {
         try {
             switch (cmd) {
                 case "delete":
-                    ledgerStore.deleteBlocksFrom(i);
+                    sqlDb.deleteBlocksFrom(i);
                     ret="block deleted:"+i;
                     break;
                 case "insert":
-                    ledgerStore.setNextStatus(ledgerStore.getSyncStatus());
-                    ledgerStore.setSyncStatus(SyncStatus.SingleInsert);
-                    ledgerStore.replayAndInsertBlock(i);
+                    sqlDb.setNextStatus(sqlDb.getSyncStatus());
+                    sqlDb.setSyncStatus(SyncStatus.SingleInsert);
+                    sqlDb.replayAndInsertBlock(i);
 
                     ret= "manual block inserted:"+i;
                     break;
@@ -138,7 +138,7 @@ public class ApiController {
         } catch (HashDecodeException e) {
             e.printStackTrace();
         }
-        Utils.log("ledger_cmd",t1,request);
+        Utils.log("ledger_cmd",t1,request , new ResponseEntity(null, HttpStatus.NOT_IMPLEMENTED));
         return  ret;
 
 
@@ -149,28 +149,28 @@ public class ApiController {
     public String ledger(@PathVariable String cmd) throws IOException, SQLException, InterruptedException {
 
         BlockchainImpl blockchain = (BlockchainImpl)ethereumBean.getEthereum().getBlockchain();
-        LedgerStore ledgerStore = LedgerStore.getLedgerStore();
+        SqlDb sqlDb = SqlDb.getSqlDb();
         switch (cmd.toLowerCase())
         {
             case "stop":
-                ledgerStore.stopSync();
+                sqlDb.stopSync();
                 break;
             //ethereumBean.ledgerStopSync();
             case "start":
-                ledgerStore.ledgerBulkLoad();
+                sqlDb.ledgerBulkLoad();
                 //ethereumBean.ledgerStartSync(Long.MAX_VALUE);
                 break;
             case "sync":
-                ledgerStore.setNextStatus(SyncStatus.onBlockSync);
+                sqlDb.setNextStatus(SyncStatus.onBlockSync);
                 break;
             case "stopsync":
-                ledgerStore.setSyncStatus(SyncStatus.stopped);
-                ledgerStore.setNextStatus(SyncStatus.stopped);
+                sqlDb.setSyncStatus(SyncStatus.stopped);
+                sqlDb.setNextStatus(SyncStatus.stopped);
                 break;
             default:
                 try {
                     int block = Integer.parseInt(cmd);
-                    ledgerStore.ledgerBulkLoad(block);
+                    sqlDb.ledgerBulkLoad(block);
                     //ethereumBean.ledgerStartSync(block);
                 }
                 catch (NumberFormatException e)
@@ -188,7 +188,7 @@ public class ApiController {
     public String blockchain(@PathVariable String cmd) throws IOException, SQLException, InterruptedException {
 
         BlockchainImpl blockchain = (BlockchainImpl)ethereumBean.getEthereum().getBlockchain();
-        LedgerStore ledgerStore = LedgerStore.getLedgerStore();
+        SqlDb sqlDb = SqlDb.getSqlDb();
         String result = blockchainStatus( );
         switch (cmd.toLowerCase())
         {
@@ -197,8 +197,8 @@ public class ApiController {
 
                 break;
             case "start":
-                ledgerStore.setSyncStatus(SyncStatus.onBlockSync);
-                ledgerStore.setNextStatus(SyncStatus.onBlockSync);
+                sqlDb.setSyncStatus(SyncStatus.onBlockSync);
+                sqlDb.setNextStatus(SyncStatus.onBlockSync);
                 ethereumBean.blockchainStartSync();
                 break;
             case "check":
@@ -216,7 +216,7 @@ public class ApiController {
         String result="TopBlock:"+blockchain.getBestBlock().getNumber()+"\n";
         result+="stopOn:"+blockchain.getStopOn()+"\n";
 
-        result+="Blockchain syncStatus:"+EthereumBean.getBlockchainSyncStatus()+"\n";
+        result+="Blockchain syncStatus:"+ EthereumBean_DEL.getBlockchainSyncStatus()+"\n";
 
         if (blockchain.getStopOn()<=blockchain.getBestBlock().getNumber())
             result+=String.format("Top block %s, Blockchain is stopped\n",String.valueOf(blockchain.getBestBlock().getNumber()));
@@ -224,14 +224,14 @@ public class ApiController {
             result+=String.format("Top block %s, Blockchain is loading\n",String.valueOf(blockchain.getBestBlock().getNumber()));
 
         try {
-            result+=String.format("Ledger sql Top block: %s\n", LedgerStore.getLedgerStore().getQuery().getSqlTopBlock());
+            result+=String.format("Ledger_DEL sql Top block: %s\n", SqlDb.getSqlDb().getQuery().getSqlTopBlock());
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        LedgerStore ledgerStore = LedgerStore.getLedgerStore();
-        result+="Ledger syncStatus:"+ledgerStore.getSyncStatus()+"\n";
-        result+="Ledger nextStatus:"+ledgerStore.getNextStatus()+"\n";
-        //result+="Ledger sql top block:"+ledgerStore.getSqlTopBlock()+"\n";
+        SqlDb sqlDb = SqlDb.getSqlDb();
+        result+="Ledger_DEL syncStatus:"+ sqlDb.getSyncStatus()+"\n";
+        result+="Ledger_DEL nextStatus:"+ sqlDb.getNextStatus()+"\n";
+        //result+="Ledger_DEL sql top block:"+ledgerStore.getSqlTopBlock()+"\n";
         //result+=checkBalance(blockchain.getBestBlock())+"\n";
         //result+=checkDelta(blockchain.getBestBlock())+"\n";
 

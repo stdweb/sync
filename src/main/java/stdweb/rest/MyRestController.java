@@ -1,39 +1,17 @@
 package stdweb.rest;
 
 
-import org.ethereum.core.Block;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.web.bind.annotation.PathVariable;
-import stdweb.Core.*;
-import stdweb.Ledger.AccountStore;
-import stdweb.Ledger.LedgerAccount;
-import stdweb.Ledger.LedgerQuery;
-import stdweb.Ledger.LedgerStore;
-import stdweb.ethereum.EthereumBean;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.bind.annotation.RestController;
+import stdweb.ethereum.EthereumBean_DEL;
 
-import javax.servlet.http.HttpServletRequest;
-import java.io.IOException;
-import java.math.BigDecimal;
-import java.sql.SQLException;
-import java.util.List;
-
-import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
-import static org.springframework.web.bind.annotation.RequestMethod.GET;
-import static stdweb.Core.Utils.address_decode;
-
-@RestController
+//@RestController
 public class MyRestController {
 
     private static final Logger logger = LoggerFactory.getLogger("rest");
     @Autowired
-    EthereumBean ethereumBean;
+    EthereumBean_DEL ethereumBean;
 
 
 
@@ -89,13 +67,13 @@ public class MyRestController {
 //
 
 
-    @RequestMapping(value = "/balance/{blockId}", method = GET, produces = APPLICATION_JSON_VALUE)
-    @ResponseBody
-    public String getBalance(@PathVariable String blockId) throws IOException, SQLException, HashDecodeException {
-
-        long t1=System.currentTimeMillis();
-        return ethereumBean.getBalance(blockId);
-    }
+//    @RequestMapping(value = "/balance/{blockId}", method = GET, produces = APPLICATION_JSON_VALUE)
+//    @ResponseBody
+//    public String getBalance(@PathVariable String blockId) throws IOException, SQLException, HashDecodeException {
+//
+//        long t1=System.currentTimeMillis();
+//        return ethereumBean.getBalance(blockId);
+//    }
 
 
 

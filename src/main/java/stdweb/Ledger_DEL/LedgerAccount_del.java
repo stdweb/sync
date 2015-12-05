@@ -1,14 +1,12 @@
-package stdweb.Ledger;
+package stdweb.Ledger_DEL;
 
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockchainImpl;
 import org.ethereum.core.Repository;
 import org.ethereum.db.ByteArrayWrapper;
-import org.ethereum.db.ContractDetails;
-import org.ethereum.db.RepositoryImpl;
 import org.spongycastle.util.encoders.Hex;
 import stdweb.Core.AddressDecodeException;
-import stdweb.ethereum.EthereumBean;
+import stdweb.ethereum.EthereumBean_DEL;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -20,22 +18,30 @@ import static stdweb.Core.Utils.address_decode;
 /**
  * Created by bitledger on 09.10.15.
  */
-public class LedgerAccount implements IAccount {
+public class LedgerAccount_del implements ITableEntry ,IAccount {
 
     boolean dirty;
     private long lastBlock;
 
     //private ContractDetails contractDetails;
 
-    LedgerAccount(String addr) throws AddressDecodeException {
+    LedgerAccount_del(String addr) throws AddressDecodeException {
         this(address_decode(addr));
     }
     public boolean isNew()
     {
-        return Id==null;
+        return Id==0;
     }
 
-    Long Id;
+    public Integer getId() {
+        return Id;
+    }
+
+    public void setId(Integer id) {
+        Id = id;
+    }
+
+    Integer Id;
     ByteArrayWrapper addrWrapper;
 
     public String getName() {
@@ -67,7 +73,7 @@ public class LedgerAccount implements IAccount {
     public void reload(ResultSet rs) throws SQLException {
         //String sql="select ID,ADDRESS, NAME, NONCE, ISCONTRACT, LASTBLOCK, BALANCE, TXSTATEROOT from Account where address =X'" +"' ";
         if (rs.isFirst()) {
-            this.Id = rs.getLong(1);
+            this.Id = rs.getInt(1);
             this.addrWrapper = new ByteArrayWrapper(rs.getBytes(2));
             this.name = rs.getString(3);
             this.nonce = rs.getLong(4);
@@ -82,11 +88,11 @@ public class LedgerAccount implements IAccount {
     private void reload() throws SQLException {
         this.reload(AccountStore.getInstance().get_rs(getAddress()));
     }
-    LedgerAccount(ResultSet rs) throws SQLException {
+    LedgerAccount_del(ResultSet rs) throws SQLException {
         this.reload(rs);
     }
 
-    public static LedgerAccount GenesisAccount()  {
+    public static LedgerAccount_del GenesisAccount()  {
         try {
             return AccountStore.getInstance().get(address_decode("0000000000000000000000000000000000000000"));
         }
@@ -98,18 +104,18 @@ public class LedgerAccount implements IAccount {
         }
     }
 
-    LedgerAccount(byte[] _address) {
-        this.Id=null;
+    LedgerAccount_del(byte[] _address) {
+        this.Id=0;
         this.addrWrapper=new ByteArrayWrapper(_address);
         this.dirty=false;
     }
 
     public boolean equals(Object other) {
 
-        if (!(other instanceof LedgerAccount))
+        if (!(other instanceof LedgerAccount_del))
             return false;
 
-        return ((LedgerAccount)other).addrWrapper.equals(this.addrWrapper);
+        return ((LedgerAccount_del)other).addrWrapper.equals(this.addrWrapper);
     }
 
     @Override
@@ -143,14 +149,14 @@ public class LedgerAccount implements IAccount {
 
     public BigDecimal getBalance(long _block)
     {
-        BlockchainImpl blockchain = (BlockchainImpl)EthereumBean.getBlockchainImpl();
+        BlockchainImpl blockchain = (BlockchainImpl) EthereumBean_DEL.getBlockchainImpl();
         Block blockByNumber = blockchain.getBlockByNumber(_block);
         return blockByNumber==null ? null : getBalance(blockByNumber);
     }
 
     public BigDecimal getBalance(Block block)
     {
-        BlockchainImpl blockchain = (BlockchainImpl)EthereumBean.getBlockchainImpl();
+        BlockchainImpl blockchain = (BlockchainImpl) EthereumBean_DEL.getBlockchainImpl();
         Repository track = blockchain.getRepository();
 
         Repository snapshot = track.getSnapshotTo(block.getStateRoot());

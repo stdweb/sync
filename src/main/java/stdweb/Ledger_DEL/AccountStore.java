@@ -1,10 +1,10 @@
-package stdweb.Ledger;
+package stdweb.Ledger_DEL;
 
 import org.ethereum.db.ContractDetails;
 import org.ethereum.db.RepositoryImpl;
 import org.spongycastle.util.encoders.Hex;
 import stdweb.Core.AddressDecodeException;
-import stdweb.ethereum.EthereumBean;
+import stdweb.ethereum.EthereumBean_DEL;
 
 import java.sql.*;
 
@@ -13,17 +13,17 @@ import static stdweb.Core.Utils.address_decode;
 /**
  * Created by bitledger on 09.11.15.
  */
-public class AccountStore extends SqlStore<LedgerAccount> {
+public class AccountStore extends SqlStore<LedgerAccount_del> {
     static AccountStore store;
 
     PreparedStatement st_ins;
     //Connection conn;
 
-    void commit() throws SQLException {
-        conn .commit();
-    }
+//    void commit() throws SQLException {
+//        conn .commit();
+//    }
 
-    public void write(LedgerAccount account) throws SQLException {
+    public void write(LedgerAccount_del account) throws SQLException {
 
         if (account.isNew()) {
                 insert(account);
@@ -51,38 +51,38 @@ public class AccountStore extends SqlStore<LedgerAccount> {
         account.reload(get_rs(account.getAddress()));
     }
 
-    public LedgerAccount get(Long id) throws SQLException {
-        ResultSet rs = get_rs(id);
+    public LedgerAccount_del get(Long id) throws SQLException {
+        ResultSet rs = get_rs(id.longValue());
         if (rs.isFirst())
-            return new LedgerAccount(rs);
+            return new LedgerAccount_del(rs);
         else
             return null;
     }
-    public  LedgerAccount get(byte[] address) throws SQLException {
+    public LedgerAccount_del get(byte[] address) throws SQLException {
         ResultSet rs = get_rs(address);
         if (rs.isFirst())
-            return new LedgerAccount(rs);
+            return new LedgerAccount_del(rs);
         else
             return null;
     }
 
-    public  LedgerAccount get(String accStr) throws SQLException, AddressDecodeException {
+    public LedgerAccount_del get(String accStr) throws SQLException, AddressDecodeException {
         byte[] addr = address_decode(accStr);
         return get(addr);
     }
 
 
-    public LedgerAccount create(byte[] addr) throws SQLException {
+    public LedgerAccount_del create(byte[] addr) throws SQLException {
         if (get_rs(addr).isFirst())
             throw new SQLDataException("Account already exists: "+"0x"+Hex.toHexString(addr));
 
-        return new LedgerAccount(addr);
+        return new LedgerAccount_del(addr);
     }
-    public LedgerAccount create(String accStr) throws SQLException, AddressDecodeException {
+    public LedgerAccount_del create(String accStr) throws SQLException, AddressDecodeException {
         return create(address_decode(accStr));
     }
 
-    protected LedgerAccount insert(LedgerAccount account) throws SQLException {
+    protected LedgerAccount_del insert(LedgerAccount_del account) throws SQLException {
 
         PreparedStatement stat=st_ins;
         byte[] addr = account.getAddress();
@@ -138,7 +138,7 @@ public class AccountStore extends SqlStore<LedgerAccount> {
 
     public static boolean isContract(byte[] addr)
     {
-        RepositoryImpl repository = (RepositoryImpl) EthereumBean.ethereum.getRepository();
+        RepositoryImpl repository = (RepositoryImpl) EthereumBean_DEL.ethereum.getRepository();
         ContractDetails contractDetails = repository.getContractDetails(addr);
 
         if (contractDetails==null)
@@ -148,6 +148,9 @@ public class AccountStore extends SqlStore<LedgerAccount> {
 
         return  (contractDetails.getCode().length!=0);
     }
+
+
+
     protected void initH2() throws SQLException, AddressDecodeException {
         Statement statement = conn.createStatement();
 
@@ -168,8 +171,8 @@ public class AccountStore extends SqlStore<LedgerAccount> {
         String sql="INSERT INTO ACCOUNT (ADDRESS, NAME, NONCE, ISCONTRACT, LASTBLOCK, BALANCE, STATEROOT) VALUES (?,?,?,?,?,?,?)";
         st_ins=conn.prepareStatement(sql);
 
-        if (LedgerAccount.GenesisAccount()==null) {
-            LedgerAccount genesisaccount = create(address_decode("0000000000000000000000000000000000000000"));
+        if (LedgerAccount_del.GenesisAccount()==null) {
+            LedgerAccount_del genesisaccount = create(address_decode("0000000000000000000000000000000000000000"));
             genesisaccount.setName("Genesis");
             write(genesisaccount);
             commit();

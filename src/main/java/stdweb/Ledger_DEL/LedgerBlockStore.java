@@ -1,4 +1,4 @@
-package stdweb.Ledger;
+package stdweb.Ledger_DEL;
 
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockHeader;
@@ -6,31 +6,29 @@ import org.spongycastle.util.encoders.Hex;
 import stdweb.Core.AddressDecodeException;
 import stdweb.Core.HashDecodeException;
 import stdweb.Core.Sha3Hash;
-import stdweb.Core.Utils;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.sql.*;
 
-import static stdweb.Core.Utils.address_decode;
 import static stdweb.Core.Utils.hash_decode;
 
 /**
  * Created by bitledger on 09.11.15.
  */
-public class LedgerBlockStore extends SqlStore<LedgerBlock> {
+public class LedgerBlockStore extends SqlStore<del_LBlock> {
 
     static LedgerBlockStore store;
 
-    void commit() throws SQLException {
-        conn .commit();
-    }
+//    void commit() throws SQLException {
+//        conn .commit();
+//    }
 
     public static LedgerBlockStore getInstance() throws SQLException {
         store= store==null ? new LedgerBlockStore() :store;
         return store;
     }
-    public void write(LedgerBlock _block) throws SQLException {
+    public void write(del_LBlock _block) throws SQLException {
 
             ResultSet rs = get_rs(_block.getNumber());
             if (!rs.isFirst())
@@ -61,7 +59,7 @@ public class LedgerBlockStore extends SqlStore<LedgerBlock> {
     }
 
     @Override
-    public LedgerBlock create(String s) throws SQLException, AddressDecodeException {
+    public del_LBlock create(String s) throws SQLException, AddressDecodeException {
         throw new SQLDataException("LedgerBlock.create(string ) not supported.");
 
     }
@@ -83,26 +81,26 @@ public class LedgerBlockStore extends SqlStore<LedgerBlock> {
 //        return getOrCreateLedgerAccount(decode);
 //    }
 
-    public LedgerBlock get(Long number) throws SQLException {
+    public del_LBlock get(Long number) throws SQLException {
         ResultSet rs = get_rs(number);
         if (rs.isFirst())
-            return LedgerBlock.reload(rs);
+            return del_LBlock.reload(rs);
         else
             return null;
     }
-    public LedgerBlock get(String blockId) throws SQLException, HashDecodeException {
+    public del_LBlock get(String blockId) throws SQLException, HashDecodeException {
         return get( hash_decode(blockId));
     }
-    public LedgerBlock get(byte[] hash) throws SQLException {
+    public del_LBlock get(byte[] hash) throws SQLException {
         ResultSet rs = get_rs(hash);
         if (rs.isFirst())
-            return LedgerBlock.reload(rs);
+            return del_LBlock.reload(rs);
         else
             return null;
     }
 
 
-    public LedgerBlock create(Block block,  BigDecimal fee, BigDecimal reward, BigDecimal trieBalance) throws SQLException {
+    public del_LBlock create(Block block, BigDecimal fee, BigDecimal reward, BigDecimal trieBalance) throws SQLException {
         //super(parentHash,unclesHash,coinbase,logsBloom,difficulty,number,gasLimit,gasUsed,timestamp,extraData,mixHash,nonce);
 
         if (get_rs(block.getNumber()).isFirst())
@@ -111,38 +109,38 @@ public class LedgerBlockStore extends SqlStore<LedgerBlock> {
         BlockHeader header = block.getHeader();
         Sha3Hash blockHash = new Sha3Hash(block.getHash());
 
-        LedgerBlock ledgerBlock = new LedgerBlock(
+        del_LBlock ledgerBlockDel = new del_LBlock(
                 header.getParentHash(), header.getUnclesHash(), header.getCoinbase(),
                 header.getLogsBloom(),
                 new BigInteger(1, header.getDifficulty()).toByteArray(), header.getNumber(),
-                header.getGasLimit(),
+                new BigInteger(1,header.getGasLimit()).longValue(),
                 header.getGasUsed(), header.getTimestamp() ,
                 header.getExtraData(), header.getMixHash(),
                 new BigInteger(1, header.getNonce()).toByteArray());
         //header.getTxTrieRoot()
         //header.getReceiptsRoot()
-        ledgerBlock.setBalance(trieBalance);
-        ledgerBlock.setReward(reward);
-        ledgerBlock.setFee(fee);
-        ledgerBlock.setHash(blockHash);
+        ledgerBlockDel.setBalance(trieBalance);
+        ledgerBlockDel.setReward(reward);
+        ledgerBlockDel.setFee(fee);
+        ledgerBlockDel.setHash(blockHash);
 
-        ledgerBlock.setTransactionsRoot(block.getTxTrieRoot());
-        ledgerBlock.setReceiptsRoot(block.getReceiptsRoot());
-        ledgerBlock.setStateRoot(block.getStateRoot());
-        ledgerBlock.setTxcount(block.getTransactionsList().size());
-        ledgerBlock.setSize(block.getEncoded().length);
-        ledgerBlock.setUncles_count(block.getUncleList().size());
+        ledgerBlockDel.setTransactionsRoot(block.getTxTrieRoot());
+        ledgerBlockDel.setReceiptsRoot(block.getReceiptsRoot());
+        ledgerBlockDel.setStateRoot(block.getStateRoot());
+        ledgerBlockDel.setTxcount(block.getTransactionsList().size());
+        ledgerBlockDel.setSize(block.getEncoded().length);
+        ledgerBlockDel.setUncles_count(block.getUncleList().size());
 
 
-        ReplayBlock replayBlock = new ReplayBlock( block);
+        ReplayBlock_DEL replayBlock = new ReplayBlock_DEL( block);
         BigInteger blockReward = replayBlock.getBlockReward();
         BigInteger totalUncleReward = replayBlock.getTotalUncleReward();
         BigInteger totalReward = blockReward.add(totalUncleReward);
-        ledgerBlock.setReward(new BigDecimal(totalReward));
+        ledgerBlockDel.setReward(new BigDecimal(totalReward));
 
-        ledgerBlock.setDirty(true);
+        ledgerBlockDel.setDirty(true);
 
-        return ledgerBlock;
+        return ledgerBlockDel;
 
     }
 //    public LedgerBlock create2(Block block, Sha3Hash blockHash, BigDecimal fee, BigDecimal reward, BigDecimal trieBalance) throws SQLException {
@@ -159,7 +157,7 @@ public class LedgerBlockStore extends SqlStore<LedgerBlock> {
 
 
     //private BlockHeader insert(Block block, Sha3Hash blockHash, BigDecimal fee, BigDecimal reward, BigDecimal trieBalance) throws SQLException {
-    protected LedgerBlock insert(LedgerBlock block) throws SQLException {
+    protected del_LBlock insert(del_LBlock block) throws SQLException {
         //BlockHeader header=block.getHeader();
         //LedgerBlock header;//=new LedgerBlock();
 
@@ -184,7 +182,7 @@ public class LedgerBlockStore extends SqlStore<LedgerBlock> {
         st.setBytes(9,block.getLogsBloom());
         st.setLong(10, new BigInteger(1,block.getDifficulty()).longValue());
         st.setTimestamp(11, new Timestamp(block.getTimestamp()));
-        st.setLong(12, block.getGasLimit());
+        st.setLong(12, new BigInteger(1,block.getGasLimit()).longValue());
         st.setLong(13,block.getGasUsed());
         st.setBytes(14,block.getMixHash());
         st.setBytes(15,block.getExtraData());
@@ -241,7 +239,7 @@ public class LedgerBlockStore extends SqlStore<LedgerBlock> {
         Statement statement = conn.createStatement();
 
         statement.execute("create TABLE if not exists BLOCK (\n" +
-                "    ID BIGINT not null,\n" +
+                "    ID INTEGER not null,\n" +
                 "    HASH VARBINARY,\n" +
                 "    PARENTHASH VARBINARY,\n" +
                 "    UNCLESHASH VARBINARY,\n" +
@@ -288,7 +286,7 @@ public class LedgerBlockStore extends SqlStore<LedgerBlock> {
         statement.close();
     }
 
-    public LedgerBlock getTopBlock() throws SQLException {
+    public del_LBlock getTopBlock() throws SQLException {
         String sql="select max(id) from block";
         Statement statement = conn.createStatement();
         ResultSet rs = statement.executeQuery(sql);
