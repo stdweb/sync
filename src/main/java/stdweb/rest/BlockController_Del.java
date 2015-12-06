@@ -7,8 +7,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 import stdweb.Core.HashDecodeException;
 import stdweb.Core.Utils;
-import stdweb.Ledger_DEL.LedgerBlockStore;
-import stdweb.Ledger_DEL.del_LBlock;
+import DEL.Ledger_DEL.LedgerBlockStore;
+import DEL.Ledger_DEL.del_LBlock;
 import stdweb.ethereum.EthereumBean_DEL;
 import stdweb.ethereum.EthereumListener;
 

@@ -9,6 +9,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.transaction.annotation.EnableTransactionManagement;
 import stdweb.Core.HashDecodeException;
 import stdweb.Desktop.DesktopController;
 import stdweb.ethereum.LedgerSyncService;
@@ -18,6 +19,7 @@ import java.nio.charset.Charset;
 import java.util.Arrays;
 
 @SpringBootApplication
+@EnableTransactionManagement
 @EnableScheduling
 @ComponentScan("stdweb")
 public class Application //extends javafx.application.Application
@@ -27,6 +29,11 @@ public class Application //extends javafx.application.Application
         ConfigurableApplicationContext ctx = SpringApplication.run(Application.class, args);
 //        String[] beanNames = ctx.getBeanDefinitionNames();
 
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
         LedgerSyncService bean = ctx.getBean(LedgerSyncService.class);
         bean.start();
 

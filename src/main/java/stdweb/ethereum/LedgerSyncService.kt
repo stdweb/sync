@@ -4,33 +4,46 @@ import org.ethereum.core.Account
 import org.ethereum.core.Block
 import org.ethereum.core.TransactionExecutionSummary
 import org.ethereum.db.RepositoryImpl
+
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.EnableTransactionManagement
+import org.springframework.transaction.annotation.Transactional
 import stdweb.Core.*
 import stdweb.Entity.LedgerAccount
+
 import stdweb.Repository.*
 import java.math.BigDecimal
+import java.util.concurrent.locks.ReentrantLock
+import javax.annotation.PostConstruct
 
-public class LedgerSyncService
+@Service
+//@EnableTransactionManagement
+open class LedgerSyncService
 {
     var syncStatus : SyncStatus = SyncStatus.stopped
 
-    @Autowired var blockRepo        : LedgerBlockRepository? = null
-    @Autowired var accRepo          : LedgerAccountRepository? = null
-    @Autowired var ledgerRepo       : LedgerEntryRepository? = null
+    @Autowired open var blockRepo        : LedgerBlockRepository? = null
+    @Autowired open var accRepo          : LedgerAccountRepository? = null
+    @Autowired open var ledgerRepo       : LedgerEntryRepository? = null
 
-    @Autowired var txRepo           : LedgerTxRepository? = null
+    @Autowired open var txRepo           : LedgerTxRepository? = null
 
-    @Autowired var logRepo          : LedgerTxLogRepository? = null
-    @Autowired var receiptRepo      : LedgerTxReceiptRepository? = null
+    @Autowired open var logRepo          : LedgerTxLogRepository? = null
+    @Autowired open var receiptRepo      : LedgerTxReceiptRepository? = null
 
-    @Autowired var ethereumBean     : EthereumBean? = null
+    @Autowired open var ethereumBean     : EthereumBean? = null
 
-    private    var listener         : EthereumListener?=null
+    public     open var listener         : EthereumListener?=null
 
-    //private var ethereum: Ethereum? = null
+    //open  var ethereum: Ethereum? = null
+
+    open val lock : ReentrantLock = ReentrantLock()
+
 
     fun getOrCreateLedgerAccount( addr : ByteArray) : LedgerAccount
     {
+
         var account = accRepo!!.findByAddress(addr) ?: LedgerAccount(addr)
 
         if (account.id==-1) {
@@ -80,9 +93,9 @@ public class LedgerSyncService
     private var replayBlock: ReplayBlockWrite? = null
 
 
-    //@Transactional
-    public fun loadBlockData(block : Block, summaries : List<TransactionExecutionSummary>)
+    @Transactional open fun saveBlockData(block : Block, summaries : List<TransactionExecutionSummary>)
     {
+
         if (accRepo!=null && blockRepo!=null && ledgerRepo!=null && txRepo!=null && logRepo!=null && receiptRepo!=null) {
 
             replayBlock = ReplayBlockWrite(
@@ -97,7 +110,7 @@ public class LedgerSyncService
 
             //(replayBlock as ReplayBlockWrite).run();
 
-            (replayBlock!!).write(summaries);
+            replayBlock!!write (summaries);
 
             println ("block saved:"+block.number)
         }
@@ -105,11 +118,44 @@ public class LedgerSyncService
             throw NullPointerException("at least one repo is null")
     }
 
+    @Transactional open fun start() {
+            try{
+                lock.lock()
+                println("genesis lock")
+                if (blockRepo!!.findOne(0)==null) {
+                    //blockRepo!!.deleteBlockWithEntries(0)
+                    //blockRepo!!.delete(0)
+                    ensureGenesis()
+                    println ("genesis deleted")
+                }
+            }
+            finally
+            {
+                lock.unlock()
+                println("genesis unlock")
+            }
+
+        println ("LedgSyncService started")
+    }
+
+    private fun ensureGenesis() {
+        if (blockRepo!!.findOne(0)==null)
+        {
+            println("ensure genesis")
+            val block0=ethereumBean!!.blockchain.getBlockByNumber(0)
+            var genesis=GenesisBlockWrite(this,block0,blockRepo!!,ledgerRepo!!)
+            genesis.writeGenesis()
+        }
+    }
+
+    @PostConstruct
+    private fun initService()
+    {
+
+        println("LedgerSync initService")
+        //println ("lock :"+lock)
+    }
+
     constructor()
     {}
-
-    public fun start() {
-        //blockRepo!!.deleteBlockAll(blockRepo!!.findOne(160854))
-        //println ("LedgSyncService started")
-    }
 }

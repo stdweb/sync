@@ -7,7 +7,7 @@ import org.ethereum.facade.Ethereum;
 import org.ethereum.facade.EthereumFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import stdweb.Core.*;
-import stdweb.Ledger_DEL.*;
+import DEL.Ledger_DEL.*;
 import stdweb.Repository.LedgerAccountRepository;
 import stdweb.Repository.LedgerBlockRepository;
 

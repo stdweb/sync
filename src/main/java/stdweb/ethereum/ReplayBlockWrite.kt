@@ -17,7 +17,7 @@ class ReplayBlockWrite : ReplayBlock
 {
 
     private val entries         = ArrayList<LedgerEntry>()
-    private val ledgerSync: LedgerSyncService
+
 
     private var blockRepo:      LedgerBlockRepository
     private var accRepo:        LedgerAccountRepository
@@ -105,40 +105,7 @@ class ReplayBlockWrite : ReplayBlock
         return txRepo.save(tx)
     }
 
-    override fun loadGenesis() {
 
-        val snapshot = blockchain.getRepository().getSnapshotTo(Utils.hash_decode("d7f8974fb5ac78d9ac099b9ad5018bedc2ce0a72dad1827a1709da30580f0544"))
-
-        var entryNo = 0
-        val accountsKeys = snapshot.accountsKeys
-
-        accountsKeys.forEach {
-            address ->
-            with(LedgerEntry())
-            {
-                ++entryNo
-
-                val balance         = BigDecimal(snapshot.getBalance(address))
-
-                Account             = ledgerSync.getOrCreateLedgerAccount(address)
-                tx                  = null
-                offsetAccount       = zeroAccount
-                amount              = balance
-                block               = ledgerBlock
-                blockTimestamp      = 1438269973000L
-                depth               = 0.toByte()
-                gasUsed             = 0
-                entryType           = EntryType.Genesis
-                fee                 = BigDecimal.ZERO
-                grossAmount         = this.amount
-                entryResult         = EntryResult.Ok
-
-                entries             .add(this)
-
-                println("acc " + entryNo + ":" + Hex.toHexString(address) + " = " + Convert2json.BD2ValStr(balance, false))
-            }
-        }
-    }
 
     fun addRewardEntries() {
 
@@ -279,7 +246,7 @@ class ReplayBlockWrite : ReplayBlock
         }
     }
 
-    @Transactional
+
     fun write(txsummaries : List<TransactionExecutionSummary>)  {
 
         val b = blockRepo.findOne(this.getBlock().getNumber().toInt())
@@ -294,8 +261,6 @@ class ReplayBlockWrite : ReplayBlock
         if (this.block.number != 0L)    addRewardEntries()
 
         txsummaries.   forEach {       addTxEntries ( it ) }
-        //txsummaries.   forEach {       addReceipt ( it ) }
-        //txsummaries.   forEach {       addLogs ( it ) }
         entries.       forEach {       ledgRepo.save( it ) }
 
     }
@@ -345,6 +310,9 @@ class ReplayBlockWrite : ReplayBlock
         }
     }
 
+
+
+
     constructor(ledgerSync: LedgerSyncService, _block: Block,
                 _blockRepo : LedgerBlockRepository,
                 _accRepo : LedgerAccountRepository,
@@ -355,7 +323,7 @@ class ReplayBlockWrite : ReplayBlock
                 _receiptRepo : LedgerTxReceiptRepository
                 ) :super (ledgerSync,_block)
     {
-        this.ledgerSync     = ledgerSync
+
         this.blockRepo      = _blockRepo
         this.accRepo        = _accRepo
         this.ledgRepo       =_ledgRepo

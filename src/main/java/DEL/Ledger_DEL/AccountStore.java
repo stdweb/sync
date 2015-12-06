@@ -1,4 +1,4 @@
-package stdweb.Ledger_DEL;
+package DEL.Ledger_DEL;
 
 import org.ethereum.db.ContractDetails;
 import org.ethereum.db.RepositoryImpl;

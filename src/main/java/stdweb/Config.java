@@ -11,8 +11,8 @@ import stdweb.ethereum.LedgerSyncService;
 
 import java.util.concurrent.Executors;
 
-@Configuration
-@EnableTransactionManagement
+//@Configuration
+//@EnableTransactionManagement
 public class Config {
 
 
@@ -21,8 +21,8 @@ public class Config {
     EthereumBean ethereumBean() throws Exception {
         EthereumBean ethereumBean = new EthereumBean();
 
-        Executors.newSingleThreadExecutor().
-                submit(ethereumBean::start);
+//        Executors.newSingleThreadExecutor().
+//                submit(ethereumBean::start);
 
         //System.out.println("eth bean created, repo is null = "+(ethereumBean.getBlockRepo()==null));
         return ethereumBean;
@@ -30,19 +30,19 @@ public class Config {
 
     @Autowired
     EthereumBean ethereumBean ;
+
     @Autowired
     LedgerBlockRepository blockRepository;
+
     @Bean
     @DependsOn({"ethereumBean","ledgerBlockRepository","ledgerAccountRepository","ledgerEntryRepository"})
     LedgerSyncService ledgerSync() throws Exception
     {
-        //System.out.println("LedgerSync bean created");
+
         Thread.sleep(2000);
         LedgerSyncService ledgerSync = new LedgerSyncService();
-
         ethereumBean.getListener().setLedgerSync(ledgerSync);
         //ledgerSync.setEthereumBean(ethereumBean);
-
 //        Executors.newSingleThreadExecutor().
 //                submit(ledgerSync::start);
 

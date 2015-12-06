@@ -10,8 +10,8 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 import stdweb.Core.Utils;
-import stdweb.Ledger_DEL.LedgerQuery;
-import stdweb.Ledger_DEL.SqlDb;
+import DEL.Ledger_DEL.LedgerQuery;
+import DEL.Ledger_DEL.SqlDb;
 import stdweb.ethereum.EthereumBean_DEL;
 
 import javax.servlet.http.HttpServletRequest;

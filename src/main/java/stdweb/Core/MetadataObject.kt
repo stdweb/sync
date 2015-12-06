@@ -1,7 +1,7 @@
 package stdweb.Core
 
-import stdweb.Ledger_DEL.DataAnnotation
-import stdweb.Ledger_DEL.ITableEntry
+import DEL.Ledger_DEL.DataAnnotation
+import DEL.Ledger_DEL.ITableEntry
 
 import sun.plugin2.liveconnect.JavaClass
 import sun.security.util.Length

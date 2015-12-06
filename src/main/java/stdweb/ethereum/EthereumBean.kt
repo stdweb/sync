@@ -4,7 +4,11 @@ import org.ethereum.core.BlockchainImpl
 import org.ethereum.db.RepositoryImpl
 import org.ethereum.facade.Ethereum
 import org.ethereum.facade.EthereumFactory
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.stereotype.Service
+import javax.annotation.PostConstruct
 
+@Service
 public class EthereumBean
 {
     val ethereum : Ethereum
@@ -12,20 +16,26 @@ public class EthereumBean
     val blockchain : BlockchainImpl
     val repo : RepositoryImpl
 
+    @Autowired
+    var ledgerSync : LedgerSyncService? = null
 
-    public fun start()
+
+    @PostConstruct
+    private fun initService()
     {
-        println("ethereumBean.start")
-        //blockchainStopSync()
-        blockchainStartSync()
+        this.listener.ledgerSync=this.ledgerSync!!
+        println("EtheteumBean initService")
     }
+
     constructor()
     {
         this.ethereum=EthereumFactory.createEthereum()
         this.listener = EthereumListener(ethereum)
+
         this.ethereum.addListener(this.listener)
         this.blockchain=this.ethereum.blockchain as BlockchainImpl
         this.repo=this.ethereum.repository as RepositoryImpl
+        blockchainStartSync()
     }
 
     fun blockchainStartSync() {

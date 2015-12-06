@@ -7,7 +7,7 @@ import org.ethereum.db.ContractDetails;
 import org.ethereum.db.RepositoryImpl;
 import org.ethereum.vm.program.InternalTransaction;
 import org.spongycastle.util.encoders.Hex;
-import stdweb.Ledger_DEL.ReplayBlock_DEL;
+import DEL.Ledger_DEL.ReplayBlock_DEL;
 import stdweb.ethereum.EthereumBean_DEL;
 
 import java.math.BigDecimal;

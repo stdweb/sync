@@ -1,4 +1,4 @@
-package stdweb.Ledger_DEL
+package DEL.Ledger_DEL
 
 import stdweb.Core.AddressDecodeException
 import stdweb.Core.HashDecodeException

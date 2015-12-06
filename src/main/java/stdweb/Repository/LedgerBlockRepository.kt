@@ -16,6 +16,8 @@ interface  ILedgerBlockRepositoryCustom
 
     @Transactional
     public fun deleteBlockWithEntries(b : LedgerBlock)
+    @Transactional
+    public fun deleteBlockWithEntries(id : Int)
 
     //public fun getPage(blockId: String) : List<LedgerBlock?>
 
@@ -44,14 +46,19 @@ class LedgerBlockRepositoryImpl : ILedgerBlockRepositoryCustom
 //    fun getPage(blockId: Int?): List<LedgerBlock?> {
 //    }
 
-    override fun deleteBlockWithEntries(b: LedgerBlock)
+    override fun deleteBlockWithEntries(id : Int)
     {
-        ledgerRepo  !!   .deleteByBlockNumber(b.id)
-        receiptRepo !!   .deleteByBlockNumber(b.id)
-        logRepo     !!   .deleteByBlockNumber(b.id)
-        txRepo      !!   .deleteByBlockNumber(b.id)
+        ledgerRepo  !!   .deleteByBlockNumber(id)
+        receiptRepo !!   .deleteByBlockNumber(id)
+        logRepo     !!   .deleteByBlockNumber(id)
+        txRepo      !!   .deleteByBlockNumber(id)
 
     }
+    override fun deleteBlockWithEntries(b: LedgerBlock)
+    {
+        deleteBlockWithEntries(b.id)
+    }
+
     override fun topBlock(): LedgerBlock? {
         
         return blockRepo?.findTopByOrderByIdDesc()

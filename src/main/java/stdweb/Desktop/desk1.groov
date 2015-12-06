@@ -1,8 +1,8 @@
 import com.simpleplugin.PanelGroovyScript
 import groovy.swing.SwingBuilder
 import net.miginfocom.swing.MigLayout
-//import stdweb.Ledger_DEL.LedgerEntry
-//import stdweb.Ledger_DEL.LedgerEntryStore
+//import DEL.Ledger_DEL.LedgerEntry
+//import DEL.Ledger_DEL.LedgerEntryStore
 
 import javax.swing.JMenuBar
 import javax.swing.JMenuItem
@@ -15,7 +15,7 @@ import javax.swing.tree.TreeSelectionModel
 import java.awt.Panel
 import java.awt.ScrollPane
 
-//import stdweb.Ledger_DEL.SqlDb;
+//import DEL.Ledger_DEL.SqlDb;
 
 
 /**

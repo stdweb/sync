@@ -1,4 +1,4 @@
-package stdweb.Ledger_DEL;
+package DEL.Ledger_DEL;
 
 /**
  * Created by bitledger on 09.11.15.

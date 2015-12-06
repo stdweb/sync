@@ -17,7 +17,7 @@ abstract class ReplayBlock {
 
     protected final EthereumBean ethereumBean;
     protected final BlockchainImpl blockchain;
-
+    protected final LedgerSyncService ledgerSync;
 
 
     //////////////////////////////////////////////////////////////////
@@ -61,34 +61,30 @@ abstract class ReplayBlock {
     }
 
 
-    public ReplayBlock(LedgerSyncService ledgerSync, Block _block) {
-
+    public ReplayBlock(LedgerSyncService _ledgerSync, Block _block) {
+        this.ledgerSync=_ledgerSync;
         this.ethereumBean=ledgerSync.getEthereumBean();
         this.blockchain = this.ethereumBean.getBlockchain();
         this.block = _block;
+
     }
 
 
-    public ReplayBlock(LedgerSyncService ledgerSync, long blockNo) {
+//    public ReplayBlock(LedgerSyncService ledgerSync, long blockNo) {
+//
+//        this.ethereumBean=ledgerSync.getEthereumBean();
+//        this.blockchain = this.ethereumBean.getBlockchain();
+//
+//        this.block=this.ethereumBean.getBlockchain().getBlockByNumber(blockNo);
+//
+//        if (block == null)
+//            System.out.println("Replayblock ctor. BlockNo not found:" + blockNo);
+//    }
 
-        this.ethereumBean=ledgerSync.getEthereumBean();
-        this.blockchain = this.ethereumBean.getBlockchain();
 
-        this.block=this.ethereumBean.getBlockchain().getBlockByNumber(blockNo);
-
-        if (block == null)
-            System.out.println("Replayblock ctor. BlockNo not found:" + blockNo);
-    }
-
-    abstract void loadGenesis();
 
     public void run() throws HashDecodeException, AddressDecodeException {
         if (block == null) {
-            return;
-        }
-
-        if (block.getNumber() == 0) {
-            loadGenesis();
             return;
         }
 

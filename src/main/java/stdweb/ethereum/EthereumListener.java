@@ -30,7 +30,18 @@ public class EthereumListener extends EthereumListenerAdapter {
     public void onBlockExecuted(Block block,List<TransactionExecutionSummary> summaries)
     {
         //System.out.println("on block exec"+block.getNumber());
-        ledgerSync.loadBlockData(block,summaries);
+        try{
+            ledgerSync.getLock().lock();
+            ledgerSync.saveBlockData(block,summaries);
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+        }
+        finally {
+            ledgerSync.getLock().unlock();
+        }
+
 
     }
 
