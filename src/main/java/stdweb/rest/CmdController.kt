@@ -9,9 +9,11 @@ import org.springframework.web.bind.annotation.*
 import stdweb.Core.SyncStatus
 import stdweb.Repository.LedgerBlockRepository
 import DEL.Ledger_DEL.EthereumBean_DEL
+import stdweb.ethereum.EthereumBean
 import stdweb.ethereum.LedgerSyncService
 import java.io.IOException
 import java.sql.SQLException
+import java.util.*
 import javax.servlet.http.HttpServletRequest
 
 
@@ -22,6 +24,7 @@ class CmdController
 
     val blockRepo   : LedgerBlockRepository
     val ledgSync    : LedgerSyncService
+    val ethereumBean: EthereumBean
 
     @RequestMapping(value = "/cmd/{cmd}/{param}", method = arrayOf( RequestMethod.GET), produces = arrayOf(MediaType.APPLICATION_JSON_VALUE))
     @ResponseBody
@@ -93,12 +96,34 @@ class CmdController
         return result
     }
 
+    @RequestMapping(value = "/blockchain/{cmd}", method = arrayOf( RequestMethod.GET), produces = arrayOf(MediaType.APPLICATION_JSON_VALUE))
+    @ResponseBody
+    fun blockchainCmd(@PathVariable cmd: String): Map<String,String> {
+
+        var result= HashMap<String, String>()
+
+        when (cmd.toLowerCase()) {
+            "stop" -> ethereumBean.blockchainStopSync()
+            "start" -> {
+                ledgSync.syncStatus = SyncStatus.onBlockSync
+                ledgSync.nextStatus = SyncStatus.onBlockSync
+                ethereumBean.blockchainStartSync()
+            }
+            "check" -> result.put ("check balance","not implemented")//TestBalances.checkBalance()
+        }//status
+        result.putAll( ledgSync.status())
+
+        return result
+    }
+
+
 
     @Autowired
-    constructor(_blockRepo : LedgerBlockRepository,_ledgSync : LedgerSyncService)
+    constructor(_blockRepo : LedgerBlockRepository,_ledgSync : LedgerSyncService, _eth : EthereumBean)
     {
         this.blockRepo=_blockRepo
         this.ledgSync=_ledgSync
+        this.ethereumBean=_eth
     }
 
 }

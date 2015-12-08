@@ -29,11 +29,13 @@ public class EthereumBean
     fun blockchainStartSync() {
         blockchain.stopOn = java.lang.Long.MAX_VALUE
         blockchainSyncStatus= SyncStatus.onBlockSync
+        println("blockchain started")
     }
 
     fun blockchainStopSync() {
         blockchainSyncStatus= SyncStatus.stopped
         blockchain.stopOn = 0
+        println("blockchain stopped")
         Thread.sleep(1000)
     }
 
