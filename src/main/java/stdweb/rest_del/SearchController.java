@@ -1,4 +1,4 @@
-package stdweb.rest;
+package stdweb.rest_del;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -11,7 +11,7 @@ import stdweb.Core.HashDecodeException;
 import stdweb.Core.Utils;
 import DEL.Ledger_DEL.LedgerQuery;
 import DEL.Ledger_DEL.SqlDb;
-import stdweb.ethereum.EthereumBean_DEL;
+import DEL.Ledger_DEL.EthereumBean_DEL;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;

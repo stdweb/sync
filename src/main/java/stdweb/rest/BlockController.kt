@@ -1,4 +1,4 @@
-package stdweb.Data
+package stdweb.rest
 
 /**
  * Created by bitledger on 20.11.15.
@@ -15,6 +15,7 @@ import stdweb.Core.Utils
 import stdweb.Entity.LedgerBlock
 import stdweb.Repository.EntityQueryRange
 import stdweb.Repository.LedgerBlockRepository
+import stdweb.ethereum.EthereumBean
 import java.util.*
 import javax.servlet.http.HttpServletRequest
 
@@ -26,23 +27,25 @@ import javax.servlet.http.HttpServletRequest
 @RestController
 class BlockController {
 
-    //@Autowired
-    //EthereumBean ethereumBean;
+    @Autowired
+    var ethereumBean : EthereumBean? = null
 
     @Autowired
-    internal var repo: LedgerBlockRepository? = null
+    var repo: LedgerBlockRepository? = null
 
 
-    @RequestMapping(value = "/bestBlock", method = arrayOf( RequestMethod.GET), produces = arrayOf(MediaType.APPLICATION_JSON_VALUE))
-    @ResponseBody
-    fun getBestBlock(request: HttpServletRequest): String {
-        println("start thread Id:"+Thread.currentThread().id+", instance "+this.hashCode())
 
-        Thread.sleep(5000)
-        println("finish thread Id:"+Thread.currentThread().id)
 
-        return repo?.topBlock()?.id.toString()
-    }
+//    @RequestMapping(value = "/bestBlock", method = arrayOf( RequestMethod.GET), produces = arrayOf(MediaType.APPLICATION_JSON_VALUE))
+//    @ResponseBody
+//    fun getBestBlock(request: HttpServletRequest): String {
+//        println("start thread Id:"+Thread.currentThread().id+", instance "+this.hashCode())
+//
+//        Thread.sleep(5000)
+//        println("finish thread Id:"+Thread.currentThread().id)
+//
+//        return repo?.topBlock()?.id.toString()
+//    }
 
     @RequestMapping(value = "/block/{blockId}", method = arrayOf( RequestMethod.GET), produces = arrayOf(MediaType.APPLICATION_JSON_VALUE))
     //@ResponseStatus(value = HttpStatus.OK)

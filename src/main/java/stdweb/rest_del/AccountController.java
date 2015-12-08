@@ -1,4 +1,4 @@
-package stdweb.rest;
+package stdweb.rest_del;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;

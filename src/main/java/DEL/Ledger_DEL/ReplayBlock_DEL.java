@@ -9,7 +9,6 @@ import org.ethereum.vm.program.ProgramResult;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
 import org.spongycastle.util.encoders.Hex;
 import stdweb.Core.*;
-import stdweb.ethereum.EthereumBean_DEL;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;

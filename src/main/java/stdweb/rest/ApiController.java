@@ -1,5 +1,6 @@
-package stdweb.Data;
+package stdweb.rest;
 
+import DEL.Ledger_DEL.TestBalances;
 import org.ethereum.core.BlockchainImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,7 +12,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 import stdweb.Core.*;
 import DEL.Ledger_DEL.SqlDb;
-import stdweb.ethereum.EthereumBean_DEL;
+import DEL.Ledger_DEL.EthereumBean_DEL;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
@@ -27,6 +28,7 @@ import static org.springframework.web.bind.annotation.RequestMethod.GET;
 //@RestController
 @RequestMapping( value = "/api" )
 public class ApiController {
+
 
     private static final Logger logger = LoggerFactory.getLogger("rest");
     @Autowired
@@ -112,7 +114,7 @@ public class ApiController {
                     break;
                 case "checkall":
 
-                    ret=TestBalances.checkBalance(i);
+                    ret= TestBalances.checkBalance(i);
                     ret+="\n";
                     ret+=TestBalances.checkAccountsBalance(i,true);
                     break;

@@ -1,12 +1,10 @@
-package stdweb.Core;
+package DEL.Ledger_DEL;
 
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockchainImpl;
 import org.spongycastle.util.encoders.Hex;
-import DEL.Ledger_DEL.LedgerAccount_del;
-import DEL.Ledger_DEL.LedgerQuery;
-import DEL.Ledger_DEL.SqlDb;
-import stdweb.ethereum.EthereumBean_DEL;
+import stdweb.Core.BlockchainQuery;
+import stdweb.Core.Convert2json;
 
 import java.math.BigDecimal;
 import java.sql.SQLException;
@@ -73,7 +71,6 @@ public class TestBalances {
         Thread.sleep(500);
 
         LedgerQuery query = LedgerQuery.getQuery(SqlDb.getSqlDb());
-
 
         long l1 = System.currentTimeMillis();
         HashMap<LedgerAccount_del, BigDecimal> balancesOnBlock = query.getLedgerBalancesOnBlock(block,checkAll);

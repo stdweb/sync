@@ -10,6 +10,7 @@ import stdweb.Entity.LedgerBlock;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.List;
 
 
@@ -66,9 +67,7 @@ abstract class ReplayBlock {
         this.ethereumBean=ledgerSync.getEthereumBean();
         this.blockchain = this.ethereumBean.getBlockchain();
         this.block = _block;
-
     }
-
 
 //    public ReplayBlock(LedgerSyncService ledgerSync, long blockNo) {
 //
@@ -82,11 +81,13 @@ abstract class ReplayBlock {
 //    }
 
 
+    List<TransactionExecutionSummary> summaries = null;
 
     public void run() throws HashDecodeException, AddressDecodeException {
         if (block == null) {
             return;
         }
+        summaries= new ArrayList<>();
 
         BlockStore blockStore = blockchain.getBlockStore();
         ProgramInvokeFactory programInvokeFactory = blockchain.getProgramInvokeFactory();
@@ -99,7 +100,6 @@ abstract class ReplayBlock {
         else
             snapshot = track.getSnapshotTo(blockchain.getBlockByHash(block.getParentHash()).getStateRoot());
 
-        int txNumber = 0;
         long totalGasUsed = 0;
 
         for (Transaction tx : block.getTransactionsList()) {
@@ -113,23 +113,12 @@ abstract class ReplayBlock {
             executor.execute();
             executor.go();
 
-            executor.finalization();
-
-            List<LogInfo> vmLogs = executor.getVMLogs();
-            if (vmLogs!=null)
-            {
-                for (LogInfo l : vmLogs)
-                    System.out.println(l.toString());
-            }
+            summaries.add(executor.finalization());
 
             totalGasUsed += executor.getGasUsed();
             ProgramResult result = executor.getResult();
             long gasRefund = Math.min(result.getFutureRefund(), result.getGasUsed() / 2);
 
-            ++txNumber;
-            boolean isFailed = result.getException() != null;
-
-            final int f_txNumber = txNumber;
         }
 
         //printEntries();

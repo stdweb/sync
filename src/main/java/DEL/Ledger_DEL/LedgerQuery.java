@@ -5,7 +5,6 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.spongycastle.util.encoders.Hex;
 import stdweb.Core.*;
-import stdweb.ethereum.EthereumBean_DEL;
 
 import java.math.BigDecimal;
 import java.sql.Connection;

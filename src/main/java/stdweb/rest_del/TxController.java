@@ -1,4 +1,4 @@
-package stdweb.rest;
+package stdweb.rest_del;
 
 
 import org.slf4j.Logger;
@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import stdweb.Core.Utils;
 import DEL.Ledger_DEL.LedgerQuery;
 import DEL.Ledger_DEL.SqlDb;
-import stdweb.ethereum.EthereumBean_DEL;
+import DEL.Ledger_DEL.EthereumBean_DEL;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;

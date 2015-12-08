@@ -1,4 +1,4 @@
-package stdweb.ethereum;
+package DEL.Ledger_DEL;
 
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockchainImpl;
@@ -7,9 +7,9 @@ import org.ethereum.facade.Ethereum;
 import org.ethereum.facade.EthereumFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import stdweb.Core.*;
-import DEL.Ledger_DEL.*;
 import stdweb.Repository.LedgerAccountRepository;
 import stdweb.Repository.LedgerBlockRepository;
+import stdweb.ethereum.EthereumListener;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;

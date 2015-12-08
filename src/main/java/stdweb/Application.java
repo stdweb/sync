@@ -10,6 +10,7 @@ import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
+import stdweb.Core.Amount;
 import stdweb.Core.HashDecodeException;
 import stdweb.Desktop.DesktopController;
 import stdweb.ethereum.LedgerSyncService;
@@ -35,7 +36,9 @@ public class Application //extends javafx.application.Application
             e.printStackTrace();
         }
         LedgerSyncService bean = ctx.getBean(LedgerSyncService.class);
+
         bean.start();
+
 
 
         System.out.println("spring main finish");

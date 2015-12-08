@@ -4,7 +4,6 @@ import org.ethereum.db.ContractDetails;
 import org.ethereum.db.RepositoryImpl;
 import org.spongycastle.util.encoders.Hex;
 import stdweb.Core.AddressDecodeException;
-import stdweb.ethereum.EthereumBean_DEL;
 
 import java.sql.*;
 

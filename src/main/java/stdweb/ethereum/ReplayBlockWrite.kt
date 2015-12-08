@@ -180,7 +180,6 @@ class ReplayBlockWrite : ReplayBlock
 
     fun addTxEntries(summary: TransactionExecutionSummary ) {
 
-
         val ledg_tx= getOrCreateTx(summary.transaction,summary.entryNumber )
         val calcGasUsed = summary.gasLimit.subtract(summary.gasLeftover.add(summary.gasRefund)).toLong()
 
@@ -193,7 +192,6 @@ class ReplayBlockWrite : ReplayBlock
 
         saveReceipt(summary,ledg_tx)
         saveLogs(summary,ledg_tx)
-
     }
 
     fun addTxEntries(_tx: Transaction, _gasUsed: Long, ledg_tx : Tx, isFailed: Boolean) {
@@ -246,13 +244,9 @@ class ReplayBlockWrite : ReplayBlock
         }
     }
 
-
-    fun write(txsummaries : List<TransactionExecutionSummary>)  {
+    fun write()  {
 
         val b = blockRepo.findOne(this.getBlock().getNumber().toInt())
-
-        val t1=System.currentTimeMillis()
-
         if (b!=null)
             blockRepo.deleteBlockWithEntries(b)
 
@@ -260,9 +254,10 @@ class ReplayBlockWrite : ReplayBlock
 
         if (this.block.number != 0L)    addRewardEntries()
 
-        txsummaries.   forEach {       addTxEntries ( it ) }
+        summaries.     forEach {       addTxEntries ( it ) }
         entries.       forEach {       ledgRepo.save( it ) }
-
+        //todo: use logger
+        println ("block saved:" + block.number)
     }
 
     private fun saveReceipt(summary: TransactionExecutionSummary, _tx : Tx) {
@@ -309,9 +304,6 @@ class ReplayBlockWrite : ReplayBlock
             println(entry)
         }
     }
-
-
-
 
     constructor(ledgerSync: LedgerSyncService, _block: Block,
                 _blockRepo : LedgerBlockRepository,

@@ -16,5 +16,9 @@ interface LedgerEntryRepository : PagingAndSortingRepository<LedgerEntry, Int>
     @Query("delete from LedgerEntry b where b.block.id=:bnumber")
     fun deleteByBlockNumber(@Param("bnumber") bnumber : Int)
 
+    @Modifying
+    @Query("delete from LedgerEntry b where b.block.id>=:bnumber")
+    fun deleteByBlockNumberFrom(@Param("bnumber") bnumber : Int)
+
 }
 

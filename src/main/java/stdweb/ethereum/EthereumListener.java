@@ -4,6 +4,7 @@ import org.ethereum.core.Block;
 import org.ethereum.core.TransactionExecutionSummary;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.listener.EthereumListenerAdapter;
+import stdweb.Core.SyncStatus;
 
 import java.util.List;
 
@@ -30,19 +31,12 @@ public class EthereumListener extends EthereumListenerAdapter {
     public void onBlockExecuted(Block block,List<TransactionExecutionSummary> summaries)
     {
         //System.out.println("on block exec"+block.getNumber());
-        try{
-            ledgerSync.getLock().lock();
-            ledgerSync.saveBlockData(block,summaries);
-        }
-        catch (Exception e)
-        {
-            e.printStackTrace();
-        }
-        finally {
-            ledgerSync.getLock().unlock();
-        }
+        if (ledgerSync.getLock().isLocked())
+            System.out.println("LedgerSync is locked");
 
-
+        if (ledgerSync.getSyncStatus()== SyncStatus.onBlockSync) {
+                ledgerSync.saveBlockData(block, summaries);
+        }
     }
 
 

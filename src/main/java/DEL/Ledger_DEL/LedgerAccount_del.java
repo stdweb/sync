@@ -6,7 +6,6 @@ import org.ethereum.core.Repository;
 import org.ethereum.db.ByteArrayWrapper;
 import org.spongycastle.util.encoders.Hex;
 import stdweb.Core.AddressDecodeException;
-import stdweb.ethereum.EthereumBean_DEL;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;

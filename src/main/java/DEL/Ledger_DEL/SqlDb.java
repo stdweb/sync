@@ -6,7 +6,6 @@ import stdweb.Core.AddressDecodeException;
 import stdweb.Core.EntryType;
 import stdweb.Core.HashDecodeException;
 import stdweb.Core.SyncStatus;
-import stdweb.ethereum.EthereumBean_DEL;
 
 import java.math.BigDecimal;
 import java.sql.*;

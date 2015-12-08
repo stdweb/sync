@@ -3,7 +3,7 @@ package stdweb.Core;
 import org.ethereum.core.Block;
 import org.ethereum.core.BlockchainImpl;
 import org.ethereum.core.Repository;
-import stdweb.ethereum.EthereumBean_DEL;
+import DEL.Ledger_DEL.EthereumBean_DEL;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;

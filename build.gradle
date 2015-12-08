@@ -84,7 +84,7 @@ dependencyManagement {
 
 //dependencies {
 //    compile 'org.springframework.data:spring-data-jpa'
-//    compile 'org.springframework.data:spring-data-rest'
+//    compile 'org.springframework.data:spring-data-rest_del'
 //}
 
 bootRun {

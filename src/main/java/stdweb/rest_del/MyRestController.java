@@ -1,10 +1,10 @@
-package stdweb.rest;
+package stdweb.rest_del;
 
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import stdweb.ethereum.EthereumBean_DEL;
+import DEL.Ledger_DEL.EthereumBean_DEL;
 
 //@RestController
 public class MyRestController {

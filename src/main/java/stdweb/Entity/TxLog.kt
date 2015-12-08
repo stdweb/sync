@@ -18,6 +18,8 @@ class TxLog
 
     @ManyToOne(fetch = FetchType.LAZY)
     var address : LedgerAccount? = null
+
+    @Lob
     var data : ByteArray = ByteUtil.EMPTY_BYTE_ARRAY
 
     @Column(length = 32) var topic1 = ByteUtil.EMPTY_BYTE_ARRAY

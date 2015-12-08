@@ -1,4 +1,4 @@
-package stdweb.rest;
+package stdweb.rest_del;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -9,7 +9,7 @@ import stdweb.Core.HashDecodeException;
 import stdweb.Core.Utils;
 import DEL.Ledger_DEL.LedgerBlockStore;
 import DEL.Ledger_DEL.del_LBlock;
-import stdweb.ethereum.EthereumBean_DEL;
+import DEL.Ledger_DEL.EthereumBean_DEL;
 import stdweb.ethereum.EthereumListener;
 
 import javax.servlet.http.HttpServletRequest;
@@ -26,6 +26,7 @@ import static org.springframework.web.bind.annotation.RequestMethod.GET;
  */
 //@RestController
 public class BlockController_Del {
+
 
     //@Autowired
     EthereumBean_DEL ethereumBean;

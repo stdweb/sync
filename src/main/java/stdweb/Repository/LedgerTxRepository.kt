@@ -16,5 +16,9 @@ interface LedgerTxRepository : PagingAndSortingRepository<Tx, Int>
     @Modifying
     @Query("delete from Tx b where b.block.id=:bnumber")
     fun deleteByBlockNumber(@Param("bnumber") bnumber : Int)
+
+    @Modifying
+    @Query("delete from Tx b where b.block.id>=:bnumber")
+    fun deleteByBlockNumberFrom(@Param("bnumber") bnumber : Int)
 }
 
