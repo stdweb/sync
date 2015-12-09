@@ -17,7 +17,7 @@ public class Config {
 
 
 
-    @Bean
+//    @Bean
     EthereumBean ethereumBean() throws Exception {
         EthereumBean ethereumBean = new EthereumBean();
 
@@ -34,7 +34,7 @@ public class Config {
     @Autowired
     LedgerBlockRepository blockRepository;
 
-    @Bean
+ //   @Bean
     @DependsOn({"ethereumBean","ledgerBlockRepository","ledgerAccountRepository","ledgerEntryRepository"})
     LedgerSyncService ledgerSync() throws Exception
     {
