@@ -219,8 +219,8 @@ open class LedgerSyncService
                 lock.unlock()
             }
 
-        syncStatus= SyncStatus.onBlockSync
-        ethereumBean?.blockchainStartSync()
+        //syncStatus= SyncStatus.onBlockSync
+        //ethereumBean?.blockchainStartSync()
 
         println ("LedgSyncService started")
     }

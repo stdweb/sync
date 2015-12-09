@@ -60,7 +60,7 @@ class ReplayBlockWrite : ReplayBlock
         var parent : LedgerBlock? = null
 
         var coinbaseAccount = ledgerSync.getOrCreateLedgerAccount(b?.coinbase ?: Utils.ZERO_BYTE_ARRAY_20 )
-        val ledgBlock = LedgerBlock()
+        val ledgBlock =  LedgerBlock()
 
         with(ledgBlock)
         {
