@@ -30,14 +30,14 @@ public class EthereumListener extends EthereumListenerAdapter {
     @Override
     public void onBlockExecuted(Block block,List<TransactionExecutionSummary> summaries)
     {
-        System.out.print("on block exec"+block.getNumber());
+        System.out.println("on block exec "+block.getNumber());
         if (ledgerSync==null)
         {
             System.out.println(" - ledgSync is null!!!\n");
             return;
         }
-        if (ledgerSync.getLock().isLocked())
-            System.out.println("LedgerSync is locked");
+//        if (ledgerSync.getLock().isLocked())
+//            System.out.println("LedgerSync is locked");
 
         if (ledgerSync.getSyncStatus()== SyncStatus.onBlockSync) {
                 ledgerSync.saveBlockData(block, summaries);

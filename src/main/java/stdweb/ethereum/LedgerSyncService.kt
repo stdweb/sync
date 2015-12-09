@@ -175,6 +175,7 @@ open class LedgerSyncService
     {
         try {
             lock.lock()
+            println("lock aquired in thread" +Thread.currentThread().id)
             val replayBlock = ReplayBlockWrite(
                     this, block,
                     blockRepo!!,
