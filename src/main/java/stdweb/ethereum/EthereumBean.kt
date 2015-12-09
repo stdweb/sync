@@ -61,6 +61,8 @@ public class EthereumBean
         this.blockchain=this.ethereum.blockchain as BlockchainImpl
         this.repo=this.ethereum.repository as RepositoryImpl
 
+        println ("bestblock on start:"+this.blockchain.bestBlock.number);
+
 
     }
 }
