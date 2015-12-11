@@ -19,6 +19,8 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 
+import static java.lang.Runtime.getRuntime;
+
 @SpringBootApplication
 @EnableTransactionManagement
 @EnableScheduling
@@ -39,7 +41,9 @@ public class Application //extends javafx.application.Application
 
         bean.start();
 
-
+        System.out.println(String.format("stdweb:FreeMemory %s, TotalMemory %s, 0.3 of totmem: %s",
+                getRuntime().freeMemory()/1024,getRuntime().totalMemory()/1024,getRuntime().totalMemory()/1024*0.3
+        ));
 
         System.out.println("spring main finish");
        // launch(args);

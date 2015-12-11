@@ -20,7 +20,6 @@ public class EthereumBean
     val repo        : RepositoryImpl
 
 
-
     @Autowired
     var ledgerSync : LedgerSyncService? = null
 
