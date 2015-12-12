@@ -30,7 +30,7 @@ public class EthereumListener extends EthereumListenerAdapter {
     @Override
     public void onBlockExecuted(Block block,List<TransactionExecutionSummary> summaries)
     {
-        System.out.println("on block exec "+block.getNumber());
+        //System.out.println("on block exec "+block.getNumber());
         if (ledgerSync==null)
         {
             System.out.println(" - ledgSync is null!!!\n");

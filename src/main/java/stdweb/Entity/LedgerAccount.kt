@@ -20,8 +20,8 @@ class LedgerAccount {
     var nonce : Long = -1
     var isContract : Boolean = false
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    var lastBlock : LedgerBlock?  = null
+//    @ManyToOne(fetch = FetchType.LAZY)
+//    var lastBlock : LedgerBlock?  = null
 
     @Column(precision = 31,scale = 0)
     var balance : BigDecimal = BigDecimal.ZERO

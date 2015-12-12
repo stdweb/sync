@@ -82,12 +82,16 @@ class GenesisBlockWrite : ReplayBlock
         var entryNo = 0
         val accountsKeys = snapshot.accountsKeys
 
-        accountsKeys.forEach {
-            address ->
+        //accountsKeys.forEach {
+        //    address ->
 
+        for (address in  accountsKeys){
             with(LedgerEntry())
             {
                 entryNo++
+
+//                if (entryNo>=500)
+//                    return;
 
                 val balance = BigDecimal(snapshot.getBalance(address))
 

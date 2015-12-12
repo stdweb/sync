@@ -175,7 +175,7 @@ open class LedgerSyncService
     {
         try {
             lock.lock()
-            println("lock aquired in thread" +Thread.currentThread().id)
+            //println("lock aquired in thread " +Thread.currentThread().id)
             val replayBlock = ReplayBlockWrite(
                     this, block,
                     blockRepo!!,
@@ -213,10 +213,12 @@ open class LedgerSyncService
     @Transactional open fun start() {
             try{
                 lock.lock()
+                //println("Genesis lock aquired in thread " +Thread.currentThread().id)
                 if (blockRepo!!.findOne(0)==null)
                     ensureGenesis()
             }
             finally {
+                //println("Genesis unlock ,count : " +lock.holdCount)
                 lock.unlock()
             }
 

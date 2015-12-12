@@ -44,8 +44,8 @@ public class EthereumBean
         this.listener.ledgerSync=this.ledgerSync!!
         //blockchainStopSync()
         blockchainStartSync()
-        //ledgerSync?.syncStatus = SyncStatus.onBlockSync
-        //ledgerSync?.nextStatus = SyncStatus.onBlockSync
+        ledgerSync?.syncStatus = SyncStatus.onBlockSync
+        ledgerSync?.nextStatus = SyncStatus.onBlockSync
 
         println("EtheteumBean initService")
 

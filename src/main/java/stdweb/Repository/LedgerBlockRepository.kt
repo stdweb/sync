@@ -88,9 +88,11 @@ class LedgerBlockRepositoryImpl : ILedgerBlockRepositoryCustom
     }
 
     override fun topBlock(): LedgerBlock? {
-        
-        return blockRepo?.findTopByOrderByIdDesc()
+
+        return blockRepo?.findOne(blockRepo?.topBlockId())
     }
+
+
 
     public override fun get(b : Int ) : LedgerBlock?
     {
@@ -136,6 +138,10 @@ interface LedgerBlockRepository : PagingAndSortingRepository<LedgerBlock, Int> ,
     @Modifying
     @Query("delete from LedgerBlock b where b.id>=:bnumber")
     public fun deleteByBlockNumberFrom( @Param("bnumber") bnumber : Int)
+
+    @Query("select max(b.id)   from LedgerBlock b ")
+    public fun topBlockId() : Int
+
 
 
 

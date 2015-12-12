@@ -31,7 +31,7 @@ class InfoController
     fun status(request: HttpServletRequest): Map<String,String> {
 
         val map                     = HashMap<String, String>()
-        val sqlTopBlock             = -1//repo.topBlock()?.id
+        val sqlTopBlock             = repo.topBlock()?.id
         val blockChainSyncStatus    = ethereumBean.blockchainSyncStatus
         val ledgSyncStatus          = ledgSync?.syncStatus
 

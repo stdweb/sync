@@ -247,8 +247,11 @@ class ReplayBlockWrite : ReplayBlock
     fun write()  {
 
         val b = blockRepo.findOne(this.getBlock().getNumber().toInt())
-        if (b!=null)
-            blockRepo.deleteBlockWithEntries(b)
+        if (b!=null) {
+            println ("skip block :" + block.number)
+            return;
+            //blockRepo.deleteBlockWithEntries(b)
+        }
 
         createLedgerBlock()
 
@@ -256,6 +259,7 @@ class ReplayBlockWrite : ReplayBlock
 
         summaries.     forEach {       addTxEntries ( it ) }
         entries.       forEach {       ledgRepo.save( it ) }
+
         //todo: use logger
         println ("block saved:" + block.number)
     }
