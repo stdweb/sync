@@ -20,6 +20,8 @@ public class Ledger {
     {
         this.ethereum=_ethereum;
         this.repo=(RepositoryImpl)ethereum.getRepository();
+
+
     }
 
 

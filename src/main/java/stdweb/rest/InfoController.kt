@@ -51,4 +51,6 @@ class InfoController
         this.ethereumBean=_ethereumBean
         this.ledgSync=_ledgSync// =ethereumBean.ledgerSync
     }
+
+
 }

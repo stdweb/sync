@@ -2,24 +2,35 @@ package stdweb.ethereum;
 
 import org.ethereum.core.*;
 import org.ethereum.db.BlockStore;
+import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.program.ProgramResult;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
 import stdweb.Core.*;
+import stdweb.Entity.LedgerAccount;
 import stdweb.Entity.LedgerBlock;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 
-abstract class ReplayBlock {
+public abstract class ReplayBlock {
 
     protected final EthereumBean ethereumBean;
     protected final BlockchainImpl blockchain;
     protected final LedgerSyncService ledgerSync;
 
+    protected HashMap<byte[],LedgerAccount> accounts        = new HashMap<byte[],LedgerAccount>();
+    protected void addAmount(LedgerAccount acc, BigDecimal amount)
+    {
+        if (accounts.get(acc.getAddress())==null)
+            accounts.put(acc.getAddress(),acc);
+
+        acc.setBalance(acc.getBalance().add(amount));
+    }
 
     //////////////////////////////////////////////////////////////////
 

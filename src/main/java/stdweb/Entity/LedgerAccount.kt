@@ -1,8 +1,10 @@
 package stdweb.Entity
 
+import org.ethereum.db.ByteArrayWrapper
 import org.ethereum.util.ByteUtil
 import org.hibernate.annotations.NaturalId
 import org.spongycastle.util.encoders.Hex
+import stdweb.Core.Utils
 
 import java.math.BigDecimal
 import javax.persistence.*
@@ -20,8 +22,12 @@ class LedgerAccount {
     var nonce : Long = -1
     var isContract : Boolean = false
 
-//    @ManyToOne(fetch = FetchType.LAZY)
-//    var lastBlock : LedgerBlock?  = null
+    @ManyToOne(fetch = FetchType.LAZY)
+    var lastBlock : LedgerBlock?  = null
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    var firstBlock : LedgerBlock?  = null
+
 
     @Column(precision = 31,scale = 0)
     var balance : BigDecimal = BigDecimal.ZERO
@@ -30,9 +36,18 @@ class LedgerAccount {
     var stateRoot : ByteArray = ByteUtil.EMPTY_BYTE_ARRAY
 
 
+
+
     public override fun toString(): String {
         return "0x"+Hex.toHexString(address)
     }
+
+    fun address_str() : String
+    {
+        return if (ByteArrayWrapper(address).equals(ByteArrayWrapper(Utils.ZERO_BYTE_ARRAY_20))) "" else toString()
+    }
+
+
     public constructor(){}
     public constructor(addr: ByteArray)
     {

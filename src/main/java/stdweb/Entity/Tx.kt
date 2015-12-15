@@ -46,6 +46,10 @@ class Tx{
         return "tx: 0x"+Hex.toHexString(hash)
     }
 
+    fun hash_str() : String {
+        return "0x"+Hex.toHexString(hash)
+    }
+
     constructor(_hash: ByteArray?) {
         this.hash=_hash
     }

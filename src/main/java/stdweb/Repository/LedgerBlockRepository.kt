@@ -142,6 +142,8 @@ interface LedgerBlockRepository : PagingAndSortingRepository<LedgerBlock, Int> ,
     @Query("select max(b.id)   from LedgerBlock b ")
     public fun topBlockId() : Int
 
+    @Query("select b   from LedgerBlock b where b.id between :from and :to order by id desc")
+    public fun getBlockRange(@Param("from") from : Int,@Param("to") to : Int) : List<LedgerBlock>
 
 
 

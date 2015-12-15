@@ -69,8 +69,23 @@ class LedgerBlock
 
     @Transient
     var coinbase_str : String = ""
-
         get()="0x"+Hex.toHexString(coinbase?.address ?: Utils.ZERO_BYTE_ARRAY_20 )
+
+    @Transient
+    var stateroot_str : String = ""
+        get()="0x"+Hex.toHexString( stateRoot )
+
+    @Transient
+    var txroot_str : String = ""
+        get()="0x"+Hex.toHexString(txTrieRoot  )
+
+    @Transient
+    var receiptroot_str : String = ""
+        get()="0x"+Hex.toHexString(receiptTrieRoot  )
+
+    @Transient
+    var parent_str : String = ""
+        get()="0x"+Hex.toHexString(parentHash  )
 
 
     public fun toJSON() : String

@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional
 import org.springframework.util.Assert
 import stdweb.Core.*
 import stdweb.Entity.LedgerAccount
+import stdweb.Entity.LedgerBlock
 
 import stdweb.Repository.*
 import java.math.BigDecimal
@@ -41,18 +42,25 @@ open class LedgerSyncService
 
     //todo: LedgerSyncServ use logger instead of print
 
-    fun getOrCreateLedgerAccount( addr : ByteArray) : LedgerAccount
+    fun getOrCreateLedgerAccount(addr: ByteArray, block : LedgerBlock? ) : LedgerAccount
     {
 
         var account = accRepo!!.findByAddress(addr) ?: LedgerAccount(addr)
 
         if (account.id==-1) {
-            //account.isContract = isContract(account.address)
+            //account.firstBlock  = genesis
+            account.isContract  = isContract(account.address)
+
+            account.firstBlock  = block
+            account.lastBlock   = block
             //account = fillLedgerAccount(account)
             account = accRepo!!.save(account)
+            //println ("created acc: ${account.id} : ${account.toString()} :isContract ${account.isContract}" )
         }
         else
         {
+            account.lastBlock =  block
+            account = accRepo!!.save(account)
             //todo: upd balance and nonce
             //account = fillLedgerAccount(account)
             //account = accRepo!!.save(account)
@@ -233,7 +241,7 @@ open class LedgerSyncService
         {
             println("ensure genesis")
             val block0=ethereumBean!!.blockchain.getBlockByNumber(0)
-            var genesis=GenesisBlockWrite(this,block0,blockRepo!!,ledgerRepo!!)
+            var genesis=GenesisBlockWrite(this,block0,blockRepo!!,ledgerRepo!!,accRepo!!)
             genesis.writeGenesis()
         }
     }

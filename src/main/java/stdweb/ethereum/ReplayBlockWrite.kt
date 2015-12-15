@@ -19,6 +19,7 @@ class ReplayBlockWrite : ReplayBlock
     private val entries         = ArrayList<LedgerEntry>()
 
 
+
     private var blockRepo:      LedgerBlockRepository
     private var accRepo:        LedgerAccountRepository
     private var ledgRepo:       LedgerEntryRepository
@@ -59,7 +60,7 @@ class ReplayBlockWrite : ReplayBlock
         val b=block
         var parent : LedgerBlock? = null
 
-        var coinbaseAccount = ledgerSync.getOrCreateLedgerAccount(b?.coinbase ?: Utils.ZERO_BYTE_ARRAY_20 )
+        var coinbaseAccount = ledgerSync.getOrCreateLedgerAccount(b?.coinbase ?: Utils.ZERO_BYTE_ARRAY_20,null)
         val ledgBlock =  LedgerBlock()
 
         with(ledgBlock)
@@ -78,10 +79,13 @@ class ReplayBlockWrite : ReplayBlock
             receiptTrieRoot = b?.receiptsRoot ?: ByteUtil.EMPTY_BYTE_ARRAY
             stateRoot       = b?.stateRoot ?: ByteUtil.EMPTY_BYTE_ARRAY
             txTrieRoot      = b?.txTrieRoot ?: ByteUtil.EMPTY_BYTE_ARRAY
-            reward          = BigDecimal(blockReward)
+            reward          = BigDecimal(blockReward).add(BigDecimal(totalUncleReward))
             fee             = BigDecimal(blockFee)
         }
-        this.ledgerBlock = blockRepo.save(ledgBlock)
+        this.ledgerBlock    = blockRepo.save(ledgBlock)
+        coinbaseAccount     .firstBlock=this.ledgerBlock
+        coinbaseAccount     .lastBlock=this.ledgerBlock
+        coinbaseAccount     = accRepo.save(coinbaseAccount)
     }
 
     fun getOrCreateTx(tran: Transaction, ind : Int ) : Tx
@@ -90,8 +94,8 @@ class ReplayBlockWrite : ReplayBlock
         with (tx)
         {
             block=ledgerBlock
-            from                = ledgerSync.getOrCreateLedgerAccount(tran.sender)
-            to                  = ledgerSync.getOrCreateLedgerAccount(tran.receiveAddress ?: tran.contractAddress)
+            from                = ledgerSync.getOrCreateLedgerAccount(tran.sender,ledgerBlock)
+            to                  = ledgerSync.getOrCreateLedgerAccount(tran.receiveAddress ?: tran.contractAddress,ledgerBlock)
             value               = BigDecimal(BigInteger(1, tran.value))
             gas                 = BigInteger(1,tran.gasLimit).toLong()
             gasPrice            = BigDecimal(BigInteger(1,tran.gasPrice))
@@ -109,21 +113,22 @@ class ReplayBlockWrite : ReplayBlock
 
     fun addRewardEntries() {
 
-        val coinbase = ledgerSync.getOrCreateLedgerAccount(block.coinbase)
+        val coinbase = ledgerSync.getOrCreateLedgerAccount(block.coinbase,ledgerBlock)
 
         var totalBlockReward = Block.BLOCK_REWARD
         var uncleReward = BigDecimal.ZERO
 
         // Add extra rewards based on number of uncles
-        block.uncleList.forEach ({
+        block.uncleList.forEach {
             uncle ->
 
             uncleReward             = getUncleReward( uncle )
             totalBlockReward        = totalBlockReward.add(Block.INCLUSION_REWARD)
 
-            with (LedgerEntry())
-            {
-                Account             = ledgerSync.getOrCreateLedgerAccount(uncle.coinbase)
+            with (LedgerEntry()){
+                account             = ledgerSync.getOrCreateLedgerAccount(uncle.coinbase,ledgerBlock)
+                account?.balance    = account?.balance?.add(uncleReward)
+                balance             = account?.balance ?: BigDecimal.ZERO
                 tx                  = null
                 offsetAccount       = zeroAccount
                 amount              = uncleReward
@@ -136,12 +141,14 @@ class ReplayBlockWrite : ReplayBlock
                 grossAmount         = uncleReward
                 entryResult         = EntryResult.Ok
 
-                entries             .add(this)
-            }})
 
-            with (LedgerEntry())
-            {
-                Account             = coinbase
+                entries             .add(this)
+                accRepo             .save(account)
+            }}
+
+            with (LedgerEntry()){
+                account             = coinbase
+
                 tx                  = null
                 offsetAccount       = zeroAccount
                 amount              = BigDecimal(totalBlockReward)
@@ -152,16 +159,23 @@ class ReplayBlockWrite : ReplayBlock
                 entryType           = EntryType.CoinbaseReward
                 fee                 = BigDecimal.ZERO
                 grossAmount         = this.amount
+
+                account?.balance    =account?.balance?.add(this.amount)
+                balance             =account?.balance ?: BigDecimal.ZERO
+
                 entryResult         = EntryResult.Ok
 
                 entries             .add(this)
+                accRepo             .save(account)
             }
 
         val block_fee = entries.map({ x -> x.fee }).reduce( { acc, z -> acc.add(z)} )
         if (block_fee  != BigDecimal.ZERO)
             with (LedgerEntry())
             {
-                Account             = coinbase
+                account             = coinbase
+                account?.balance    = account?.balance?.add(block_fee)
+                balance             = account?.balance ?: BigDecimal.ZERO
                 tx                  = null
                 offsetAccount       = zeroAccount
                 amount              = block_fee
@@ -174,7 +188,8 @@ class ReplayBlockWrite : ReplayBlock
                 grossAmount         = amount
                 entryResult         = EntryResult.Ok
 
-                entries.add(this)
+                accRepo             .save(account)
+                entries             .add(this)
             }
     }
 
@@ -190,27 +205,27 @@ class ReplayBlockWrite : ReplayBlock
                     ledg_tx, t.isRejected)
         }
 
-        saveReceipt(summary,ledg_tx)
-        saveLogs(summary,ledg_tx)
+        saveReceipt (summary,ledg_tx)
+        saveLogs    (summary,ledg_tx)
     }
 
     fun addTxEntries(_tx: Transaction, _gasUsed: Long, ledg_tx : Tx, isFailed: Boolean) {
 
-        val senderAcc       = ledgerSync.getOrCreateLedgerAccount(_tx.sender)
-        val recvAcc         = ledgerSync.getOrCreateLedgerAccount(_tx.contractAddress ?: _tx.receiveAddress)
+        val senderAcc       = ledgerSync.getOrCreateLedgerAccount(_tx.sender,ledgerBlock)
+        val recvAcc         = ledgerSync.getOrCreateLedgerAccount(_tx.contractAddress ?: _tx.receiveAddress,ledgerBlock)
         val entryResult1    = if (isFailed) EntryResult.Failed else EntryResult.Ok
 
-        with (LedgerEntry())//ledger send entry
-        {
+        //ledger send entry
+        with (LedgerEntry()){
             tx              = ledg_tx
-            Account         = senderAcc
+            account         = senderAcc
+
             offsetAccount   = recvAcc
-            amount          = Convert2json.val2BigDec(_tx.value).negate()
+            amount          = if (isFailed) BigDecimal.ZERO else Convert2json.val2BigDec(_tx.value).negate()
             entryResult     = entryResult1
             block           = ledgerBlock
             blockTimestamp  = ledgerBlock?.timestamp ?: 0
             entryType       = getSendEntryType(_tx, senderAcc, recvAcc)
-            grossAmount     = amount.subtract(fee)
 
             if (_tx is InternalTransaction) {
                 fee         = BigDecimal.valueOf(0)
@@ -218,18 +233,22 @@ class ReplayBlockWrite : ReplayBlock
                 gasUsed     = 0
             }
             else {
-                fee         = BigDecimal((BigInteger(1, _tx.gasPrice)).multiply(BigInteger.valueOf(gasUsed)))
                 gasUsed     = _gasUsed
+                fee         = ledg_tx.gasPrice.multiply(BigDecimal.valueOf(gasUsed))
             }
-            entries.add(this)
-        }
+            grossAmount     = amount.subtract(fee)
+            account?.balance= account?.balance?.add(grossAmount)
+            balance         = account?.balance ?: BigDecimal.ZERO
 
-        with (LedgerEntry())//ledgerEntryRecv
-        {
+            accRepo         .save   (account)
+            entries         .add    (this)
+        }
+        //ledgerEntryRecv
+        with (LedgerEntry()){
             tx              = ledg_tx
             offsetAccount   = senderAcc
-            Account         = recvAcc
-            amount          = Convert2json.val2BigDec(_tx.value)
+            account = recvAcc
+            amount          = if (isFailed) BigDecimal.ZERO else Convert2json.val2BigDec(_tx.value).negate()
             entryResult     = entryResult1
             block           = ledgerBlock
             blockTimestamp  = ledgerBlock?.timestamp ?: 0
@@ -238,9 +257,15 @@ class ReplayBlockWrite : ReplayBlock
             fee             = BigDecimal.valueOf(0)
 
             grossAmount     = amount
+
+            account?.balance= account?.balance?.add(grossAmount)
+            balance         = account?.balance ?: BigDecimal.ZERO
+
             if (_tx is InternalTransaction)
                 depth       = (_tx.deep + 1).toByte()
-            entries.add(this)
+
+            accRepo         .save   (account)
+            entries         .add    (this)
         }
     }
 
@@ -289,7 +314,7 @@ class ReplayBlockWrite : ReplayBlock
                 tx          = _tx
                 block       = ledgerBlock
                 ind         = _ind ++
-                address     = ledgerSync.getOrCreateLedgerAccount(it.address)
+                address     = ledgerSync.getOrCreateLedgerAccount(it.address,ledgerBlock)
                 data        = it.data
 
                 val q = it.topics.size
@@ -319,7 +344,6 @@ class ReplayBlockWrite : ReplayBlock
                 _receiptRepo : LedgerTxReceiptRepository
                 ) :super (ledgerSync,_block)
     {
-
         this.blockRepo      = _blockRepo
         this.accRepo        = _accRepo
         this.ledgRepo       =_ledgRepo
@@ -327,8 +351,6 @@ class ReplayBlockWrite : ReplayBlock
         this.logRepo        =_logRepo
         this.receiptRepo    =_receiptRepo
 
-        zeroAccount=ledgerSync.getOrCreateLedgerAccount(Utils.ZERO_BYTE_ARRAY_20)
+        zeroAccount=ledgerSync.getOrCreateLedgerAccount(Utils.ZERO_BYTE_ARRAY_20,ledgerBlock)
     }
-
-
 }

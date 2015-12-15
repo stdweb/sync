@@ -58,28 +58,30 @@ public class Utils {
 
     public static byte[] address_decode(String s) throws AddressDecodeException {
         s= Utils.Remove0x(s);
-        if (s.length()!=40) throw new AddressDecodeException("Error decoding address. Incorrect string size: "+ s +" : "+s.length());
+        if (s.length()!=40) return null;//throw new AddressDecodeException("Error decoding address. Incorrect string size: "+ s +" : "+s.length());
         try{
             return Hex.decode(s);
 
         }
         catch (DecoderException e)
         {
-            throw new AddressDecodeException("incorrect address:"+s);
+            return null;
+            //throw new AddressDecodeException("incorrect address:"+s);
         }
     }
 
     public static byte[] hash_decode(String s) throws HashDecodeException {
 
         s= Utils.Remove0x(s);
-        if (s.length()!=64) throw new HashDecodeException("Error decoding hash. Incorrect string size: "+ s +" : "+s.length());
+        if (s.length()!=64) return null;// throw new HashDecodeException("Error decoding hash. Incorrect string size: "+ s +" : "+s.length());
         try{
             return Hex.decode(s);
 
         }
         catch (DecoderException e)
         {
-            throw new HashDecodeException("incorrect hash:"+s);
+            return null;
+            //throw new HashDecodeException("incorrect hash:"+s);
         }
     }
 }

@@ -1,8 +1,5 @@
 package stdweb.rest
 
-/**
- * Created by bitledger on 20.11.15.
- */
 
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.domain.Page
@@ -19,11 +16,6 @@ import stdweb.ethereum.EthereumBean
 import java.util.*
 import javax.servlet.http.HttpServletRequest
 
-//import org.springframework.web.bind.annotation.RequestMethod
-
-/**
- * Created by bitledger on 12.11.15.
- */
 @RestController
 class BlockController {
 
@@ -34,18 +26,12 @@ class BlockController {
     var repo: LedgerBlockRepository? = null
 
 
+    @RequestMapping(value = "/bestBlock", method = arrayOf( RequestMethod.GET), produces = arrayOf(MediaType.APPLICATION_JSON_VALUE))
+    @ResponseBody
+    fun getBestBlock(request: HttpServletRequest): String {
 
-
-//    @RequestMapping(value = "/bestBlock", method = arrayOf( RequestMethod.GET), produces = arrayOf(MediaType.APPLICATION_JSON_VALUE))
-//    @ResponseBody
-//    fun getBestBlock(request: HttpServletRequest): String {
-//        println("start thread Id:"+Thread.currentThread().id+", instance "+this.hashCode())
-//
-//        Thread.sleep(5000)
-//        println("finish thread Id:"+Thread.currentThread().id)
-//
-//        return repo?.topBlock()?.id.toString()
-//    }
+        return repo?.topBlock()?.id.toString()
+    }
 
     @RequestMapping(value = "/block/{blockId}", method = arrayOf( RequestMethod.GET), produces = arrayOf(MediaType.APPLICATION_JSON_VALUE))
     //@ResponseStatus(value = HttpStatus.OK)
@@ -72,26 +58,20 @@ class BlockController {
 
 
         @RequestMapping(value = "/blocks/{blockId}", method = arrayOf( RequestMethod.GET), produces = arrayOf(MediaType.APPLICATION_JSON_VALUE))
-        fun  getBlockList(@PathVariable blockId : String ,request : HttpServletRequest ): ArrayList<LedgerBlock>? {
+        fun  getBlockList(@PathVariable blockId : String ,request : HttpServletRequest ): List<LedgerBlock>? {
 
-            var ret : ResponseEntity<ArrayList<LedgerBlock>>
+            var ret : ResponseEntity<List<LedgerBlock>>
 
             val t1=System.currentTimeMillis();
 
             var top =repo?.topBlock()?.id ?: 0
-            var offsetBlock=repo?.get(blockId)
-            var offset=offsetBlock?.id ?: top
+            var offset=top
 
-            //val page_req=PageRequest(0,40, Sort.Direction.DESC,"id")
-            var page_req=EntityQueryRange(top,offset,40,Sort(Sort.Direction.DESC,"id"))
+            if (!blockId.equals("top")) {
+                offset = repo?.get(blockId)?.id ?: top
+            }
 
-
-            //Utils.log("page request", t1, request, ResponseEntity<Any>(null, HttpStatus.OK))
-
-            var list: Page<LedgerBlock>? =repo?.findAll(page_req)
-            //Utils.log("page request", t1, request, ResponseEntity<Any>(null, HttpStatus.OK))
-
-            var content : ArrayList<LedgerBlock>? = list?.content?.toArrayList()
+            var content = repo?.getBlockRange(offset-40,offset)
 
             if (content==null)
                 ret= ResponseEntity(null, HttpStatus.INTERNAL_SERVER_ERROR)
