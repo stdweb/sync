@@ -72,10 +72,8 @@ class CmdController
     @Throws(IOException::class, SQLException::class, InterruptedException::class)
     fun ledgerCmd(@PathVariable cmd: String): Map<String,String> {
 
-       // val sqlDb = SqlDb.getSqlDb()
         when (cmd.toLowerCase()) {
             "stop" -> ledgSync.stopSync()
-        //ethereumBean.ledgerStopSync();
             "start" -> ledgSync.ledgerBulkLoad()
             "sync" -> ledgSync.nextStatus = SyncStatus.onBlockSync
             "stopsync" -> {
@@ -89,10 +87,8 @@ class CmdController
             } catch (e: NumberFormatException) {
                 //return "Wrong cmd in method /ledger/{cmd}"
             }
-
         }//ethereumBean.ledgerStartSync(Long.MAX_VALUE);
         val result = ledgSync.status()
-
         return result
     }
 

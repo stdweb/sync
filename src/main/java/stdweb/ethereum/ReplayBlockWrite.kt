@@ -248,7 +248,7 @@ class ReplayBlockWrite : ReplayBlock
             tx              = ledg_tx
             offsetAccount   = senderAcc
             account = recvAcc
-            amount          = if (isFailed) BigDecimal.ZERO else Convert2json.val2BigDec(_tx.value).negate()
+            amount          = if (isFailed) BigDecimal.ZERO else Convert2json.val2BigDec(_tx.value)
             entryResult     = entryResult1
             block           = ledgerBlock
             blockTimestamp  = ledgerBlock?.timestamp ?: 0
