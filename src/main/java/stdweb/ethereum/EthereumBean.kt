@@ -26,8 +26,8 @@ public class EthereumBean
     var blockchainSyncStatus : SyncStatus = SyncStatus.stopped
 
     fun blockchainStartSync() {
-        blockchain.stopOn = java.lang.Long.MAX_VALUE
-        blockchainSyncStatus= SyncStatus.onBlockSync
+        blockchain.stopOn       = java.lang.Long.MAX_VALUE
+        blockchainSyncStatus    = SyncStatus.onBlockSync
         println("blockchain started")
     }
 

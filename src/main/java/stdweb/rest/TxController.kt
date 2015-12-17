@@ -20,6 +20,7 @@ import org.springframework.http.MediaType.APPLICATION_JSON_VALUE
 import org.springframework.web.bind.annotation.*
 import org.springframework.web.bind.annotation.RequestMethod.GET
 import stdweb.Core.EntryType
+import stdweb.Entity.LedgerAccount
 import stdweb.Entity.LedgerBlock
 import stdweb.Entity.LedgerEntry
 import stdweb.Entity.Tx
@@ -37,6 +38,8 @@ class TxController {
     @Autowired var ledgRepo     : LedgerEntryRepository?    = null
     @Autowired var blockRepo    : LedgerBlockRepository?    = null
     @Autowired var txRepo       : LedgerTxRepository?       = null
+
+
 
     @RequestMapping(value = "/tx/{txId}", method = arrayOf( RequestMethod.GET), produces = arrayOf(MediaType.APPLICATION_JSON_VALUE))
     @ResponseBody
@@ -89,6 +92,7 @@ class TxController {
                             EntryType.Genesis,
                             EntryType.ContractCreation )}
 
+            f1.forEach { it.offsetAccount = it.account; it.account = LedgerAccount(Utils.ZERO_BYTE_ARRAY_20) }
             f2.forEach { it.amount= it.amount.abs() }
             result.addAll(f1.union(f2))
         }

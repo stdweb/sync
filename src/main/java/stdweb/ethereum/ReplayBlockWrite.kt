@@ -18,8 +18,6 @@ class ReplayBlockWrite : ReplayBlock
 
     private val entries         = ArrayList<LedgerEntry>()
 
-
-
     private var blockRepo:      LedgerBlockRepository
     private var accRepo:        LedgerAccountRepository
     private var ledgRepo:       LedgerEntryRepository
@@ -27,8 +25,6 @@ class ReplayBlockWrite : ReplayBlock
 
     private var logRepo:        LedgerTxLogRepository
     private var receiptRepo:    LedgerTxReceiptRepository
-
-
 
     private fun getSendEntryType(tx: Transaction, sendAcc: LedgerAccount, recvAcc: LedgerAccount): EntryType {
 
@@ -117,6 +113,34 @@ class ReplayBlockWrite : ReplayBlock
 
         var totalBlockReward = Block.BLOCK_REWARD
         var uncleReward = BigDecimal.ZERO
+        var block_fee  = BigDecimal.ZERO
+
+        if (entries.count()>0)
+            block_fee = entries
+                .map    ({ x -> x.fee })
+                .reduce ({ acc, z -> acc.add(z)} )
+
+        if (block_fee  != BigDecimal.ZERO)
+            with (LedgerEntry())
+            {
+                account             = coinbase
+                account?.balance    = account?.balance?.add(block_fee)
+                balance             = account?.balance ?: BigDecimal.ZERO
+                tx                  = null
+                offsetAccount       = zeroAccount
+                amount              = block_fee
+                block               = ledgerBlock
+                blockTimestamp      = ledgerBlock?.timestamp ?: 0
+                depth               = 0.toByte()
+                gasUsed             = 0
+                entryType           = EntryType.FeeReward
+                fee                 = BigDecimal.ZERO
+                grossAmount         = amount
+                entryResult         = EntryResult.Ok
+
+                accRepo             .save(account)
+                entries             .add(0,this)
+            }
 
         // Add extra rewards based on number of uncles
         block.uncleList.forEach {
@@ -141,8 +165,8 @@ class ReplayBlockWrite : ReplayBlock
                 grossAmount         = uncleReward
                 entryResult         = EntryResult.Ok
 
-
                 entries             .add(this)
+                entries             .add(0,this)
                 accRepo             .save(account)
             }}
 
@@ -165,32 +189,11 @@ class ReplayBlockWrite : ReplayBlock
 
                 entryResult         = EntryResult.Ok
 
-                entries             .add(this)
+                entries             .add(0,this)
                 accRepo             .save(account)
             }
 
-        val block_fee = entries.map({ x -> x.fee }).reduce( { acc, z -> acc.add(z)} )
-        if (block_fee  != BigDecimal.ZERO)
-            with (LedgerEntry())
-            {
-                account             = coinbase
-                account?.balance    = account?.balance?.add(block_fee)
-                balance             = account?.balance ?: BigDecimal.ZERO
-                tx                  = null
-                offsetAccount       = zeroAccount
-                amount              = block_fee
-                block               = ledgerBlock
-                blockTimestamp      = ledgerBlock?.timestamp ?: 0
-                depth               = 0.toByte()
-                gasUsed             = 0
-                entryType           = EntryType.FeeReward
-                fee                 = BigDecimal.ZERO
-                grossAmount         = amount
-                entryResult         = EntryResult.Ok
 
-                accRepo             .save(account)
-                entries             .add(this)
-            }
     }
 
     fun addTxEntries(summary: TransactionExecutionSummary ) {
@@ -280,9 +283,12 @@ class ReplayBlockWrite : ReplayBlock
 
         createLedgerBlock()
 
-        if (this.block.number != 0L)    addRewardEntries()
+
 
         summaries.     forEach {       addTxEntries ( it ) }
+
+        if (this.block.number != 0L)    addRewardEntries()
+
         entries.       forEach {       ledgRepo.save( it ) }
 
         //todo: use logger

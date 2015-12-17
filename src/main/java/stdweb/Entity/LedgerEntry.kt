@@ -95,7 +95,8 @@ class LedgerEntry {
 
     @Transient
     var addr_str: String =""
-        get() ="0x"+ Hex.toHexString(account?.address ?: byteArrayOf(0,0))
+        //get() ="0x"+ Hex.toHexString(account?.address ?: byteArrayOf(0,0))
+        get() =this.account?.address_str() ?: ""
 
     @Transient
     var offsetAddr_str: String =""
