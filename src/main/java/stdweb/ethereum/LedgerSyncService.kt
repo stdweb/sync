@@ -205,8 +205,6 @@ open class LedgerSyncService
                     replayBlock.write()
                 }
             }
-
-
         }
         catch ( e : KotlinNullPointerException)
         {

@@ -59,7 +59,7 @@ class AccountController{
             if (it.fee.signum()==1)
                 with (LedgerEntry()) {
                     account             = it.account
-                    tx                  = null
+                    tx                  = it.tx
                     offsetAccount       = it.offsetAccount
                     amount              = it.fee.negate()
                     block               = it.block

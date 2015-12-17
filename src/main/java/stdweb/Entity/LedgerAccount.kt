@@ -17,23 +17,26 @@ class LedgerAccount {
 
     @NaturalId
     @Column(length = 20)
-    var address : ByteArray = ByteUtil.EMPTY_BYTE_ARRAY
-    var name : String =""
-    var nonce : Long = -1
-    var isContract : Boolean = false
+    var address     : ByteArray = ByteUtil.EMPTY_BYTE_ARRAY
+    var name        : String =""
+    var nonce       : Long = -1
+    var isContract  : Boolean = false
 
     @ManyToOne(fetch = FetchType.LAZY)
-    var lastBlock : LedgerBlock?  = null
+    var lastBlock   : LedgerBlock?  = null
 
     @ManyToOne(fetch = FetchType.LAZY)
-    var firstBlock : LedgerBlock?  = null
+    var firstBlock  : LedgerBlock?  = null
 
 
     @Column(precision = 31,scale = 0)
-    var balance : BigDecimal = BigDecimal.ZERO
+    var balance     : BigDecimal = BigDecimal.ZERO
 
     @Column(length = 32)
-    var stateRoot : ByteArray = ByteUtil.EMPTY_BYTE_ARRAY
+    var stateRoot   : ByteArray = ByteUtil.EMPTY_BYTE_ARRAY
+
+    var txCount     : Int = 0
+    var entrCnt     : Int =0
 
 
 

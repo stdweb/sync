@@ -78,6 +78,8 @@ class GenesisBlockWrite : ReplayBlock
             address ->
             with(LedgerEntry()){
                 entryNo++
+
+
                 val gen_balance = BigDecimal(snapshot.getBalance(address))
 
                 account         = ledgerSync.getOrCreateLedgerAccount(address,genesis)
@@ -95,8 +97,10 @@ class GenesisBlockWrite : ReplayBlock
 
                 account?.balance= balance?.add(grossAmount)
 
-                //account?.firstBlock = genesis
-                //account?.lastBlock = genesis
+                account         ?.firstBlock= genesis
+                account         ?.lastBlock = genesis
+                accentryind = 1
+                account         ?.entrCnt   = 1
 
                 balance         = account?.balance ?: BigDecimal.ZERO
 

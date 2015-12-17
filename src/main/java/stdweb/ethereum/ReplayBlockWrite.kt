@@ -126,6 +126,8 @@ class ReplayBlockWrite : ReplayBlock
                 account             = coinbase
                 account?.balance    = account?.balance?.add(block_fee)
                 balance             = account?.balance ?: BigDecimal.ZERO
+                account?.entrCnt    = account?.entrCnt?.plus(1)
+                accentryind = account?.entrCnt ?: 0
                 tx                  = null
                 offsetAccount       = zeroAccount
                 amount              = block_fee
@@ -152,6 +154,8 @@ class ReplayBlockWrite : ReplayBlock
             with (LedgerEntry()){
                 account             = ledgerSync.getOrCreateLedgerAccount(uncle.coinbase,ledgerBlock)
                 account?.balance    = account?.balance?.add(uncleReward)
+                account?.entrCnt    = account?.entrCnt?.plus(1)
+                accentryind = account?.entrCnt ?: 0
                 balance             = account?.balance ?: BigDecimal.ZERO
                 tx                  = null
                 offsetAccount       = zeroAccount
@@ -184,8 +188,10 @@ class ReplayBlockWrite : ReplayBlock
                 fee                 = BigDecimal.ZERO
                 grossAmount         = this.amount
 
-                account?.balance    =account?.balance?.add(this.amount)
-                balance             =account?.balance ?: BigDecimal.ZERO
+                account?.balance    = account?.balance?.add(this.amount)
+                account?.entrCnt    = account?.entrCnt?.plus(1)
+                accentryind = account?.entrCnt ?: 0
+                balance             = account?.balance ?: BigDecimal.ZERO
 
                 entryResult         = EntryResult.Ok
 
@@ -241,6 +247,8 @@ class ReplayBlockWrite : ReplayBlock
             }
             grossAmount     = amount.subtract(fee)
             account?.balance= account?.balance?.add(grossAmount)
+            account?.entrCnt= account?.entrCnt?.plus(1)
+            accentryind = account?.entrCnt ?: 0
             balance         = account?.balance ?: BigDecimal.ZERO
 
             accRepo         .save   (account)
@@ -250,7 +258,7 @@ class ReplayBlockWrite : ReplayBlock
         with (LedgerEntry()){
             tx              = ledg_tx
             offsetAccount   = senderAcc
-            account = recvAcc
+            account         = recvAcc
             amount          = if (isFailed) BigDecimal.ZERO else Convert2json.val2BigDec(_tx.value)
             entryResult     = entryResult1
             block           = ledgerBlock
@@ -262,6 +270,8 @@ class ReplayBlockWrite : ReplayBlock
             grossAmount     = amount
 
             account?.balance= account?.balance?.add(grossAmount)
+            account?.entrCnt= account?.entrCnt?.plus(1)
+            accentryind = account?.entrCnt ?: 0
             balance         = account?.balance ?: BigDecimal.ZERO
 
             if (_tx is InternalTransaction)

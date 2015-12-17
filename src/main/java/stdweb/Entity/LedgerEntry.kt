@@ -10,6 +10,7 @@ import java.math.BigDecimal
 import javax.persistence.*
 
 @Entity
+@Table(indexes = arrayOf( Index (unique = true,name = "UIX_Id_accEntryId",columnList = "ACCOUNT_ID,ACCENTRYIND")))
 class LedgerEntry {
 
     @Id @GeneratedValue var id: Int = 0
@@ -39,6 +40,7 @@ class LedgerEntry {
 
     var entryType: EntryType = EntryType.NA
     var entryResult: EntryResult = EntryResult.Ok
+    var accentryind: Int = 0
 
     @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
@@ -52,6 +54,7 @@ class LedgerEntry {
 
     @ManyToOne(fetch = FetchType.LAZY)
     var receipt: TxReceipt? = null
+
 
     public constructor() {
     }
