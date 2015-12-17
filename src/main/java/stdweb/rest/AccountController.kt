@@ -50,7 +50,9 @@ class AccountController{
         val acc   = acckRepo?.findByAddress(addr)
         val offs=(page.toInt()-1)*25
 
-        val content = ledgRepo?.getAccountLedgerPage(acc!!.id,offs) ?:  ArrayList<LedgerEntry>()
+        //val content = ledgRepo?.getAccountLedgerPage(acc!!.id,offs) ?:  ArrayList<LedgerEntry>()
+        //val content = ledgRepo?.getAccountLedger(acc!!.id,offs,page.toInt()*25) ?:  ArrayList<LedgerEntry>()
+        val content = ledgRepo?.getAccountLedger(acc!!.id,offs,page.toInt()*25) ?:  ArrayList<LedgerEntry>()
 
         val result  = ArrayList<LedgerEntry>()
 

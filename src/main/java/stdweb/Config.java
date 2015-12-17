@@ -17,9 +17,11 @@ public class Config {
 
 
 
-//    @Bean
+    @Bean
     EthereumBean ethereumBean() throws Exception {
         EthereumBean ethereumBean = new EthereumBean();
+
+        ethereumBean.initService();
 
 //        Executors.newSingleThreadExecutor().
 //                submit(ethereumBean::start);

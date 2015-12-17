@@ -36,6 +36,11 @@ interface LedgerEntryRepository : PagingAndSortingRepository<LedgerEntry, Int>
             nativeQuery = true)
     fun getAccountLedgerPage(@Param("accid") accid : Int, @Param("offset") offset: Int) : List<LedgerEntry>
 
+    //and e.accEntryInd between :from and :to
+    //, @Param("from") from : Int,@Param("to") to : Int
+    @Query("select e from LedgerEntry e where e.account.id=:accid and accEntryInd > :from and accEntryInd <= :to")
+    fun getAccountLedger(@Param("accid") accid : Int,@Param("from") from : Int,@Param("to") to : Int) : List<LedgerEntry>
+
     @Query("select count(e) from LedgerEntry e where e.account.id=:accid")
     fun getEntriesCount(@Param("accid") accid : Int) : Int
 

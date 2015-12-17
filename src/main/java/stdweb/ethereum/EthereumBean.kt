@@ -39,7 +39,7 @@ public class EthereumBean
     }
 
     @PostConstruct
-    private fun initService()
+    public  fun initService()
     {
         this.listener.ledgerSync=this.ledgerSync!!
         blockchainStopSync()
@@ -48,7 +48,6 @@ public class EthereumBean
         //ledgerSync?.nextStatus = SyncStatus.onBlockSync
 
         println("EtheteumBean initService")
-
     }
 
     constructor()
