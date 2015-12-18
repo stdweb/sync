@@ -296,8 +296,7 @@ class ReplayBlockWrite : ReplayBlock
 
 
         summaries.     forEach {       addTxEntries ( it ) }
-
-        if (this.block.number != 0L)    addRewardEntries()
+        if (this.block.number != 0L)   addRewardEntries()
 
         entries.       forEach {       ledgRepo.save( it ) }
 

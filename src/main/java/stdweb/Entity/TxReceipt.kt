@@ -17,7 +17,8 @@ class TxReceipt
     @OneToOne(fetch = FetchType.LAZY)
     var tx : Tx? = null
 
-    @NaturalId @Column(length = 32)
+    //@NaturalId
+    @Column(length = 32)
     var postTxState     = ByteUtil.EMPTY_BYTE_ARRAY
     var cumulativeGas   = ByteUtil.EMPTY_BYTE_ARRAY
 
