@@ -41,10 +41,10 @@ public class EthereumBean
     public  fun initService()
     {
         this.listener.ledgerSync=this.ledgerSync!!
-        blockchainStopSync()
-//        blockchainStartSync()
-//        ledgerSync?.syncStatus = SyncStatus.onBlockSync
-//        ledgerSync?.nextStatus = SyncStatus.onBlockSync
+//        blockchainStopSync()
+        blockchainStartSync()
+        ledgerSync?.syncStatus = SyncStatus.onBlockSync
+        ledgerSync?.nextStatus = SyncStatus.onBlockSync
 
         println("EtheteumBean initService")
     }
