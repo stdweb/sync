@@ -292,7 +292,7 @@ class ReplayBlockWrite : ReplayBlock
                 "${if (Hex.toHexString(block.parentHash).equals(Hex.toHexString(sqltopHash))) " Match" else " Not match"}" )
 
         println("sqltop hash ${Hex.toHexString(sqltopHash)} - newblock parent ${Hex.toHexString(block.parentHash)} " +
-                "eq: ${block.parentHash==sqltopHash}")
+                "eq: ${block.parentHash.equals(sqltopHash)}")
         println("")
     }
 
