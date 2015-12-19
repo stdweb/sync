@@ -284,12 +284,28 @@ class ReplayBlockWrite : ReplayBlock
     }
 
 
-    fun checkParent()
+    fun checkParent() : Boolean
     {
         val sqltopHash=blockRepo.topBlock()!!.hash
+
         val sqlTop = blockRepo.topBlock()
         val foundParent =blockRepo.findByHash(block.parentHash)
 
+        if (foundParent!=null)
+            if (foundParent.id ==block.number.toInt()-1)
+            {
+                return true
+            }
+            else
+            {
+                println ("new block is ${block.number}, but parent is ${foundParent?.id}")
+                return false
+            }
+        else
+        {
+            println("parent for new block ${block.number} not found in sql ledg")
+            return false
+        }
     }
 
 
@@ -308,6 +324,11 @@ class ReplayBlockWrite : ReplayBlock
     fun write()  {
 
         //connectBlock()
+        if (!checkParent())
+        {
+            printWriteStatus("wrong parent, skipping")
+            return
+        }
 
         val b = blockRepo.findOne(this.getBlock().getNumber().toInt())
 
