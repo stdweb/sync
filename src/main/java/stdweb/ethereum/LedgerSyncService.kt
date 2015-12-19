@@ -252,7 +252,8 @@ open class LedgerSyncService
             }
             else
             {
-                println ("replayblock  not child of sql top ${r.block.number} ")
+                println ("replayblock  ${r.block.number} : ${Hex.toHexString(r.block.hash)} " +
+                        "not child of sql top ${sqlTopBlock.id} ")
             }
 
             //if blockchain.isBlockExist(replayBlock.block.hash)
