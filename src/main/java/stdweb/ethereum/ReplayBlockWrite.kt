@@ -338,6 +338,7 @@ class ReplayBlockWrite : ReplayBlock
             return;
             //blockRepo.deleteBlockWithEntries(b)
         }
+        printWriteStatus("bsaved")
 
 
         createLedgerBlock()
@@ -348,7 +349,7 @@ class ReplayBlockWrite : ReplayBlock
         entries.       forEach {       ledgRepo.save( it ) }
 
         //todo: use logger
-        printWriteStatus("bsaved")
+
     }
 
     private fun connectBlock() {
