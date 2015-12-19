@@ -293,11 +293,13 @@ class ReplayBlockWrite : ReplayBlock
 
         println("sqltop hash ${Hex.toHexString(sqltopHash)} - newblock parent ${Hex.toHexString(block.parentHash)} " +
                 "eq: ${block.parentHash==sqltopHash}")
+        println("")
     }
 
     fun write()  {
 
         //connectBlock()
+
         val b = blockRepo.findOne(this.getBlock().getNumber().toInt())
 
         if (b!=null) {
@@ -305,6 +307,8 @@ class ReplayBlockWrite : ReplayBlock
             return;
             //blockRepo.deleteBlockWithEntries(b)
         }
+
+        printWriteStatus("bsaved")
         createLedgerBlock()
 
         summaries.     forEach {       addTxEntries ( it ) }
@@ -313,7 +317,7 @@ class ReplayBlockWrite : ReplayBlock
         entries.       forEach {       ledgRepo.save( it ) }
 
         //todo: use logger
-        printWriteStatus("bsaved")
+        //printWriteStatus("bsaved")
     }
 
     private fun connectBlock() {
