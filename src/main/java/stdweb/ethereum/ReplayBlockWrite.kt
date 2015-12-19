@@ -284,13 +284,20 @@ class ReplayBlockWrite : ReplayBlock
     }
 
 
+    fun printWriteStatus(msg : String)
+    {
+        val sqltopHash=blockRepo.topBlock()!!.hash
+        println ("${msg} : ${block.number} hash ${Hex.toHexString(block.hash)} parent ${Hex.toHexString(block.parentHash)}" +
+                "${if (block.parentHash==sqltopHash) "Match" else "Not match"}" )
+    }
+
     fun write()  {
 
         //connectBlock()
         val b = blockRepo.findOne(this.getBlock().getNumber().toInt())
 
         if (b!=null) {
-            println ("skip block: ${block.number} hash ${Hex.toHexString(block.hash)} parent ${Hex.toHexString(block.parentHash)}" )
+            printWriteStatus("bskip")
             return;
             //blockRepo.deleteBlockWithEntries(b)
         }
@@ -302,7 +309,7 @@ class ReplayBlockWrite : ReplayBlock
         entries.       forEach {       ledgRepo.save( it ) }
 
         //todo: use logger
-        println ("block saved: ${block.number} hash ${Hex.toHexString(block.hash)} parent ${Hex.toHexString(block.parentHash)}" )
+        printWriteStatus("bsaved")
     }
 
     private fun connectBlock() {
