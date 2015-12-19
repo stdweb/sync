@@ -54,6 +54,7 @@ class ReplayBlockWrite : ReplayBlock
     fun createLedgerBlock() {
 
         val b=block
+
         var parent : LedgerBlock? = null
 
         var coinbaseAccount = ledgerSync.getOrCreateLedgerAccount(b?.coinbase ?: Utils.ZERO_BYTE_ARRAY_20,null)
@@ -282,18 +283,18 @@ class ReplayBlockWrite : ReplayBlock
         }
     }
 
+
     fun write()  {
 
+        //connectBlock()
         val b = blockRepo.findOne(this.getBlock().getNumber().toInt())
+
         if (b!=null) {
-            println ("skip block :" + block.number)
+            println ("skip block: ${block.number} hash ${Hex.toHexString(block.hash)} parent ${Hex.toHexString(block.parentHash)}" )
             return;
             //blockRepo.deleteBlockWithEntries(b)
         }
-
         createLedgerBlock()
-
-
 
         summaries.     forEach {       addTxEntries ( it ) }
         if (this.block.number != 0L)   addRewardEntries()
@@ -301,7 +302,18 @@ class ReplayBlockWrite : ReplayBlock
         entries.       forEach {       ledgRepo.save( it ) }
 
         //todo: use logger
-        println ("block saved:" + block.number)
+        println ("block saved: ${block.number} hash ${Hex.toHexString(block.hash)} parent ${Hex.toHexString(block.parentHash)}" )
+    }
+
+    private fun connectBlock() {
+
+        val parentHash=block.parentHash
+        val sqlTopBlock=blockRepo.topBlock()!!
+        if (parentHash != (sqlTopBlock.hash)) {
+            println("skip block ${block.number}, hash ${block.hash} " +
+                    "parentHash ${Hex.toHexString(parentHash)}")
+        }
+
     }
 
     private fun saveReceipt(summary: TransactionExecutionSummary, _tx : Tx) {
