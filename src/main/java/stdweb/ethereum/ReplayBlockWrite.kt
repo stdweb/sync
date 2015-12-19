@@ -290,6 +290,9 @@ class ReplayBlockWrite : ReplayBlock
         println ("${msg} : ${block.number} hash ${Hex.toHexString(block.hash).substring(0,10)} " +
                 "parent ${Hex.toHexString(block.parentHash).substring(0,10)}" +
                 "${if (Hex.toHexString(block.parentHash).equals(Hex.toHexString(sqltopHash))) " Match" else " Not match"}" )
+
+        println("sqltop hash ${Hex.toHexString(sqltopHash)} - newblock parent ${Hex.toHexString(block.parentHash)} " +
+                "eq: ${block.parentHash==sqltopHash}")
     }
 
     fun write()  {
