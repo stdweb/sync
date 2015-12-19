@@ -210,7 +210,8 @@ open class LedgerSyncService
 
                 }
             }
-            enqueue( replayBlock)
+            replayBlock.write()
+            //enqueue( replayBlock)
         }
         catch ( e : KotlinNullPointerException)
         {
@@ -245,8 +246,6 @@ open class LedgerSyncService
         }
 
     }
-
-
 
     @Transactional open fun start() {
 

@@ -342,11 +342,11 @@ class ReplayBlockWrite : ReplayBlock
     fun write()  {
 
         //connectBlock()
-        if (!checkParent())
-        {
-            printWriteStatus("wrong parent, skipping")
-            return
-        }
+//        if (!checkParent())
+//        {
+//            printWriteStatus("wrong parent, skipping")
+//            return
+//        }
 
         val b = blockRepo.findOne(this.getBlock().getNumber().toInt())
 
