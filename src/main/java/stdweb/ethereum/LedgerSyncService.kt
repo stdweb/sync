@@ -4,6 +4,7 @@ package stdweb.ethereum
 import org.ethereum.core.Account
 import org.ethereum.core.Block
 import org.ethereum.core.TransactionExecutionSummary
+import org.ethereum.db.ByteArrayWrapper
 import org.ethereum.db.RepositoryImpl
 
 import org.springframework.beans.factory.annotation.Autowired
@@ -12,6 +13,7 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.util.Assert
 import stdweb.Core.*
+import stdweb.Entity.AmountEntity
 import stdweb.Entity.LedgerAccount
 import stdweb.Entity.LedgerBlock
 
@@ -37,6 +39,9 @@ open class LedgerSyncService
     @Autowired open var receiptRepo      : LedgerTxReceiptRepository? = null
     @Autowired open var ethereumBean     : EthereumBean? = null
     public     open var listener         : EthereumListener?=null
+
+    var q : HashMap<Sha3Hash,ReplayBlockWrite> = HashMap()
+    var chain : LinkedList<ReplayBlockWrite> = LinkedList()
 
     open val lock : ReentrantLock = ReentrantLock()
 
@@ -197,14 +202,15 @@ open class LedgerSyncService
             when (syncStatus) {
                 SyncStatus.onBlockSync -> {
                     replayBlock.summaries=summaries
-                    replayBlock.write ()
+
                 }
                 SyncStatus.bulkLoading,
                 SyncStatus.SingleInsert -> {
                     replayBlock.run()
-                    replayBlock.write()
+
                 }
             }
+            enqueue( replayBlock)
         }
         catch ( e : KotlinNullPointerException)
         {
@@ -216,7 +222,34 @@ open class LedgerSyncService
         }
     }
 
+    private fun enqueue(replayBlock: ReplayBlockWrite) {
+
+        //already stored block
+        if (blockRepo!!.findByHash(replayBlock.block.hash)!=null)
+            return;
+
+        val parentHash = replayBlock.block.parentHash
+        if (q.containsKey(Sha3Hash(parentHash)) )
+        {
+            val r=q.get(Sha3Hash(parentHash))
+            r!!.write()
+            replayBlock.write()
+            q.clear()
+            return
+        }
+
+        val sqlTopHash=blockRepo!!.topBlock()!!.hash
+        if (replayBlock.isChildOf(sqlTopHash))
+        {
+            q.putIfAbsent(Sha3Hash(replayBlock.block.hash),replayBlock)
+        }
+
+    }
+
+
+
     @Transactional open fun start() {
+
             try{
                 lock.lock()
                 //println("Genesis lock aquired in thread " +Thread.currentThread().id)

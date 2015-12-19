@@ -1,11 +1,13 @@
 package stdweb.ethereum;
 
+import javassist.bytecode.ByteArray;
 import org.ethereum.core.*;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ByteArrayWrapper;
 import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.program.ProgramResult;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
+import org.jetbrains.annotations.NotNull;
 import stdweb.Core.*;
 import stdweb.Entity.LedgerAccount;
 import stdweb.Entity.LedgerBlock;
@@ -13,6 +15,7 @@ import stdweb.Entity.LedgerBlock;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
@@ -42,7 +45,7 @@ public abstract class ReplayBlock {
 //    }
 
 
-    private Block block;
+    protected Block block;
     public BigInteger getTotalUncleReward() {
         BigInteger totalUncleReward = BigInteger.ZERO;
         for (BlockHeader blockHeader : this.getBlock().getUncleList()) {
@@ -140,6 +143,14 @@ public abstract class ReplayBlock {
     }
 
 
-
+    public boolean isParentOf(@NotNull ReplayBlockWrite replayBlock) {
+        return Arrays.equals(this.block.getHash(),replayBlock.block.getParentHash());
+    }
+    public boolean isChildOf(@NotNull byte[] parenthash) {
+        return Arrays.equals(this.block.getParentHash(),parenthash);
+    }
+    public boolean isChildOf(@NotNull ReplayBlockWrite replayBlock) {
+        return Arrays.equals(this.block.getParentHash(),replayBlock.block.getHash());
+    }
 }
 

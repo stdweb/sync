@@ -17,6 +17,12 @@ class ReplayBlockWrite : ReplayBlock
 {
 
     private val entries         = ArrayList<LedgerEntry>()
+    private val txs             = ArrayList<Tx>()
+    private val txlogs          = ArrayList<TxLog>()
+    private val txreceipts      = ArrayList<TxReceipt>()
+    private val chaingedAccs    = ArrayList<LedgerAccount>()
+
+
 
     private var blockRepo:      LedgerBlockRepository
     private var accRepo:        LedgerAccountRepository
@@ -55,7 +61,14 @@ class ReplayBlockWrite : ReplayBlock
 
         val b=block
 
-        var parent : LedgerBlock? = null
+        val sqlTopBlock=blockRepo.topBlock()!!
+
+
+        if (!Arrays.equals(sqlTopBlock.hash,block.parentHash))
+        {
+            println("create skip ${block.number} parent does not match")
+            return
+        }
 
         var coinbaseAccount = ledgerSync.getOrCreateLedgerAccount(b?.coinbase ?: Utils.ZERO_BYTE_ARRAY_20,null)
         val ledgBlock =  LedgerBlock()
@@ -65,7 +78,7 @@ class ReplayBlockWrite : ReplayBlock
             coinbase        = coinbaseAccount
             id              = b?.number?.toInt() as Int
             hash            = b?.hash ?: ByteUtil.EMPTY_BYTE_ARRAY
-            parentHash      = parent?.hash ?: ByteUtil.EMPTY_BYTE_ARRAY
+            parentHash      = sqlTopBlock.hash
             timestamp       = b?.timestamp ?: 0
             difficulty      = b?.difficultyBI?.toLong() ?: 0
             gasLimit        = BigInteger(1, b?.gasLimit).toLong()
@@ -79,6 +92,7 @@ class ReplayBlockWrite : ReplayBlock
             reward          = BigDecimal(blockReward).add(BigDecimal(totalUncleReward))
             fee             = BigDecimal(blockFee)
         }
+
         this.ledgerBlock    = blockRepo.save(ledgBlock)
         coinbaseAccount     .firstBlock=this.ledgerBlock
         coinbaseAccount     .lastBlock=this.ledgerBlock
@@ -90,7 +104,7 @@ class ReplayBlockWrite : ReplayBlock
         var tx = txRepo.findByHash(tran.hash) ?: Tx(tran.hash)
         with (tx)
         {
-            block=ledgerBlock
+            block               = ledgerBlock
             from                = ledgerSync.getOrCreateLedgerAccount(tran.sender,ledgerBlock)
             to                  = ledgerSync.getOrCreateLedgerAccount(tran.receiveAddress ?: tran.contractAddress,ledgerBlock)
             value               = BigDecimal(BigInteger(1, tran.value))
@@ -105,8 +119,6 @@ class ReplayBlockWrite : ReplayBlock
         }
         return txRepo.save(tx)
     }
-
-
 
     fun addRewardEntries() {
 
@@ -255,6 +267,7 @@ class ReplayBlockWrite : ReplayBlock
             accRepo         .save   (account)
             entries         .add    (this)
         }
+
         //ledgerEntryRecv
         with (LedgerEntry()){
             tx              = ledg_tx
@@ -294,7 +307,13 @@ class ReplayBlockWrite : ReplayBlock
         if (foundParent!=null)
             if (foundParent.id ==block.number.toInt()-1)
             {
-                return true
+                if (Arrays.equals(foundParent.hash,block.parentHash))
+                    return true
+                else
+                {
+                    println("parent hash does not match")
+                    return false
+                }
             }
             else
             {
@@ -308,13 +327,11 @@ class ReplayBlockWrite : ReplayBlock
         }
     }
 
-
     fun printWriteStatus(msg : String)
     {
         val sqltopHash=blockRepo.topBlock()!!.hash
-        println ("${msg} : ${block.number} hash ${Hex.toHexString(block.hash).substring(0,10)} " +
+        println ("${msg} : ${block.number}     <-- hash ${Hex.toHexString(block.hash).substring(0,10)} " +
                 "parent ${Hex.toHexString(block.parentHash).substring(0,10)} " +
-                "sqltop hash ${Hex.toHexString(sqltopHash).substring(0,10)} " +
                 "${if (Hex.toHexString(block.parentHash).equals(Hex.toHexString(sqltopHash))) " Match" else " NotMatch"}" )
 
 //        println("sqltop hash ${Hex.toHexString(sqltopHash)} - newblock parent ${Hex.toHexString(block.parentHash)} " +
@@ -339,7 +356,6 @@ class ReplayBlockWrite : ReplayBlock
             //blockRepo.deleteBlockWithEntries(b)
         }
         printWriteStatus("bsaved")
-
 
         createLedgerBlock()
 

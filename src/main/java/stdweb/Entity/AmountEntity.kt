@@ -9,14 +9,15 @@ import javax.persistence.Id
 
 
 
-//@Entity
+@Entity
 open class AmountEntity
 {
-    @Id @GeneratedValue
-    var id: Int = -1
+    @Id //@GeneratedValue
+    var id: Int? = null
 
-
-    @Type(type="AmountUserType")
+    var descr : String = ""
+    //@Type(type="AmountUserType")
     var amount = Amount.Zero
+
 
 }

@@ -4,6 +4,7 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -13,6 +14,7 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 import stdweb.Core.Amount;
 import stdweb.Core.HashDecodeException;
 import stdweb.Desktop.DesktopController;
+import stdweb.Entity.AmountEntity;
 import stdweb.ethereum.LedgerSyncService;
 
 import java.io.IOException;
@@ -45,9 +47,13 @@ public class Application //extends javafx.application.Application
                 getRuntime().freeMemory()/1024,getRuntime().totalMemory()/1024,getRuntime().totalMemory()/1024*0.3
         ));
 
+
         System.out.println("spring main finish");
        // launch(args);
     }
+
+
+
     //@Override
     public void start(Stage primaryStage) throws IOException, HashDecodeException {
 
