@@ -17,7 +17,7 @@ class LedgerBlock
 
     @JsonIgnore
     @NaturalId
-    @Column(length = 32)    var hash : ByteArray = ByteUtil.EMPTY_BYTE_ARRAY
+    @Column(length = 32)    var hash  = ByteUtil.EMPTY_BYTE_ARRAY
 
     var timestamp : Long = 0
 
