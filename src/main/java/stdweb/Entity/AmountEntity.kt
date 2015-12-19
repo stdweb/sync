@@ -9,7 +9,7 @@ import javax.persistence.Id
 
 
 
-@Entity
+//@Entity
 open class AmountEntity
 {
     @Id //@GeneratedValue
