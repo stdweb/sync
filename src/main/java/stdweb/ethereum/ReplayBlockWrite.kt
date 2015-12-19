@@ -313,8 +313,9 @@ class ReplayBlockWrite : ReplayBlock
     {
         val sqltopHash=blockRepo.topBlock()!!.hash
         println ("${msg} : ${block.number} hash ${Hex.toHexString(block.hash).substring(0,10)} " +
-                "parent ${Hex.toHexString(block.parentHash).substring(0,10)}" +
-                "${if (Hex.toHexString(block.parentHash).equals(Hex.toHexString(sqltopHash))) " Match" else " Not match"}" )
+                "parent ${Hex.toHexString(block.parentHash).substring(0,10)} " +
+                "sqltop hash ${Hex.toHexString(sqltopHash).substring(0,10)} " +
+                "${if (Hex.toHexString(block.parentHash).equals(Hex.toHexString(sqltopHash))) " Match" else " NotMatch"}" )
 
 //        println("sqltop hash ${Hex.toHexString(sqltopHash)} - newblock parent ${Hex.toHexString(block.parentHash)} " +
 //                "eq: ${Arrays.equals(block.parentHash,sqltopHash)}")
