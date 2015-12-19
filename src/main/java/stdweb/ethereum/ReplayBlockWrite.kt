@@ -284,6 +284,15 @@ class ReplayBlockWrite : ReplayBlock
     }
 
 
+    fun checkParent()
+    {
+        val sqltopHash=blockRepo.topBlock()!!.hash
+        val sqlTop = blockRepo.topBlock()
+        val foundParent =blockRepo.findByHash(block.parentHash)
+
+    }
+
+
     fun printWriteStatus(msg : String)
     {
         val sqltopHash=blockRepo.topBlock()!!.hash
@@ -292,7 +301,7 @@ class ReplayBlockWrite : ReplayBlock
                 "${if (Hex.toHexString(block.parentHash).equals(Hex.toHexString(sqltopHash))) " Match" else " Not match"}" )
 
         println("sqltop hash ${Hex.toHexString(sqltopHash)} - newblock parent ${Hex.toHexString(block.parentHash)} " +
-                "eq: ${block.parentHash.equals(sqltopHash)}")
+                "eq: ${Arrays.equals(block.parentHash,sqltopHash)}")
         println("")
     }
 
