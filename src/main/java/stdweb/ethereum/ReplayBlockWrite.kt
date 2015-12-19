@@ -287,7 +287,8 @@ class ReplayBlockWrite : ReplayBlock
     fun printWriteStatus(msg : String)
     {
         val sqltopHash=blockRepo.topBlock()!!.hash
-        println ("${msg} : ${block.number} hash ${Hex.toHexString(block.hash)} parent ${Hex.toHexString(block.parentHash)}" +
+        println ("${msg} : ${block.number} hash ${Hex.toHexString(block.hash).substring(0,10)} " +
+                "parent ${Hex.toHexString(block.parentHash).substring(0,10)}" +
                 "${if (block.parentHash==sqltopHash) "Match" else "Not match"}" )
     }
 
