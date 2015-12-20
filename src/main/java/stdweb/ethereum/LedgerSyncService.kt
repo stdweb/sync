@@ -211,8 +211,10 @@ open class LedgerSyncService
 
                 }
             }
-            //replayBlock.write()
-            enqueue( replayBlock)
+            if (replayBlock.block.number<715750)
+                replayBlock.write()
+            else
+                enqueue( replayBlock)
         }
         catch ( e : KotlinNullPointerException)
         {
@@ -233,17 +235,19 @@ open class LedgerSyncService
         }
 
         val blockchain=ethereumBean!!.blockchain
-
         val sqlTopBlock=blockRepo!!.topBlock()!!
 
         if (replayBlock.block.number>=sqlTopBlock.id+5)
         {
             val block2add=blockchain.getBlockByNumber(sqlTopBlock.id.toLong()+1)
-            val r=q.get(Sha3Hash(block2add.hash))
+            blockchain.stopOn
+            var r=q.get(Sha3Hash(block2add.hash))
             if (r==null)
             {
-                println ("replayblock  not found in q ${block2add.number} : ${Hex.toHexString(block2add.hash)}")
-                return
+                println ("replayblock  not found in q, replaying. ${block2add.number} : ${Hex.toHexString(block2add.hash)}")
+                r= ReplayBlockWrite(this,block2add,blockRepo!!,accRepo!!,ledgerRepo!!,txRepo!!,logRepo!!,receiptRepo!!)
+                r.run()
+
             }
             if (r?.isChildOf(sqlTopBlock.hash) ?: false) {
                 r?.write()
