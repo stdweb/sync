@@ -187,7 +187,7 @@ open class LedgerSyncService
 
     private fun enqueue(replayBlock: ReplayBlockWrite) {
         //already stored block
-        println("start enq , block ${replayBlock.block.number} -->")
+        //println("start enq , block ${replayBlock.block.number} -->")
         if (blockRepo!!.findByHash(replayBlock.block.hash)!=null) {
             println ("block ${replayBlock.block.number} already stored}")
             return;
@@ -208,7 +208,7 @@ open class LedgerSyncService
             if (r?.isChildOf(sqlTopBlock.hash) ?: false) {
                 r?.write()
                 q.remove(Sha3Hash(block2add.hash))
-                println ("write and remove from q: ${r?.block?.number} , q size : ${q.size}")
+          //      println ("write and remove from q: ${r?.block?.number} , q size : ${q.size}")
             }
             else{
                 println ("replayblock  ${r.block.number} : ${Hex.toHexString(r.block.hash)} " +
@@ -216,18 +216,18 @@ open class LedgerSyncService
             }
         }
 
-        println ("block ${replayBlock.block.number} added to queue, q size : ${q.size}")
+        //println ("block ${replayBlock.block.number} added to queue, q size : ${q.size}")
         q.putIfAbsent(Sha3Hash(replayBlock.block.hash), replayBlock)
 
         //clear old blocks in queue
-        println("befere clear old blocks inq , size ${q.size}")
+        //println("befere clear old blocks inq , size ${q.size}")
         q
                 .filter     { it.value.block.number<sqlTopBlock.id }
                 .forEach    { q.remove( Sha3Hash(it.value.block.hash)) }
-        println("after clear old blocks inq , size ${q.size}")
-        println("")
-        println("<-- finish q , block ${replayBlock.block.number}")
-        Thread.sleep(2000)
+//        println("after clear old blocks inq , size ${q.size}")
+//        println("")
+//        println("<-- finish q , block ${replayBlock.block.number}")
+        //Thread.sleep(2000)
 
     }
 
