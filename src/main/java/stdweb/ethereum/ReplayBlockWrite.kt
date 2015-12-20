@@ -64,11 +64,11 @@ class ReplayBlockWrite : ReplayBlock
         val sqlTopBlock=blockRepo.topBlock()!!
 
 
-//        if (!Arrays.equals(sqlTopBlock.hash,block.parentHash))
-//        {
-//            println("create skip ${block.number} parent does not match")
-//            return
-//        }
+        if (!Arrays.equals(sqlTopBlock.hash,block.parentHash))
+        {
+            println("ledgerBlock CreateError ${block.number} parent does not match")
+            return
+        }
 
         var coinbaseAccount = ledgerSync.getOrCreateLedgerAccount(b?.coinbase ?: Utils.ZERO_BYTE_ARRAY_20,null)
         val ledgBlock =  LedgerBlock()

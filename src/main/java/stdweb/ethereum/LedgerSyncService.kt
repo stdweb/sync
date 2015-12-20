@@ -197,7 +197,7 @@ open class LedgerSyncService
 
         if (replayBlock.block.number>=sqlTopBlock.id+5){
             val block2add=blockchain.getBlockByNumber(sqlTopBlock.id.toLong()+1)
-            blockchain.stopOn
+
             var r=q.get(Sha3Hash(block2add.hash))
             if (r==null){
                 println ("replayblock  not found in q, replaying. ${block2add.number} : ${Hex.toHexString(block2add.hash)}")
