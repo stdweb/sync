@@ -185,6 +185,46 @@ open class LedgerSyncService
         nextSyncBlock = 1000000000
     }
 
+    private fun enqueue(replayBlock: ReplayBlockWrite) {
+        //already stored block
+        if (blockRepo!!.findByHash(replayBlock.block.hash)!=null) {
+            println ("block ${replayBlock.block.number} already stored}")
+            return;
+        }
+        val blockchain=ethereumBean!!.blockchain
+        val sqlTopBlock=blockRepo!!.topBlock()!!
+
+        if (replayBlock.block.number>=sqlTopBlock.id+5){
+            val block2add=blockchain.getBlockByNumber(sqlTopBlock.id.toLong()+1)
+            blockchain.stopOn
+            var r=q.get(Sha3Hash(block2add.hash))
+            if (r==null){
+                println ("replayblock  not found in q, replaying. ${block2add.number} : ${Hex.toHexString(block2add.hash)}")
+                r= ReplayBlockWrite(this,block2add,blockRepo!!,accRepo!!,ledgerRepo!!,txRepo!!,logRepo!!,receiptRepo!!)
+                r.run()
+
+            }
+            if (r?.isChildOf(sqlTopBlock.hash) ?: false) {
+                r?.write()
+                q.remove(Sha3Hash(block2add.hash))
+                println ("write and remove from q: ${r?.block?.number} , q size : ${q.size}")
+            }
+            else{
+                println ("replayblock  ${r.block.number} : ${Hex.toHexString(r.block.hash)} " +
+                        "not child of sql top ${sqlTopBlock.id} ")
+            }
+        }
+        else {
+            println ("block ${replayBlock.block.number} added to queue, q size : ${q.size}")
+            q.putIfAbsent(Sha3Hash(replayBlock.block.hash), replayBlock)
+        }
+        //clear old blocks in queue
+        q
+                .filter     { it.value.block.number<sqlTopBlock.id }
+                .forEach    { q.remove( Sha3Hash(it.value.block.hash)) }
+    }
+
+
     @Transactional open fun saveBlockData(block : Block, summaries : List<TransactionExecutionSummary>)
     {
         try {
@@ -211,10 +251,10 @@ open class LedgerSyncService
 
                 }
             }
-            if (replayBlock.block.number<715750)
+
                 replayBlock.write()
-            else
-                enqueue( replayBlock)
+
+           //     enqueue( replayBlock)
         }
         catch ( e : KotlinNullPointerException)
         {
@@ -226,53 +266,7 @@ open class LedgerSyncService
         }
     }
 
-    private fun enqueue(replayBlock: ReplayBlockWrite) {
 
-        //already stored block
-        if (blockRepo!!.findByHash(replayBlock.block.hash)!=null) {
-            println ("block ${replayBlock.block.number} already stored}")
-            return;
-        }
-
-        val blockchain=ethereumBean!!.blockchain
-        val sqlTopBlock=blockRepo!!.topBlock()!!
-
-        if (replayBlock.block.number>=sqlTopBlock.id+5)
-        {
-            val block2add=blockchain.getBlockByNumber(sqlTopBlock.id.toLong()+1)
-            blockchain.stopOn
-            var r=q.get(Sha3Hash(block2add.hash))
-            if (r==null)
-            {
-                println ("replayblock  not found in q, replaying. ${block2add.number} : ${Hex.toHexString(block2add.hash)}")
-                r= ReplayBlockWrite(this,block2add,blockRepo!!,accRepo!!,ledgerRepo!!,txRepo!!,logRepo!!,receiptRepo!!)
-                r.run()
-
-            }
-            if (r?.isChildOf(sqlTopBlock.hash) ?: false) {
-                r?.write()
-                q.remove(Sha3Hash(block2add.hash))
-                println ("write and remove from q: ${r?.block?.number} , q size : ${q.size}")
-            }
-            else
-            {
-                println ("replayblock  ${r.block.number} : ${Hex.toHexString(r.block.hash)} " +
-                        "not child of sql top ${sqlTopBlock.id} ")
-            }
-
-            //if blockchain.isBlockExist(replayBlock.block.hash)
-        }
-        else {
-            println ("block ${replayBlock.block.number} added to queue, q size : ${q.size}")
-            q.putIfAbsent(Sha3Hash(replayBlock.block.hash), replayBlock)
-        }
-
-        //clear old blocks in queue
-        q
-        .filter     { it.value.block.number<sqlTopBlock.id }
-        .forEach    { q.remove( Sha3Hash(it.value.block.hash)) }
-
-    }
 
 
     @Transactional open fun start() {
