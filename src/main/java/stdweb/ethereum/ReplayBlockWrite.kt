@@ -234,7 +234,7 @@ class ReplayBlockWrite : ReplayBlock
     fun addTxEntries(_tx: Transaction, _gasUsed: Long, ledg_tx : Tx, isFailed: Boolean) {
 
         val senderAcc       = ledgerSync.getOrCreateLedgerAccount(_tx.sender,ledgerBlock)
-        val recvAcc         = ledgerSync.getOrCreateLedgerAccount(_tx.contractAddress ?: _tx.receiveAddress,ledgerBlock)
+        val recvAcc         = ledgerSync.getOrCreateLedgerAccount(_tx.contractAddress ?: _tx.receiveAddress,ledgerBlock,_tx.contractAddress!=null)
         val entryResult1    = if (isFailed) EntryResult.Failed else EntryResult.Ok
 
         //ledger send entry

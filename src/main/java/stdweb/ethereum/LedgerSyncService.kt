@@ -48,14 +48,14 @@ open class LedgerSyncService
 
     //todo: LedgerSyncServ use logger instead of print
 
-    fun getOrCreateLedgerAccount(addr: ByteArray, block : LedgerBlock? ) : LedgerAccount
+    fun getOrCreateLedgerAccount(addr: ByteArray, block : LedgerBlock? ,isContract : Boolean = false) : LedgerAccount
     {
 
         var account = accRepo!!.findByAddress(addr) ?: LedgerAccount(addr)
 
         if (account.id==-1) {
             //account.firstBlock  = genesis
-            account.isContract  = isContract(account.address)
+            account.isContract  = isContract//isContract(account.address)
 
             account.firstBlock  = block
             account.lastBlock   = block
@@ -97,6 +97,7 @@ open class LedgerSyncService
         val contractDetails = repository.getContractDetails(addr) ?: return false
         contractDetails.code ?: return false
 
+        contractDetails.syncStorage()
         repository.flushNoReconnect()
         //if (contractDetails.code == null)
         //    return false
@@ -189,7 +190,7 @@ open class LedgerSyncService
         //already stored block
         //println("start enq , block ${replayBlock.block.number} -->")
         if (blockRepo!!.findByHash(replayBlock.block.hash)!=null) {
-            println ("block ${replayBlock.block.number} already stored}")
+            println ("block ${replayBlock.block.number} already stored")
             return;
         }
         val blockchain=ethereumBean!!.blockchain
