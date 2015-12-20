@@ -187,6 +187,7 @@ open class LedgerSyncService
 
     private fun enqueue(replayBlock: ReplayBlockWrite) {
         //already stored block
+        println("start enq , block ${replayBlock.block.number} -->")
         if (blockRepo!!.findByHash(replayBlock.block.hash)!=null) {
             println ("block ${replayBlock.block.number} already stored}")
             return;
@@ -219,9 +220,15 @@ open class LedgerSyncService
             q.putIfAbsent(Sha3Hash(replayBlock.block.hash), replayBlock)
         }
         //clear old blocks in queue
+        println("befere clear old blocks inq , size ${q.size}")
         q
                 .filter     { it.value.block.number<sqlTopBlock.id }
                 .forEach    { q.remove( Sha3Hash(it.value.block.hash)) }
+        println("after clear old blocks inq , size ${q.size}")
+        println("")
+        println("<-- finish q , block ${replayBlock.block.number}")
+        Thread.sleep(1000)
+
     }
 
 
@@ -252,9 +259,10 @@ open class LedgerSyncService
                 }
             }
 
-                replayBlock.write()
+            //println ("block wo ledg ${block.number}")
+                //replayBlock.write()
 
-           //     enqueue( replayBlock)
+            enqueue( replayBlock)
         }
         catch ( e : KotlinNullPointerException)
         {
