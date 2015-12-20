@@ -215,10 +215,10 @@ open class LedgerSyncService
                         "not child of sql top ${sqlTopBlock.id} ")
             }
         }
-        else {
-            println ("block ${replayBlock.block.number} added to queue, q size : ${q.size}")
-            q.putIfAbsent(Sha3Hash(replayBlock.block.hash), replayBlock)
-        }
+
+        println ("block ${replayBlock.block.number} added to queue, q size : ${q.size}")
+        q.putIfAbsent(Sha3Hash(replayBlock.block.hash), replayBlock)
+
         //clear old blocks in queue
         println("befere clear old blocks inq , size ${q.size}")
         q
@@ -227,7 +227,7 @@ open class LedgerSyncService
         println("after clear old blocks inq , size ${q.size}")
         println("")
         println("<-- finish q , block ${replayBlock.block.number}")
-        Thread.sleep(1000)
+        Thread.sleep(2000)
 
     }
 
