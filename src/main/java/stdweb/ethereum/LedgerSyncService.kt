@@ -188,7 +188,7 @@ open class LedgerSyncService
 
     private fun enqueue(replayBlock: ReplayBlockWrite) {
         //already stored block
-        //println("start enq , block ${replayBlock.block.number} -->")
+        print("enq, block ${replayBlock.block.number} --> ")
         if (blockRepo!!.findByHash(replayBlock.block.hash)!=null) {
             println ("block ${replayBlock.block.number} already stored")
             return;
