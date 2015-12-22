@@ -118,12 +118,6 @@ public abstract class ReplayBlock {
             snapshot = track.getSnapshotTo(blockchain.getBlockByHash(block.getParentHash()).getStateRoot());
 
 
-//        if (snapshot instanceof RepositoryImpl)
-//            System.out.println("Impl");
-//        else if (snapshot instanceof RepositoryTrack)
-//            System.out.println("Track");
-//        else
-//            System.out.println("smth else");
 
         long totalGasUsed = 0;
 

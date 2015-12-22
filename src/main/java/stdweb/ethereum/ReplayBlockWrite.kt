@@ -341,12 +341,8 @@ class ReplayBlockWrite : ReplayBlock
         println ("${msg} : ${block.number}     <-- hash ${Hex.toHexString(block.hash).substring(0,10)} " +
                 "parent ${Hex.toHexString(block.parentHash).substring(0,10)} " +
                 "${if (Sha3Hash(block.parentHash).equals(Sha3Hash(sqltopHash))) " Match" else " NotMatch"}" )
-
-
-//        println("sqltop hash ${Hex.toHexString(sqltopHash)} - newblock parent ${Hex.toHexString(block.parentHash)} " +
-//                "eq: ${Arrays.equals(block.parentHash,sqltopHash)}")
-//        println("")
     }
+
 
     fun write()  {
 
@@ -360,7 +356,8 @@ class ReplayBlockWrite : ReplayBlock
         val b = blockRepo.findOne(this.getBlock().getNumber().toInt())
 
         if (b!=null) {
-            printWriteStatus("bskip")
+
+            println ("bskip : ${block.number}     <-- hash ${Hex.toHexString(block.hash).substring(0,10)} " )
             return;
             //blockRepo.deleteBlockWithEntries(b)
         }
