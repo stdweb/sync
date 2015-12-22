@@ -240,6 +240,9 @@ open class LedgerSyncService
 
     @Transactional open fun saveBlockData(block : Block, summaries : List<TransactionExecutionSummary>)
     {
+        println ("block wo ledg ${block.number} hash:  ${Hex.toHexString(block.hash)}")
+        return
+
         try {
             lock.lock()
             val replayBlock  = ReplayBlockWrite(
@@ -262,9 +265,9 @@ open class LedgerSyncService
                     replayBlock.run()
                 }
             }
-            //println ("block wo ledg ${block.number}")
+
                 //replayBlock.write()
-            enqueue( replayBlock)
+            //enqueue( replayBlock)
         }
         catch ( e : Exception){throw RuntimeException("Error writing block ",e)}
         finally{ lock.unlock() }
