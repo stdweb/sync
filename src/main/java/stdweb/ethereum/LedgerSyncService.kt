@@ -223,7 +223,7 @@ open class LedgerSyncService
         q.putIfAbsent(Sha3Hash(replayBlock.block.hash), replayBlock)
 
         //clear old blocks in queue
-        //println("befere clear old blocks inq , size ${q.size}")
+        //println("before clear old blocks inq , size ${q.size}")
         q
                 .filter     { it.value.block.number<sqlTopBlock.id }
                 .forEach    { q.remove( Sha3Hash(it.value.block.hash)) }
@@ -232,6 +232,7 @@ open class LedgerSyncService
 
         Thread.sleep(2000)
         println("<-- finish q , block ${replayBlock.block.number}")
+        println("_________________________________________________________")
 
     }
 
