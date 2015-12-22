@@ -66,8 +66,9 @@ class ReplayBlockWrite : ReplayBlock
 
         if (!Arrays.equals(sqlTopBlock.hash,block.parentHash))
         {
-            println("ledgerBlock CreateError ${block.number} parent does not match")
-            return
+            //println("ledgerBlock CreateError ${block.number} parent does not match")
+            throw RuntimeException("ledgerBlock CreateError ${block.number} parent does not match")
+
         }
 
         var coinbaseAccount = ledgerSync.getOrCreateLedgerAccount(b?.coinbase ?: Utils.ZERO_BYTE_ARRAY_20,null)
