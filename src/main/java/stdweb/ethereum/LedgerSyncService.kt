@@ -197,7 +197,9 @@ open class LedgerSyncService
         val sqlTopBlock=blockRepo!!.topBlock()!!
 
         if (replayBlock.block.number>=sqlTopBlock.id+5){
+            println("enq >=+5 , getting block ${ sqlTopBlock.id.toLong()+1 } from blochain")
             val block2add=blockchain.getBlockByNumber(sqlTopBlock.id.toLong()+1)
+            println ("got block ${sqlTopBlock.id.toLong()+1}")
 
             var r=q.get(Sha3Hash(block2add.hash))
             if (r==null){
