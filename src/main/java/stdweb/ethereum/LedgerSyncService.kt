@@ -215,7 +215,8 @@ open class LedgerSyncService
             }
             else{
                 println ("replayblock  ${r.block.number} : ${Hex.toHexString(r.block.hash)} " +
-                        "not child of sql top ${sqlTopBlock.id} ")
+                        "parent: ${Hex.toHexString(r.block.parentHash)} \n" +
+                        "not child of sql top ${sqlTopBlock.id} hash : ${sqlTopBlock.hash_str} ")
             }
         }
 
