@@ -266,8 +266,8 @@ open class LedgerSyncService
                 }
             }
 
-            //println ("block wo ledg ${block.number} hash:  ${Hex.toHexString(block.hash)}")
-            replayBlock.write()
+            println ("block wo ledg ${block.number} hash:  ${Hex.toHexString(block.hash)}")
+            //replayBlock.write()
             //enqueue( replayBlock)
         }
         catch ( e : Exception){throw RuntimeException("Error writing block ",e)}
