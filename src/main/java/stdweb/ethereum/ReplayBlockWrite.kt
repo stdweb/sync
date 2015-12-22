@@ -227,6 +227,12 @@ class ReplayBlockWrite : ReplayBlock
                     ledg_tx, t.isRejected)
         }
 
+        if (summary.receipt==null) {
+            println("receipt null for ${Hex.toHexString(summary.transaction.hash)} , block ${block.number}")
+            print ("")
+        }
+
+
         saveReceipt (summary,ledg_tx)
         saveLogs    (summary,ledg_tx)
     }

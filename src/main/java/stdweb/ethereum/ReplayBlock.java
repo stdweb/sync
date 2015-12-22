@@ -4,6 +4,8 @@ import javassist.bytecode.ByteArray;
 import org.ethereum.core.*;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ByteArrayWrapper;
+import org.ethereum.db.RepositoryImpl;
+import org.ethereum.db.RepositoryTrack;
 import org.ethereum.vm.LogInfo;
 import org.ethereum.vm.program.ProgramResult;
 import org.ethereum.vm.program.invoke.ProgramInvokeFactory;
@@ -26,6 +28,7 @@ public abstract class ReplayBlock {
     protected final BlockchainImpl blockchain;
     protected final LedgerSyncService ledgerSync;
 
+    protected boolean blockReplayed=false;
     protected HashMap<byte[],LedgerAccount> accounts        = new HashMap<byte[],LedgerAccount>();
     protected void addAmount(LedgerAccount acc, BigDecimal amount)
     {
@@ -94,13 +97,13 @@ public abstract class ReplayBlock {
 //            System.out.println("Replayblock ctor. BlockNo not found:" + blockNo);
 //    }
 
-
     List<TransactionExecutionSummary> summaries = null;
 
     public void run() throws HashDecodeException, AddressDecodeException {
         if (block == null) {
             return;
         }
+        blockReplayed=true;
         summaries= new ArrayList<>();
 
         BlockStore blockStore = blockchain.getBlockStore();
@@ -113,6 +116,14 @@ public abstract class ReplayBlock {
             snapshot = track.getSnapshotTo(null);
         else
             snapshot = track.getSnapshotTo(blockchain.getBlockByHash(block.getParentHash()).getStateRoot());
+
+
+//        if (snapshot instanceof RepositoryImpl)
+//            System.out.println("Impl");
+//        else if (snapshot instanceof RepositoryTrack)
+//            System.out.println("Track");
+//        else
+//            System.out.println("smth else");
 
         long totalGasUsed = 0;
 

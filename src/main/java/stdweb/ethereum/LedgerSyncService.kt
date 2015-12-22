@@ -201,7 +201,7 @@ open class LedgerSyncService
 
             var r=q.get(Sha3Hash(block2add.hash))
             if (r==null){
-                println ("replayblock  not found in q, replaying. ${block2add.number} : ${Hex.toHexString(block2add.hash)}")
+                print ("replay ")
                 r= ReplayBlockWrite(this,block2add,blockRepo!!,accRepo!!,ledgerRepo!!,txRepo!!,logRepo!!,receiptRepo!!)
                 r.run()
 
@@ -209,7 +209,7 @@ open class LedgerSyncService
             if (r?.isChildOf(sqlTopBlock.hash) ?: false) {
                 r?.write()
                 q.remove(Sha3Hash(block2add.hash))
-          //      println ("write and remove from q: ${r?.block?.number} , q size : ${q.size}")
+                println ("write and remove from q: ${r?.block?.number} , q size : ${q.size}")
             }
             else{
                 println ("replayblock  ${r.block.number} : ${Hex.toHexString(r.block.hash)} " +
@@ -217,7 +217,7 @@ open class LedgerSyncService
             }
         }
 
-        //println ("block ${replayBlock.block.number} added to queue, q size : ${q.size}")
+        println ("block ${replayBlock.block.number} added to queue, q size : ${q.size}")
         q.putIfAbsent(Sha3Hash(replayBlock.block.hash), replayBlock)
 
         //clear old blocks in queue
@@ -228,7 +228,7 @@ open class LedgerSyncService
 //        println("after clear old blocks inq , size ${q.size}")
 //        println("")
 //        println("<-- finish q , block ${replayBlock.block.number}")
-        //Thread.sleep(2000)
+        Thread.sleep(2000)
 
     }
 
@@ -237,8 +237,7 @@ open class LedgerSyncService
     {
         try {
             lock.lock()
-            //println("lock aquired in thread " +Thread.currentThread().id)
-            val replayBlock = ReplayBlockWrite(
+            val replayBlock  = ReplayBlockWrite(
                     this, block,
                     blockRepo!!,
                     accRepo!!,
@@ -247,36 +246,24 @@ open class LedgerSyncService
                     logRepo!!,
                     receiptRepo!!
             )
+            //println("lock aquired in thread " +Thread.currentThread().id)
 
             when (syncStatus) {
                 SyncStatus.onBlockSync -> {
                     replayBlock.summaries=summaries
-
                 }
                 SyncStatus.bulkLoading,
                 SyncStatus.SingleInsert -> {
                     replayBlock.run()
-
                 }
             }
-
             //println ("block wo ledg ${block.number}")
                 //replayBlock.write()
-
             enqueue( replayBlock)
         }
-        catch ( e : KotlinNullPointerException)
-        {
-            throw NullPointerException("at least one repo is null")
-        }
-        finally
-        {
-            lock.unlock()
-        }
+        catch ( e : Exception){throw RuntimeException("Error writing block ",e)}
+        finally{ lock.unlock() }
     }
-
-
-
 
     @Transactional open fun start() {
 
@@ -290,10 +277,8 @@ open class LedgerSyncService
                 //println("Genesis unlock ,count : " +lock.holdCount)
                 lock.unlock()
             }
-
         //syncStatus= SyncStatus.onBlockSync
         //ethereumBean?.blockchainStartSync()
-
         println ("LedgSyncService started")
     }
 
