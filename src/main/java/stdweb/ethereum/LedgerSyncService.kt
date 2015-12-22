@@ -229,8 +229,9 @@ open class LedgerSyncService
                 .forEach    { q.remove( Sha3Hash(it.value.block.hash)) }
 //        println("after clear old blocks inq , size ${q.size}")
 //        println("")
-//        println("<-- finish q , block ${replayBlock.block.number}")
+
         Thread.sleep(2000)
+        println("<-- finish q , block ${replayBlock.block.number}")
 
     }
 
