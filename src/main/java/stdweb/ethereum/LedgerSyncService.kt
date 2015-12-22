@@ -231,7 +231,7 @@ open class LedgerSyncService
 //        println("after clear old blocks inq , size ${q.size}")
 //        println("")
 
-        Thread.sleep(2000)
+        //Thread.sleep(2000)
         println("<-- finish q , block ${replayBlock.block.number}")
         println("_________________________________________________________")
 
