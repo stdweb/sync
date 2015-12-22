@@ -2,6 +2,7 @@ package stdweb.ethereum
 
 
 import org.ethereum.core.*
+import org.ethereum.db.ByteArrayWrapper
 import org.ethereum.util.ByteUtil
 import org.ethereum.vm.program.InternalTransaction
 import org.spongycastle.util.encoders.Hex
@@ -339,7 +340,8 @@ class ReplayBlockWrite : ReplayBlock
         val sqltopHash=blockRepo.topBlock()!!.hash
         println ("${msg} : ${block.number}     <-- hash ${Hex.toHexString(block.hash).substring(0,10)} " +
                 "parent ${Hex.toHexString(block.parentHash).substring(0,10)} " +
-                "${if (Arrays.equals(block.parentHash,sqltopHash)) " Match" else " NotMatch"}" )
+                "${if (Sha3Hash(block.parentHash).equals(Sha3Hash(sqltopHash))) " Match" else " NotMatch"}" )
+
 
 //        println("sqltop hash ${Hex.toHexString(sqltopHash)} - newblock parent ${Hex.toHexString(block.parentHash)} " +
 //                "eq: ${Arrays.equals(block.parentHash,sqltopHash)}")
