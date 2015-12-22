@@ -5,6 +5,7 @@ import org.ethereum.db.RepositoryImpl
 import org.ethereum.facade.Ethereum
 import org.ethereum.facade.EthereumFactory
 import org.ethereum.net.eth.sync.SyncState
+import org.spongycastle.util.encoders.Hex
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
 import stdweb.Core.Amount
@@ -58,7 +59,7 @@ public class EthereumBean
         this.blockchain=this.ethereum.blockchain as BlockchainImpl
         this.repo=this.ethereum.repository as RepositoryImpl
 
-        println ("bestblock on start:"+this.blockchain.bestBlock.number);
+        println ("bestblock on start:${this.blockchain.bestBlock.number} hash: ${Hex.toHexString(this.blockchain.bestBlock.hash)}");
     }
 }
 
