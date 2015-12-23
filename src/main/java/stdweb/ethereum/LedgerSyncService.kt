@@ -95,7 +95,7 @@ open class LedgerSyncService
 
     private var nextSyncBlock: Int =-1
 
-    fun ledgerBulkLoad() {
+    fun ledgerBulkLoad1() {
 
         //ledgerBulkLoad(blockRepo?.topBlock()?.id ?: Int.MAX_VALUE )
         val bestBlock   =ethereumBean!! .blockchain.bestBlock.number
@@ -252,7 +252,7 @@ open class LedgerSyncService
                     }
                 else//parent and block not exist in sql
                     when {
-                        blockDiff > 1   -> { this.ledgerBulkLoad() } //need bulkloading
+                        blockDiff > 1   -> { this.ledgerBulkLoad1() } //need bulkloading
                         blockDiff ==1   -> {}
                         blockDiff < 1   -> {}
 
