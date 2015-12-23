@@ -195,7 +195,7 @@ open class LedgerSyncService
 //        println ("new block ${newBlock.toString()}")
 //        println ("<---- rebranch")
 
-        blockRepo!!.deleteBlockWithEntries(newBlock.number.toInt())
+        this.deleteBlockData(newBlock.number.toInt())
 
 
 
