@@ -189,6 +189,7 @@ open class LedgerSyncService
         val bestBlock   =ethereumBean!! .blockchain.bestBlock.number
         val sqlTop      =blockRepo!!    .topBlock()!!.id
 
+
         //val block=ethereumBean!!.blockchain.getBlockByHash()
 
 
@@ -255,13 +256,15 @@ open class LedgerSyncService
                             //normal blockchain sync loading
                             val replayBlock = ReplayBlockWrite(this, newBlock,blockRepo!!,accRepo!!,ledgerRepo!!,txRepo!!,logRepo!!,receiptRepo!!)
                             replayBlock.summaries = summaries
+                            println ("before write")
                             replayBlock.write()
+                            println ("after write")
                             return
                         }
                         blockDiff < 1 -> {
                             println ("b:${newBlock.number} hash ${Hex.toHexString(newBlock.hash).substring(0,10)} blockExists ${blockExists}, parentExist ${parentExists}," +
                                     " blockDiff ${blockDiff} , rebranch")
-                            //rebranchSqlDb(newBlock)
+                            rebranchSqlDb(newBlock)
                         }// need rebranch
                         blockDiff > 1 -> {
                             println ("b:${newBlock.number} hash ${Hex.toHexString(newBlock.hash).substring(0,10)}  blockExists ${blockExists}, parentExist ${parentExists}, blockDiff ${blockDiff} ")
