@@ -259,28 +259,28 @@ open class LedgerSyncService
                             return
                         }
                         blockDiff < 1 -> {
-                            println ("b:${newBlock.number} blockExists ${blockExists}, parentExist ${parentExists}," +
+                            println ("b:${newBlock.number} hash ${Hex.toHexString(newBlock.hash).substring(0,10)} blockExists ${blockExists}, parentExist ${parentExists}," +
                                     " blockDiff ${blockDiff} , rebranch")
                             //rebranchSqlDb(newBlock)
                         }// need rebranch
                         blockDiff > 1 -> {
-                            println ("b:${newBlock.number} blockExists ${blockExists}, parentExist ${parentExists}, blockDiff ${blockDiff} ")
+                            println ("b:${newBlock.number} hash ${Hex.toHexString(newBlock.hash).substring(0,10)}  blockExists ${blockExists}, parentExist ${parentExists}, blockDiff ${blockDiff} ")
                         }// never?
                         else          -> {
-                            println ("ELSE: b:${newBlock.number}  blockExists ${blockExists}, parentExist ${parentExists}, blockDiff ${blockDiff} ")
+                            println ("ELSE: b:${newBlock.number} hash ${Hex.toHexString(newBlock.hash).substring(0,10)}   blockExists ${blockExists}, parentExist ${parentExists}, blockDiff ${blockDiff} ")
                         }
                     }
                 else//parent and block not exist in sql
                     when {
                         blockDiff > 1   -> {
-                            println ("b:${newBlock.number} blockExists ${blockExists}, parentExist ${parentExists}, blockDiff ${blockDiff} ")
+                            println ("b:${newBlock.number} hash ${Hex.toHexString(newBlock.hash).substring(0,10)}  blockExists ${blockExists}, parentExist ${parentExists}, blockDiff ${blockDiff} ledgBulkload")
                             this.ledgerBulkLoad1()
                         } //need bulkloading
                         blockDiff ==1   -> {
-                            println ("b:${newBlock.number} blockExists ${blockExists}, parentExist ${parentExists}, blockDiff ${blockDiff} ")
+                            println ("b:${newBlock.number} hash ${Hex.toHexString(newBlock.hash).substring(0,10)}  blockExists ${blockExists}, parentExist ${parentExists}, blockDiff ${blockDiff} ")
                         }
                         blockDiff < 1   -> {
-                            println ("b:${newBlock.number} blockExists ${blockExists}, parentExist ${parentExists}, blockDiff ${blockDiff} ")
+                            println ("b:${newBlock.number} hash ${Hex.toHexString(newBlock.hash).substring(0,10)}  blockExists ${blockExists}, parentExist ${parentExists}, blockDiff ${blockDiff} ")
                         }
 
                     }
