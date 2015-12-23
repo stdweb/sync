@@ -189,6 +189,13 @@ open class LedgerSyncService
         val bestBlock   =ethereumBean!! .blockchain.bestBlock.number
         val sqlTop      =blockRepo!!    .topBlock()!!.id
 
+        val oldBlock=blockRepo!!.findOne(newBlock.number.toInt())
+        println ("old block ${oldBlock.toString()}")
+        println("______________________________________________")
+        println ("new block ${newBlock.toString()}")
+        println ("<---- rebranch")
+        //blockRepo.deleteBlockWithEntries()
+
 
         //val block=ethereumBean!!.blockchain.getBlockByHash()
 
