@@ -226,8 +226,8 @@ open class LedgerSyncService
 
     @Transactional open fun saveBlockData(newBlock : Block, summaries : List<TransactionExecutionSummary>)
     {
-        tmpWrite(newBlock,summaries)
-        return
+        //tmpWrite(newBlock,summaries)
+        //return
 
         try {
             lock.lock()
@@ -251,21 +251,37 @@ open class LedgerSyncService
                     when {
                         blockDiff == 1 ->
                         if (Arrays.equals(newBlock.parentHash, sqlTop.hash)){
+                            println ("blockExists ${blockExists}, parentExist ${parentExists}, blockDiff ${blockDiff} ")
                             //normal blockchain sync loading
                             val replayBlock = ReplayBlockWrite(this, newBlock,blockRepo!!,accRepo!!,ledgerRepo!!,txRepo!!,logRepo!!,receiptRepo!!)
                             replayBlock.summaries = summaries
                             replayBlock.write()
                             return
                         }
-                        blockDiff < 1 -> { rebranchSqlDb(newBlock) }// need rebranch
-                        blockDiff > 1 -> { }// never?
-                        else          -> { }
+                        blockDiff < 1 -> {
+                            println ("blockExists ${blockExists}, parentExist ${parentExists}," +
+                                    " blockDiff ${blockDiff} , rebranch")
+                            //rebranchSqlDb(newBlock)
+                        }// need rebranch
+                        blockDiff > 1 -> {
+                            println ("blockExists ${blockExists}, parentExist ${parentExists}, blockDiff ${blockDiff} ")
+                        }// never?
+                        else          -> {
+                            println ("ELSE: blockExists ${blockExists}, parentExist ${parentExists}, blockDiff ${blockDiff} ")
+                        }
                     }
                 else//parent and block not exist in sql
                     when {
-                        blockDiff > 1   -> { this.ledgerBulkLoad1() } //need bulkloading
-                        blockDiff ==1   -> {}
-                        blockDiff < 1   -> {}
+                        blockDiff > 1   -> {
+                            println ("blockExists ${blockExists}, parentExist ${parentExists}, blockDiff ${blockDiff} ")
+                            this.ledgerBulkLoad1()
+                        } //need bulkloading
+                        blockDiff ==1   -> {
+                            println ("blockExists ${blockExists}, parentExist ${parentExists}, blockDiff ${blockDiff} ")
+                        }
+                        blockDiff < 1   -> {
+                            println ("blockExists ${blockExists}, parentExist ${parentExists}, blockDiff ${blockDiff} ")
+                        }
 
                     }
             }
