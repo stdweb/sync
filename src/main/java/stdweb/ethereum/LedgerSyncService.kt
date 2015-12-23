@@ -207,8 +207,19 @@ open class LedgerSyncService
         )
 
         replayBlock.summaries=summaries
-        replayBlock.write()
-        print ("  tmp write ${block.number}")
+
+        try {
+            replayBlock.write()
+        }
+        catch( e : RuntimeException)
+        {
+            println ("cannot write block ${block.number}")
+            println(block.toString())
+            throw e
+        }
+
+
+        print ("  tmp write ${block.number}  ")
 
     }
 
