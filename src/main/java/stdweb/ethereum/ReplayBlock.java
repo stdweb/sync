@@ -101,7 +101,7 @@ public abstract class ReplayBlock {
 
     public void run() throws HashDecodeException, AddressDecodeException {
         if (block == null) {
-            return;
+            return ;
         }
         blockReplayed=true;
         summaries= new ArrayList<>();
@@ -137,7 +137,6 @@ public abstract class ReplayBlock {
             totalGasUsed += executor.getGasUsed();
             ProgramResult result = executor.getResult();
             long gasRefund = Math.min(result.getFutureRefund(), result.getGasUsed() / 2);
-
         }
 
         //printEntries();

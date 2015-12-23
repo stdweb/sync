@@ -95,7 +95,7 @@ open class LedgerSyncService
 
     private var nextSyncBlock: Int =-1
 
-    fun ledgerBulkLoad1() {
+    fun ledgerBulkLoad() {
 
         //ledgerBulkLoad(blockRepo?.topBlock()?.id ?: Int.MAX_VALUE )
         val bestBlock   =ethereumBean!! .blockchain.bestBlock.number
@@ -115,8 +115,9 @@ open class LedgerSyncService
                     logRepo!!,
                     receiptRepo!!
             )
-            replayBlock.run()
-            replayBlock.write()
+            //replayBlock.run()
+            //replayBlock.write()
+            saveBlockData(block,null)
             println ("bulk write ${block.number}")
         }
     }
@@ -195,10 +196,11 @@ open class LedgerSyncService
 //        println ("new block ${newBlock.toString()}")
 //        println ("<---- rebranch")
 
-        this.deleteBlockData(newBlock.number.toInt())
+        (newBlock.number.toInt() .. sqlTop ).forEach {
+            this.deleteBlockData(it)
+        }
 
-
-
+        saveBlockData(newBlock,null)
         //val block=ethereumBean!!.blockchain.getBlockByHash()
 
 
@@ -234,14 +236,10 @@ open class LedgerSyncService
     }
 
 
-    @Transactional open fun saveBlockData(newBlock : Block, summaries : List<TransactionExecutionSummary>)
+    @Transactional open fun saveBlockData(newBlock : Block, summaries : List<TransactionExecutionSummary>?)
     {
-        //tmpWrite(newBlock,summaries)
-        //return
-
         try {
             lock.lock()
-
             //val newBlockHash        =block.hash
             //val newBlockParentHash  =block.parentHash
 
@@ -264,11 +262,13 @@ open class LedgerSyncService
                             println ("b:${newBlock.number} blockExists ${blockExists}, parentExist ${parentExists}, blockDiff ${blockDiff} ")
                             //normal blockchain sync loading
                             val replayBlock = ReplayBlockWrite(this, newBlock,blockRepo!!,accRepo!!,ledgerRepo!!,txRepo!!,logRepo!!,receiptRepo!!)
-                            replayBlock.summaries = summaries
-                            println ("before write")
+
+                            if (summaries==null)
+                                replayBlock.run()
+                            else
+                                replayBlock.summaries = summaries
+
                             replayBlock.write()
-                            println ("after write")
-                            return
                         }
                         blockDiff < 1 -> {
                             println ("b:${newBlock.number} hash ${Hex.toHexString(newBlock.hash).substring(0,10)} blockExists ${blockExists}, parentExist ${parentExists}," +
@@ -286,7 +286,7 @@ open class LedgerSyncService
                     when {
                         blockDiff > 1   -> {
                             println ("b:${newBlock.number} hash ${Hex.toHexString(newBlock.hash).substring(0,10)}  blockExists ${blockExists}, parentExist ${parentExists}, blockDiff ${blockDiff} ledgBulkload")
-                            this.ledgerBulkLoad1()
+                            this.ledgerBulkLoad()
                         } //need bulkloading
                         blockDiff ==1   -> {
                             println ("b:${newBlock.number} hash ${Hex.toHexString(newBlock.hash).substring(0,10)}  blockExists ${blockExists}, parentExist ${parentExists}, blockDiff ${blockDiff} ")
