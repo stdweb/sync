@@ -74,7 +74,7 @@ class CmdController
 
         when (cmd.toLowerCase()) {
             "stop" -> ledgSync.stopSync()
-            "start" -> ledgSync.ledgerBulkLoad()
+            "start" -> {}//ledgSync.ledgerBulkLoad()
             "sync" -> ledgSync.nextStatus = SyncStatus.onBlockSync
             "stopsync" -> {
                 ledgSync.syncStatus = SyncStatus.stopped
