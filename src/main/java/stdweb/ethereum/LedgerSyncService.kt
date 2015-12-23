@@ -208,7 +208,7 @@ open class LedgerSyncService
 
         replayBlock.summaries=summaries
         replayBlock.write()
-        println ("bulk write ${block.number}")
+        print ("  tmp write ${block.number}")
 
     }
 
