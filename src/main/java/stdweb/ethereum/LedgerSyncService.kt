@@ -91,99 +91,34 @@ open class LedgerSyncService
         return ledgerAccount
     }
 
-    fun isContract(addr: ByteArray): Boolean {
 
-        val repository = ethereumBean?.ethereum?.repository as RepositoryImpl
-        val contractDetails = repository.getContractDetails(addr) ?: return false
-        contractDetails.code ?: return false
-
-        contractDetails.syncStorage()
-        repository.flushNoReconnect()
-        //if (contractDetails.code == null)
-        //    return false
-
-        return (contractDetails.code.size != 0)
-    }
 
     private var nextSyncBlock: Int =-1
 
-    fun ledgerBulkLoad(_block: Int) {
-
-        println("Ledger Start BulkLoad from :" + _block)
-        syncStatus = SyncStatus.bulkLoading
-
-        this.nextSyncBlock = _block
-        blockRepo?.deleteBlockWithEntriesFrom(_block)
-
-        if ( ! (syncLedgerThread?.isAlive ?: false)) {
-            val thread=createSyncLedgerThread()
-            thread.start()
-            syncLedgerThread=thread
-        }
-    }
-
     fun ledgerBulkLoad() {
 
-        ledgerBulkLoad(blockRepo?.topBlock()?.id ?: Int.MAX_VALUE )
-    }
+        //ledgerBulkLoad(blockRepo?.topBlock()?.id ?: Int.MAX_VALUE )
+        val bestBlock   =ethereumBean!! .blockchain.bestBlock.number
+        val sqlTop      =blockRepo!!    .topBlock()!!.id
 
-    private var syncLedgerThread: Thread? = null
+        if (bestBlock>sqlTop)
+        for (i in sqlTop+1 .. bestBlock)
+        {
+            val block=ethereumBean!! .blockchain.getBlockByNumber(i)
 
-
-    fun replayAndSaveBlock(blockNumber: Int) {
-
-        //todo: LedgerSyncService. autowire in ctor
-        if (ethereumBean?.blockchain?.bestBlock?.number ?:0 < blockNumber) {
-            println("cannot insert block.Top block is: " + ethereumBean?.blockchain?.bestBlock?.number)
-            return
+            val replayBlock = ReplayBlockWrite(
+                    this,block,
+                    blockRepo !!,
+                    accRepo !!,
+                    ledgerRepo!!,
+                    txRepo!!,
+                    logRepo!!,
+                    receiptRepo!!
+            )
+            replayBlock.run()
+            replayBlock.write()
+            println ("bulk write ${block.number}")
         }
-
-        val block = ethereumBean?.blockchain?.getBlockByNumber(blockNumber.toLong())
-
-        Assert.isTrue(block != null, "blockBy number is null:" + blockNumber)
-        //todo: throw exception here if null
-        if (block == null)
-            return
-
-        val replayBlock = ReplayBlockWrite(
-                this,block,
-                blockRepo !!,
-                accRepo !!,
-                ledgerRepo!!,
-                txRepo!!,
-                logRepo!!,
-                receiptRepo!!
-        )
-        saveBlockData(block,replayBlock.summaries)
-    }
-
-    @Synchronized @Throws(SQLException::class, InterruptedException::class)
-    fun createSyncLedgerThread() : Thread {
-
-        println("create Ledger BulkLoadThread")
-        ethereumBean?.blockchainStopSync()
-
-        return  Thread {
-            while (syncStatus == SyncStatus.bulkLoading) {
-                if (nextSyncBlock <= ethereumBean?.blockchain?.bestBlock?.number?.toInt() ?: 0)
-                {
-                    replayAndSaveBlock(nextSyncBlock)
-                    nextSyncBlock++
-                    }
-                else {
-                    syncStatus = nextStatus
-                    println("finished bulkloading . Block:" + ethereumBean?.blockchain?.bestBlock?.number)
-                    println("Snc status set to: " + syncStatus)
-                    break
-                }
-            }
-        }
-    }
-
-    fun stopSync() {
-        println("stop BulkLoad")
-        syncStatus = SyncStatus.stopped
-        nextSyncBlock = 1000000000
     }
 
     private fun enqueue(replayBlock: ReplayBlockWrite) {
@@ -237,46 +172,115 @@ open class LedgerSyncService
 
     }
 
-
-    @Transactional open fun saveBlockData(block : Block, summaries : List<TransactionExecutionSummary>)
+    fun deleteTopBlockData() {
+        val topblock=blockRepo?.topBlockId()
+        deleteBlockData(topblock ?: -1)
+    }
+    @Transactional open fun deleteBlockData(id: Int)
     {
+        accRepo?.updAccFirstBlock2null(id)
+        accRepo?.updAccLastBlock2null(id)
+
+        blockRepo?.deleteBlockWithEntries(id)
+    }
+
+    private fun rebranchSqlDb(newBlock: Block) {
+           //block not exists, parent exists, blockDiff<1
+        val bestBlock   =ethereumBean!! .blockchain.bestBlock.number
+        val sqlTop      =blockRepo!!    .topBlock()!!.id
+
+        //val block=ethereumBean!!.blockchain.getBlockByHash()
 
 
+    }
+
+    fun tmpWrite(block : Block,summaries: List<TransactionExecutionSummary>)
+    {
+        val replayBlock = ReplayBlockWrite(
+                this,block,
+                blockRepo !!,
+                accRepo !!,
+                ledgerRepo!!,
+                txRepo!!,
+                logRepo!!,
+                receiptRepo!!
+        )
+
+        replayBlock.summaries=summaries
+        replayBlock.write()
+        println ("bulk write ${block.number}")
+
+    }
+
+
+    @Transactional open fun saveBlockData(newBlock : Block, summaries : List<TransactionExecutionSummary>)
+    {
+        tmpWrite(newBlock,summaries)
+        return
 
         try {
             lock.lock()
-            val replayBlock  = ReplayBlockWrite(
-                    this, block,
-                    blockRepo!!,
-                    accRepo!!,
-                    ledgerRepo!!,
-                    txRepo!!,
-                    logRepo!!,
-                    receiptRepo!!
-            )
+
+            //val newBlockHash        =block.hash
+            //val newBlockParentHash  =block.parentHash
+
+            val sqlTop=blockRepo!!.topBlock()!!
+
+            val blockExists  = blockRepo!!.findByHash(newBlock.hash) !=null
+            val parentExists = blockRepo!!.findByHash(newBlock.parentHash) !=null
+
+            val blockDiff = newBlock.number.toInt()-sqlTop.id
+
+            if (blockExists){
+                //exists in sql -- skipping
+                println ("bskip ${newBlock.number} : ${Hex.toHexString(newBlock.hash)}")
+                return
+            }else{
+                if (parentExists)//block not exists in sql , parent exists
+                    when {
+                        blockDiff == 1 ->
+                        if (Arrays.equals(newBlock.parentHash, sqlTop.hash)){
+                            //normal blockchain sync loading
+                            val replayBlock = ReplayBlockWrite(this, newBlock,blockRepo!!,accRepo!!,ledgerRepo!!,txRepo!!,logRepo!!,receiptRepo!!)
+                            replayBlock.summaries = summaries
+                            replayBlock.write()
+                            return
+                        }
+                        blockDiff < 1 -> { rebranchSqlDb(newBlock) }// need rebranch
+                        blockDiff > 1 -> { }// never?
+                        else          -> { }
+                    }
+                else//parent and block not exist in sql
+                    when {
+                        blockDiff > 1   -> { this.ledgerBulkLoad() } //need bulkloading
+                        blockDiff ==1   -> {}
+                        blockDiff < 1   -> {}
+
+                    }
+            }
             //println("lock aquired in thread " +Thread.currentThread().id)
 
-            when (syncStatus) {
-                SyncStatus.onBlockSync -> {
-                    replayBlock.summaries=summaries
-                }
-                SyncStatus.bulkLoading,
-                SyncStatus.SingleInsert -> {
-                    replayBlock.run()
-                }
-            }
-
+//            when (syncStatus) {
+//                SyncStatus.onBlockSync -> {
+//                    replayBlock.summaries=summaries
+//                }
+//                SyncStatus.bulkLoading,
+//                SyncStatus.SingleInsert -> {
+//                    replayBlock.run()
+//                }
+//            }
             //println ("block wo ledg ${block.number} hash:  ${Hex.toHexString(block.hash)}")
-            replayBlock.write()
+            //replayBlock.write()
             //enqueue( replayBlock)
         }
         catch ( e : Exception){throw RuntimeException("Error writing block ",e)}
         finally{ lock.unlock() }
     }
 
-    @Transactional open fun start() {
 
-            try{
+
+    @Transactional open fun start() {
+        try{
                 lock.lock()
                 //println("Genesis lock aquired in thread " +Thread.currentThread().id)
                 if (blockRepo!!.findOne(0)==null)
@@ -325,4 +329,94 @@ open class LedgerSyncService
 
     constructor()
     {}
+
+
+    @Synchronized @Throws(SQLException::class, InterruptedException::class)
+    fun createSyncLedgerThread() : Thread {
+
+        println("create Ledger BulkLoadThread")
+        ethereumBean?.blockchainStopSync()
+
+        return  Thread {
+            while (syncStatus == SyncStatus.bulkLoading) {
+                if (nextSyncBlock <= ethereumBean?.blockchain?.bestBlock?.number?.toInt() ?: 0)
+                {
+                    replayAndSaveBlock(nextSyncBlock)
+                    nextSyncBlock++
+                }
+                else {
+                    syncStatus = nextStatus
+                    println("finished bulkloading . Block:" + ethereumBean?.blockchain?.bestBlock?.number)
+                    println("Snc status set to: " + syncStatus)
+                    break
+                }
+            }
+        }
+    }
+
+    fun stopSync() {
+        println("stop BulkLoad")
+        syncStatus = SyncStatus.stopped
+        nextSyncBlock = 1000000000
+    }
+
+    fun old_ledgerBulkLoad(_block: Int) {
+
+        println("Ledger Start BulkLoad from :" + _block)
+        syncStatus = SyncStatus.bulkLoading
+
+        this.nextSyncBlock = _block
+        blockRepo?.deleteBlockWithEntriesFrom(_block)
+
+        if ( ! (syncLedgerThread?.isAlive ?: false)) {
+            val thread=createSyncLedgerThread()
+            thread.start()
+            syncLedgerThread=thread
+        }
+    }
+
+    private var syncLedgerThread: Thread? = null
+
+
+    fun replayAndSaveBlock(blockNumber: Int) {
+
+        //todo: LedgerSyncService. autowire in ctor
+        if (ethereumBean?.blockchain?.bestBlock?.number ?:0 < blockNumber) {
+            println("cannot insert block.Top block is: " + ethereumBean?.blockchain?.bestBlock?.number)
+            return
+        }
+
+        val block = ethereumBean?.blockchain?.getBlockByNumber(blockNumber.toLong())
+
+        Assert.isTrue(block != null, "blockBy number is null:" + blockNumber)
+        //todo: throw exception here if null
+        if (block == null)
+            return
+
+        val replayBlock = ReplayBlockWrite(
+                this,block,
+                blockRepo !!,
+                accRepo !!,
+                ledgerRepo!!,
+                txRepo!!,
+                logRepo!!,
+                receiptRepo!!
+        )
+        saveBlockData(block,replayBlock.summaries)
+    }
+
+    //    fun isContract(addr: ByteArray): Boolean {
+    //
+    //        val repository = ethereumBean?.ethereum?.repository as RepositoryImpl
+    //        val contractDetails = repository.getContractDetails(addr) ?: return false
+    //        contractDetails.code ?: return false
+    //
+    //        contractDetails.syncStorage()
+    //        repository.flushNoReconnect()
+    //        //if (contractDetails.code == null)
+    //        //    return false
+    //
+    //        return (contractDetails.code.size != 0)
+    //    }
+
 }

@@ -13,8 +13,11 @@ import java.util.*
 import javax.servlet.http.HttpServletRequest
 
 import kotlinx.html.*
+import kotlinx.html.attributes.stringSetDecode
+import kotlinx.html.attributes.stringSetEncode
 import kotlinx.html.dom.*
 import kotlinx.html.stream.appendHTML
+import stdweb.Entity.LedgerBlock
 
 
 @RestController
@@ -46,19 +49,33 @@ class InfoController {
         return map
     }
 
-    @Autowired
-    constructor(_ethereumBean: EthereumBean, _repo: LedgerBlockRepository, _ledgSync: LedgerSyncService) {
-        this.repo = _repo
-        this.ethereumBean = _ethereumBean
-        this.ledgSync = _ledgSync// =ethereumBean.ledgerSync
+
+
+    fun FlowContent.mytab(classes1 : String? = null, blocks : List<LedgerBlock>) : Unit {
+
+        //val bl : TABLE.() -> Unit = {
+        val bl : TABLE.() -> Unit = {
+            thead { tr { td { +"blockNumber" } ; td { +"block hash" } } }
+            blocks.forEach{ tr {
+
+                    td ("cl1.id1") {  +it.id.toString() }
+                    td { classes=setOf("cl2"); +it.hash_str}
+
+                }
+            }
+        }
+
+         TABLE(listOf("class" to stringSetDecode(classes1)?.stringSetEncode()).toAttributesMap(), consumer)
+                .visit(bl)
     }
 
     @RequestMapping(value = "/test")
     fun info() : String {
         //val h=html {a("http://bitledger.net")}
 
+        val blocks=repo.getBlockRange(100000,100100)
 
-        val text = StringBuilder {
+        val text = StringBuilder().apply {
             appendln("<!DOCTYPE html>")
             appendHTML().html {
                 head { title {"title html"}}
@@ -78,17 +95,27 @@ class InfoController {
                         li { a("#") { +"Separated link" } }
                         li { a("#") { +"One more separated link" } }
                     }
-                    table {
-                        thead { tr { td { +"h1" } ; td { +"h2" } } }
-                        tr {
-                            td { +"1" }
-                            td { +"2" }
-                        }
-                    }
+                    mytab(null,blocks)
+                    //                    table {
+                    //                        thead { tr { td { +"blockNumber" } ; td { +"block hash" } } }
+                    //
+                    //                        blocks.forEach {
+                    //                            tr {
+                    //                                td { +it.id.toString() }
+                    //                                td { +it.hash_str }
+                    //                            }
+                    //                        }
+                    //                    }
                 }
             }
             appendln()
         }
         return text.toString()
+    }
+    @Autowired
+    constructor(_ethereumBean: EthereumBean, _repo: LedgerBlockRepository, _ledgSync: LedgerSyncService) {
+        this.repo = _repo
+        this.ethereumBean = _ethereumBean
+        this.ledgSync = _ledgSync// =ethereumBean.ledgerSync
     }
 }

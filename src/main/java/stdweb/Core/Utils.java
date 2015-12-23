@@ -15,13 +15,7 @@ import java.util.Date;
  */
 public class Utils {
 
-
-
-
     public static final byte[] ZERO_BYTE_ARRAY_20 = new byte[]{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
-
-
-
 
     public static String TimeDiff(String descr,long t1 ) {
         long t2=System.currentTimeMillis();

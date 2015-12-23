@@ -8,6 +8,7 @@ import org.springframework.data.repository.query.Param
 import org.springframework.transaction.annotation.Transactional
 import stdweb.Core.HashDecodeException
 import stdweb.Core.Utils
+import stdweb.Entity.LedgerAccount
 import stdweb.Entity.LedgerBlock
 
 interface  ILedgerBlockRepositoryCustom
@@ -44,6 +45,9 @@ class LedgerBlockRepositoryImpl : ILedgerBlockRepositoryCustom
     @Autowired
     var receiptRepo : LedgerTxReceiptRepository? = null
 
+    @Autowired
+    var accRepo : LedgerAccountRepository? = null
+
 
 //    override fun getPage(blockId: String): List<LedgerBlock?> {
 //        val top_block=this.topBlock()
@@ -72,15 +76,21 @@ class LedgerBlockRepositoryImpl : ILedgerBlockRepositoryCustom
 
     override fun deleteBlockWithEntries(id : Int)
     {
+//        val acclist = ledgerRepo  !!   .getAccountsByBlock(id)
+//
+//        acclist.distinct().forEach {
+//            if (it.firstBlock   ?.id==id ) it.firstBlock=null
+//            if (it.lastBlock    ?.id==id ) it.lastBlock =null
+//            accRepo!!.save(it)
+//        }
+
         ledgerRepo  !!   .deleteByBlockNumber(id)
         receiptRepo !!   .deleteByBlockNumber(id)
         logRepo     !!   .deleteByBlockNumber(id)
         txRepo      !!   .deleteByBlockNumber(id)
 
         blockRepo   !!   .deleteByBlockNumber(id)
-
     }
-
 
     override fun deleteBlockWithEntries(b: LedgerBlock)
     {
@@ -144,6 +154,7 @@ interface LedgerBlockRepository : PagingAndSortingRepository<LedgerBlock, Int> ,
 
     @Query("select b   from LedgerBlock b where b.id between :from and :to order by id desc")
     public fun getBlockRange(@Param("from") from : Int,@Param("to") to : Int) : List<LedgerBlock>
+
 
 
 

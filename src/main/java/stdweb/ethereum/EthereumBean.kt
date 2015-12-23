@@ -47,7 +47,24 @@ public class EthereumBean
         ledgerSync?.syncStatus = SyncStatus.onBlockSync
         ledgerSync?.nextStatus = SyncStatus.onBlockSync
 
+
+//        for (i in 135000 downTo 134800) {
+//            println("try del top block ${i}")
+//
+//            ledgerSync?.deleteBlockData(i)
+//        }
+
+//        checkBlockNumber()
         println("EtheteumBean initService")
+    }
+
+    private fun checkBlockNumber() {
+        val b326= ethereum.blockchain.getBlockByNumber(326)
+        val b323= ethereum.blockchain.getBlockByNumber(323)
+
+        val uncle=ethereum.blockchain.getBlockByHash(Hex.decode("55b44267d6e07e845edcf2ef3020ec4b889e13eba463e46ec9539371758e81a8"))
+
+        println("uncle : ${uncle.number}")
     }
 
     constructor()
