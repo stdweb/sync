@@ -33,6 +33,8 @@ class ReplayBlockWrite : ReplayBlock
     private var logRepo:        LedgerTxLogRepository
     private var receiptRepo:    LedgerTxReceiptRepository
 
+    //var checkParent = true
+
     private fun getSendEntryType(tx: Transaction, sendAcc: LedgerAccount, recvAcc: LedgerAccount): EntryType {
 
         if (tx.isContractCreation)

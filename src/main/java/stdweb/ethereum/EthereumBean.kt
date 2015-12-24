@@ -42,17 +42,22 @@ public class EthereumBean
     public  fun initService()
     {
         this.listener.ledgerSync=this.ledgerSync!!
-//        blockchainStopSync()
+        blockchainStopSync()
+        val sqltop=ledgerSync!!.blockRepo!!.topBlockId()
+
+//        for (i in sqltop downTo 740950) {
+//            println("try del top block ${i}")
+//
+//            ledgerSync?.deleteBlockData(i)
+//        }
+        //ledgerSync!!.ledgerBulkLoad(74000,75000)
+
         blockchainStartSync()
         ledgerSync?.syncStatus = SyncStatus.onBlockSync
         ledgerSync?.nextStatus = SyncStatus.onBlockSync
 
 
-//        for (i in 135000 downTo 134800) {
-//            println("try del top block ${i}")
-//
-//            ledgerSync?.deleteBlockData(i)
-//        }
+
 
 //        checkBlockNumber()
         println("EtheteumBean initService")

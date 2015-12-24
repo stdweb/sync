@@ -95,16 +95,21 @@ open class LedgerSyncService
 
     private var nextSyncBlock: Int =-1
 
-    fun ledgerBulkLoad() {
+    @Transactional open fun ledgerBulkLoad(from : Int, to : Int) {
 
         //ledgerBulkLoad(blockRepo?.topBlock()?.id ?: Int.MAX_VALUE )
+
         val bestBlock   =ethereumBean!! .blockchain.bestBlock.number
         val sqlTop      =blockRepo!!    .topBlock()!!.id
 
-        if (bestBlock>sqlTop)
-        for (i in sqlTop+1 .. bestBlock)
+        println ("    <=====start bulkloading  from ${from} to ${to} ")
+        //if (bestBlock>sqlTop)
+        //for (i in sqlTop+1 .. bestBlock)
+        for (i in from .. to)
         {
-            val block=ethereumBean!! .blockchain.getBlockByNumber(i)
+            val block=ethereumBean!! .blockchain.getBlockByNumber(i.toLong())
+
+            val t1=System.currentTimeMillis()
 
             val replayBlock = ReplayBlockWrite(
                     this,block,
@@ -115,11 +120,16 @@ open class LedgerSyncService
                     logRepo!!,
                     receiptRepo!!
             )
-            //replayBlock.run()
-            //replayBlock.write()
-            saveBlockData(block,null)
-            println ("bulk write ${block.number}")
+            //Utils.TimeDiff("before run",t1)
+            replayBlock.run()
+            //Utils.TimeDiff("after run",t1)
+            replayBlock.write()
+            //Utils.TimeDiff("after write",t1)
+            //saveBlockData(block,null)
+            println ("replay write ${block.number} : ${Hex.toHexString(block.hash)}")
+
         }
+        println ("    =====> end bulkloading  ")
     }
 
     private fun enqueue(replayBlock: ReplayBlockWrite) {
@@ -185,26 +195,42 @@ open class LedgerSyncService
         blockRepo?.deleteBlockWithEntries(id)
     }
 
+    private fun findForkPointBlock(newBlock: Block): Block? {
+        var block : Block? = null
+        for (i in newBlock.number downTo newBlock.number-256) {
+
+            var block=ethereumBean  !!.blockchain.getBlockByNumber(i)
+            val sqlBlock = blockRepo!!.findByHash(block.hash)
+            if (sqlBlock!=null)
+                break
+        }
+        return block
+    }
+
     private fun rebranchSqlDb(newBlock: Block) {
            //block not exists, parent exists, blockDiff<1
         val bestBlock   =ethereumBean!! .blockchain.bestBlock.number
         val sqlTop      =blockRepo!!    .topBlock()!!.id
 
-//        val oldBlock=blockRepo!!.findOne(newBlock.number.toInt())
-//        println ("old block ${oldBlock.toString()}")
-//        println("______________________________________________")
-//        println ("new block ${newBlock.toString()}")
-//        println ("<---- rebranch")
+        val forkPointBlock=findForkPointBlock(newBlock)
+        println ("   <======== start rebranch ")
 
-        (newBlock.number.toInt() .. sqlTop ).forEach {
+        if (forkPointBlock==null)
+            return//??
+
+        (forkPointBlock.number.toInt()+1 .. sqlTop ).forEach {
             this.deleteBlockData(it)
         }
+        println ("deleted from ${newBlock.number} ${Hex.toHexString(newBlock.hash)}  to ${sqlTop}")
 
-        saveBlockData(newBlock,null)
+        ledgerBulkLoad(forkPointBlock.number.toInt()+1,newBlock.number.toInt())
+        //saveBlockData(newBlock,null)
+
+        println("   =======> end rebranch")
         //val block=ethereumBean!!.blockchain.getBlockByHash()
-
-
     }
+
+
 
     fun tmpWrite(block : Block,summaries: List<TransactionExecutionSummary>)
     {
@@ -221,6 +247,7 @@ open class LedgerSyncService
         replayBlock.summaries=summaries
 
         try {
+           // replayBlock.checkParent=false
             replayBlock.write()
         }
         catch( e : RuntimeException)
@@ -236,8 +263,14 @@ open class LedgerSyncService
     }
 
 
+
     @Transactional open fun saveBlockData(newBlock : Block, summaries : List<TransactionExecutionSummary>?)
     {
+        //println ("block wo ledg ${newBlock.number} hash:  ${Hex.toHexString(newBlock.hash)}")
+        //println ("block wo ledg ${newBlock.number} ")
+        //tmpWrite(newBlock,summaries!! )
+        //return
+
         try {
             lock.lock()
             //val newBlockHash        =block.hash
@@ -259,7 +292,8 @@ open class LedgerSyncService
                     when {
                         blockDiff == 1 ->
                         if (Arrays.equals(newBlock.parentHash, sqlTop.hash)){
-                            println ("b:${newBlock.number} blockExists ${blockExists}, parentExist ${parentExists}, blockDiff ${blockDiff} ")
+                            //print ("b:${newBlock.number} b_Exists ${blockExists}, p_Exist ${parentExists}, b_Diff ${blockDiff} ")
+                            //print (" <-- Norma ")
                             //normal blockchain sync loading
                             val replayBlock = ReplayBlockWrite(this, newBlock,blockRepo!!,accRepo!!,ledgerRepo!!,txRepo!!,logRepo!!,receiptRepo!!)
 
@@ -270,29 +304,45 @@ open class LedgerSyncService
 
                             replayBlock.write()
                         }
-                        blockDiff < 1 -> {
-                            println ("b:${newBlock.number} hash ${Hex.toHexString(newBlock.hash).substring(0,10)} blockExists ${blockExists}, parentExist ${parentExists}," +
-                                    " blockDiff ${blockDiff} , rebranch")
+                        blockDiff == 0 -> {
+                            println("<---------------------------")
+                            println ("b:${newBlock.number} : ${Hex.toHexString(newBlock.hash)}" +
+                                    " b_Exists ${blockExists}, p_Exist ${parentExists}, b_Diff ${blockDiff} ")
+                            println("skip unitl next newBlock")
+                            //rebranchSqlDb(newBlock)
+                            println("--------------------------->")
+                        }
+                        blockDiff < 0 -> {
+                            println("<---------------------------")
+                            println ("b:${newBlock.number} : ${Hex.toHexString(newBlock.hash)}" +
+                                    " b_Exists ${blockExists}, p_Exist ${parentExists}, b_Diff ${blockDiff} ")
+
                             rebranchSqlDb(newBlock)
+                            println("--------------------------->")
                         }// need rebranch
                         blockDiff > 1 -> {
-                            println ("b:${newBlock.number} hash ${Hex.toHexString(newBlock.hash).substring(0,10)}  blockExists ${blockExists}, parentExist ${parentExists}, blockDiff ${blockDiff} ")
+                            println("<---------------------------")
+                            println ("b:${newBlock.number} : ${Hex.toHexString(newBlock.hash)} b_Exists ${blockExists}, p_Exist ${parentExists}, b_Diff ${blockDiff} ")
+                            println (" <-- NEVER ")
+                            println("--------------------------->")
                         }// never?
-                        else          -> {
-                            println ("ELSE: b:${newBlock.number} hash ${Hex.toHexString(newBlock.hash).substring(0,10)}   blockExists ${blockExists}, parentExist ${parentExists}, blockDiff ${blockDiff} ")
-                        }
                     }
                 else//parent and block not exist in sql
                     when {
                         blockDiff > 1   -> {
-                            println ("b:${newBlock.number} hash ${Hex.toHexString(newBlock.hash).substring(0,10)}  blockExists ${blockExists}, parentExist ${parentExists}, blockDiff ${blockDiff} ledgBulkload")
-                            this.ledgerBulkLoad()
+                            println("<---------------------------")
+                            println ("b:${newBlock.number} : ${Hex.toHexString(newBlock.hash)} b_Exists ${blockExists}, p_Exist ${parentExists}, b_Diff ${blockDiff} ")
+                            println (" <-- BULK ")
+                            //this.ledgerBulkLoad(sqlTop.id+1,newBlock.number.toInt())
+                            this.rebranchSqlDb(newBlock)
+                            println("--------------------------->")
                         } //need bulkloading
-                        blockDiff ==1   -> {
-                            println ("b:${newBlock.number} hash ${Hex.toHexString(newBlock.hash).substring(0,10)}  blockExists ${blockExists}, parentExist ${parentExists}, blockDiff ${blockDiff} ")
-                        }
-                        blockDiff < 1   -> {
-                            println ("b:${newBlock.number} hash ${Hex.toHexString(newBlock.hash).substring(0,10)}  blockExists ${blockExists}, parentExist ${parentExists}, blockDiff ${blockDiff} ")
+
+                        else   -> {
+                            println("<---------------------------")
+                            println ("b:${newBlock.number} : ${Hex.toHexString(newBlock.hash)} b_Exists ${blockExists}, p_Exist ${parentExists}, b_Diff ${blockDiff} ")
+                            println (" <-- NEVER ")
+                            println("--------------------------->")
                         }
 
                     }

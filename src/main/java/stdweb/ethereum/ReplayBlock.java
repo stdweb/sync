@@ -1,6 +1,7 @@
 package stdweb.ethereum;
 
 import javassist.bytecode.ByteArray;
+import org.ethereum.config.SystemProperties;
 import org.ethereum.core.*;
 import org.ethereum.db.BlockStore;
 import org.ethereum.db.ByteArrayWrapper;
@@ -106,6 +107,10 @@ public abstract class ReplayBlock {
         blockReplayed=true;
         summaries= new ArrayList<>();
 
+
+        long t1= System.currentTimeMillis();
+
+        //Utils.TimeDiff("before snapshot",t1);
         BlockStore blockStore = blockchain.getBlockStore();
         ProgramInvokeFactory programInvokeFactory = blockchain.getProgramInvokeFactory();
 
@@ -117,10 +122,9 @@ public abstract class ReplayBlock {
         else
             snapshot = track.getSnapshotTo(blockchain.getBlockByHash(block.getParentHash()).getStateRoot());
 
-
-
         long totalGasUsed = 0;
 
+        //Utils.TimeDiff("after snapshot",t1);
         for (Transaction tx : block.getTransactionsList()) {
 
             TransactionExecutor executor = new TransactionExecutor(tx, block.getCoinbase(),
@@ -128,15 +132,21 @@ public abstract class ReplayBlock {
                     programInvokeFactory, block, ethereumBean.getListener(), totalGasUsed);
 
             executor.setLocalCall(false);
+          //  Utils.TimeDiff("        after localcall",t1);
             executor.init();
+            //Utils.TimeDiff("        after init",t1);
             executor.execute();
+            //Utils.TimeDiff("        after execute",t1);
             executor.go();
+            //Utils.TimeDiff("        after gor",t1);
 
             summaries.add(executor.finalization());
+            //Utils.TimeDiff("        after finaliz",t1);
 
             totalGasUsed += executor.getGasUsed();
             ProgramResult result = executor.getResult();
             long gasRefund = Math.min(result.getFutureRefund(), result.getGasUsed() / 2);
+//            Utils.TimeDiff("        finish tx exec",t1);
         }
 
         //printEntries();
