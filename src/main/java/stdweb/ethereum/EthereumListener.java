@@ -34,6 +34,9 @@ public class EthereumListener extends EthereumListenerAdapter {
         if (block.getNumber()==0)
             return;
 
+        if (block.getNumber()>742001)
+            System.exit(-1);
+
         //System.out.println("on block exec "+block.getNumber());
         if (ledgerSync==null)
         {
@@ -44,7 +47,7 @@ public class EthereumListener extends EthereumListenerAdapter {
 //            System.out.println("LedgerSync is locked");
 
         if (ledgerSync.getSyncStatus()== SyncStatus.onBlockSync) {
-                ledgerSync.saveBlockData(block, summaries);
+                ledgerSync.saveBlock(block, summaries);
         }
     }
 

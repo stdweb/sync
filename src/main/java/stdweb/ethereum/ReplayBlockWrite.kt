@@ -355,8 +355,8 @@ class ReplayBlockWrite : ReplayBlock
 //            return
 //        }
 
-        val b = blockRepo.findOne(this.getBlock().getNumber().toInt())
-
+        //val b = blockRepo.findOne   (this.getBlock().getNumber().toInt())
+        val b = blockRepo.findByHash(this.getBlock().hash)
         if (b!=null) {
 
             println ("bskip : ${block.number}     <-- hash ${Hex.toHexString(block.hash).substring(0,10)} " )

@@ -95,17 +95,17 @@ open class LedgerSyncService
 
     private var nextSyncBlock: Int =-1
 
-    @Transactional open fun ledgerBulkLoad(from : Int, to : Int) {
+    @Transactional open fun ledgerBulkLoad(_from : Int, _to : Int) {
 
         //ledgerBulkLoad(blockRepo?.topBlock()?.id ?: Int.MAX_VALUE )
 
         val bestBlock   =ethereumBean!! .blockchain.bestBlock.number
         val sqlTop      =blockRepo!!    .topBlock()!!.id
 
-        println ("    <=====start bulkloading  from ${from} to ${to} ")
+        println ("    <=====start bulkloading  from ${_from} to ${_to} ")
         //if (bestBlock>sqlTop)
         //for (i in sqlTop+1 .. bestBlock)
-        for (i in from .. to)
+        for (i in _from .. _to)
         {
             val block=ethereumBean!! .blockchain.getBlockByNumber(i.toLong())
 
@@ -197,9 +197,9 @@ open class LedgerSyncService
 
     private fun findForkPointBlock(newBlock: Block): Block? {
         var block : Block? = null
-        for (i in newBlock.number downTo newBlock.number-256) {
+        for (i in newBlock.number-1 downTo newBlock.number-256) {
 
-            var block=ethereumBean  !!.blockchain.getBlockByNumber(i)
+            block=ethereumBean  !!.blockchain.getBlockByNumber(i)
             val sqlBlock = blockRepo!!.findByHash(block.hash)
             if (sqlBlock!=null)
                 break
@@ -221,9 +221,9 @@ open class LedgerSyncService
         (forkPointBlock.number.toInt()+1 .. sqlTop ).forEach {
             this.deleteBlockData(it)
         }
-        println ("deleted from ${newBlock.number} ${Hex.toHexString(newBlock.hash)}  to ${sqlTop}")
+        println ("deleted from ${forkPointBlock.number} ${Hex.toHexString(newBlock.hash)}  to ${sqlTop}")
 
-        ledgerBulkLoad(forkPointBlock.number.toInt()+1,newBlock.number.toInt())
+        ledgerBulkLoad(forkPointBlock.number.toInt()+1,newBlock.number.toInt()-1)
         //saveBlockData(newBlock,null)
 
         println("   =======> end rebranch")
@@ -231,8 +231,7 @@ open class LedgerSyncService
     }
 
 
-
-    fun tmpWrite(block : Block,summaries: List<TransactionExecutionSummary>)
+    fun saveBlockData(block : Block,summaries: List<TransactionExecutionSummary>?)
     {
         val replayBlock = ReplayBlockWrite(
                 this,block,
@@ -244,34 +243,24 @@ open class LedgerSyncService
                 receiptRepo!!
         )
 
-        replayBlock.summaries=summaries
+        if (summaries==null)
+            replayBlock.run()
+        else
+            replayBlock.summaries = summaries
 
-        try {
-           // replayBlock.checkParent=false
-            replayBlock.write()
-        }
-        catch( e : RuntimeException)
-        {
-            println ("cannot write block ${block.number}")
-            println(block.toString())
-            throw e
-        }
-
-
-        print ("  tmp write ${block.number}  ")
-
+        replayBlock.write()
     }
 
 
 
-    @Transactional open fun saveBlockData(newBlock : Block, summaries : List<TransactionExecutionSummary>?)
+    @Transactional open fun saveBlock(newBlock : Block, summaries : List<TransactionExecutionSummary>?)
     {
         //println ("block wo ledg ${newBlock.number} hash:  ${Hex.toHexString(newBlock.hash)}")
         //println ("block wo ledg ${newBlock.number} ")
         //tmpWrite(newBlock,summaries!! )
         //return
 
-        //val tst=ethereumBean!!.blockchain.getBlockByNumber(newBlock.number)
+        val tst=ethereumBean!!.blockchain.getBlockByNumber(newBlock.number)
 
         try {
             lock.lock()
@@ -297,14 +286,9 @@ open class LedgerSyncService
                             //print ("b:${newBlock.number} b_Exists ${blockExists}, p_Exist ${parentExists}, b_Diff ${blockDiff} ")
                             //print (" <-- Norma ")
                             //normal blockchain sync loading
-                            val replayBlock = ReplayBlockWrite(this, newBlock,blockRepo!!,accRepo!!,ledgerRepo!!,txRepo!!,logRepo!!,receiptRepo!!)
 
-                            if (summaries==null)
-                                replayBlock.run()
-                            else
-                                replayBlock.summaries = summaries
+                            saveBlockData(newBlock,summaries)
 
-                            replayBlock.write()
                         }
                         blockDiff == 0 -> {
                             println("<---------------------------")
@@ -320,6 +304,7 @@ open class LedgerSyncService
                                     " b_Exists ${blockExists}, p_Exist ${parentExists}, b_Diff ${blockDiff} ")
 
                             rebranchSqlDb(newBlock)
+                            saveBlockData(newBlock,summaries)
                             println("--------------------------->")
                         }// need rebranch
                         blockDiff > 1 -> {
@@ -334,9 +319,10 @@ open class LedgerSyncService
                         blockDiff > 1   -> {
                             println("<---------------------------")
                             println ("b:${newBlock.number} : ${Hex.toHexString(newBlock.hash)} b_Exists ${blockExists}, p_Exist ${parentExists}, b_Diff ${blockDiff} ")
-                            println (" <-- BULK ")
+                            println (" <-- rebranch ")
                             //this.ledgerBulkLoad(sqlTop.id+1,newBlock.number.toInt())
                             this.rebranchSqlDb(newBlock)
+                            this.saveBlockData(newBlock,summaries)
                             println("--------------------------->")
                         } //need bulkloading
 
@@ -364,7 +350,10 @@ open class LedgerSyncService
             //replayBlock.write()
             //enqueue( replayBlock)
         }
-        catch ( e : Exception){throw RuntimeException("Error writing block ",e)}
+        catch ( e : Exception){
+            println("RuntimException : ${e.message}")
+            throw RuntimeException("Error writing block ",e)
+        }
         finally{ lock.unlock() }
     }
 
@@ -493,7 +482,7 @@ open class LedgerSyncService
                 logRepo!!,
                 receiptRepo!!
         )
-        saveBlockData(block,replayBlock.summaries)
+        saveBlock(block,replayBlock.summaries)
     }
 
     //    fun isContract(addr: ByteArray): Boolean {

@@ -12,12 +12,13 @@ import java.util.*
 import javax.persistence.*
 
 @Entity
+@Table(indexes = arrayOf( Index (unique = true,name = "UIX_block_hash",columnList = "HASH")))
 class LedgerBlock
 {
     @Id var id: Int = 0
 
     @JsonIgnore
-    @NaturalId
+    //@NaturalId
     @Column(length = 32)    var hash  = ByteUtil.EMPTY_BYTE_ARRAY
 
     var timestamp : Long = 0

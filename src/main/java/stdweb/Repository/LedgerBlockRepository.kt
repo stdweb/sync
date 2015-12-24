@@ -90,6 +90,7 @@ class LedgerBlockRepositoryImpl : ILedgerBlockRepositoryCustom
         txRepo      !!   .deleteByBlockNumber(id)
 
         blockRepo   !!   .deleteByBlockNumber(id)
+
     }
 
     override fun deleteBlockWithEntries(b: LedgerBlock)
@@ -154,6 +155,7 @@ interface LedgerBlockRepository : PagingAndSortingRepository<LedgerBlock, Int> ,
 
     @Query("select b   from LedgerBlock b where b.id between :from and :to order by id desc")
     public fun getBlockRange(@Param("from") from : Int,@Param("to") to : Int) : List<LedgerBlock>
+
 
 
 
