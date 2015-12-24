@@ -271,6 +271,8 @@ open class LedgerSyncService
         //tmpWrite(newBlock,summaries!! )
         //return
 
+        //val tst=ethereumBean!!.blockchain.getBlockByNumber(newBlock.number)
+
         try {
             lock.lock()
             //val newBlockHash        =block.hash
