@@ -43,8 +43,9 @@ public class EthereumBean
     {
         this.listener.ledgerSync=this.ledgerSync!!
         blockchainStopSync()
-        val sqltop=ledgerSync!!.blockRepo!!.topBlockId()
 
+
+        //val sqltop=ledgerSync!!.blockRepo!!.topBlockId()
 //        for (i in sqltop downTo 740950) {
 //            println("try del top block ${i}")
 //
