@@ -33,12 +33,12 @@ class GenesisBlockWrite : ReplayBlock
         val b=block
         var parent : LedgerBlock? = null
 
-        var block=LedgerBlock()
+        var block=LedgerBlock(b.number.toInt())
 
         var coinbaseAccount = ledgerSync.getOrCreateLedgerAccount(b?.coinbase ?: Utils.ZERO_BYTE_ARRAY_20,null)
         with(block){
             coinbase        = coinbaseAccount
-            id              = b?.number?.toInt() as Int
+            //id              = b?.number?.toInt() as Int
             hash            = b?.hash ?: ByteUtil.EMPTY_BYTE_ARRAY
             parentHash      = parent?.hash ?: ByteUtil.EMPTY_BYTE_ARRAY
             timestamp       = b?.timestamp ?: 0

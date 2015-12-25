@@ -23,6 +23,9 @@ public class EthereumBean
     @Autowired
     var ledgerSync : LedgerSyncService? = null
 
+    @Autowired
+    var dbBean : DbBean? = null
+
     var blockchainSyncStatus : SyncStatus = SyncStatus.stopped
 
     fun blockchainStartSync() {
@@ -48,16 +51,16 @@ public class EthereumBean
         //val sqltop=ledgerSync!!.blockRepo!!.topBlockId()
 //        for (i in sqltop downTo 740950) {
 //            println("try del top block ${i}")
-//
-//            ledgerSync?.deleteBlockData(i)
+
+        //ledgerSync?.deleteBlockData(745105)
 //        }
         //ledgerSync!!.ledgerBulkLoad(74000,75000)
+
+        //dbBean!!.testGetFirstBlock()
 
         blockchainStartSync()
         ledgerSync?.syncStatus = SyncStatus.onBlockSync
         ledgerSync?.nextStatus = SyncStatus.onBlockSync
-
-
 
 
 //        checkBlockNumber()

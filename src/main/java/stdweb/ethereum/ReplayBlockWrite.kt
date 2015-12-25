@@ -60,27 +60,23 @@ class ReplayBlockWrite : ReplayBlock
 
     private val zeroAccount : LedgerAccount
 
-    fun createLedgerBlock() {
+    fun getOrCreateLedgerBlock() {
 
         val b=block
-
         val sqlTopBlock=blockRepo.topBlock()!!
-
-
         if (!Arrays.equals(sqlTopBlock.hash,block.parentHash))
         {
-            //println("ledgerBlock CreateError ${block.number} parent does not match")
             throw RuntimeException("ledgerBlock CreateError ${block.number} parent does not match")
-
         }
-
         var coinbaseAccount = ledgerSync.getOrCreateLedgerAccount(b?.coinbase ?: Utils.ZERO_BYTE_ARRAY_20,null)
-        val ledgBlock =  LedgerBlock()
+        val blockId=b?.number?.toInt()!!
+        //val ledgBlock =  blockRepo.findOne( blockId) ?: LedgerBlock(blockId)
+        val ledgBlock =   LedgerBlock(blockId)
 
         with(ledgBlock)
         {
             coinbase        = coinbaseAccount
-            id              = b?.number?.toInt() as Int
+            //id              = b?.number?.toInt() as Int
             hash            = b?.hash ?: ByteUtil.EMPTY_BYTE_ARRAY
             parentHash      = sqlTopBlock.hash
             timestamp       = b?.timestamp ?: 0
@@ -98,9 +94,9 @@ class ReplayBlockWrite : ReplayBlock
         }
 
         this.ledgerBlock    = blockRepo.save(ledgBlock)
-        coinbaseAccount     .firstBlock=this.ledgerBlock
-        coinbaseAccount     .lastBlock=this.ledgerBlock
-        coinbaseAccount     = accRepo.save(coinbaseAccount)
+//        coinbaseAccount     .firstBlock=this.ledgerBlock
+//        coinbaseAccount     .lastBlock=this.ledgerBlock
+//        coinbaseAccount     = accRepo.save(coinbaseAccount)
     }
 
     fun getOrCreateTx(tran: Transaction, ind : Int ) : Tx
@@ -207,7 +203,7 @@ class ReplayBlockWrite : ReplayBlock
 
                 account?.balance    = account?.balance?.add(this.amount)
                 account?.entrCnt    = account?.entrCnt?.plus(1)
-                accentryind = account?.entrCnt ?: 0
+                accentryind         = account?.entrCnt ?: 0
                 balance             = account?.balance ?: BigDecimal.ZERO
 
                 entryResult         = EntryResult.Ok
@@ -220,6 +216,8 @@ class ReplayBlockWrite : ReplayBlock
     }
 
     fun addTxEntries(summary: TransactionExecutionSummary ) {
+
+
 
         val ledg_tx= getOrCreateTx(summary.transaction,summary.entryNumber )
         val calcGasUsed = summary.gasLimit.subtract(summary.gasLeftover.add(summary.gasRefund)).toLong()
@@ -365,15 +363,23 @@ class ReplayBlockWrite : ReplayBlock
         }
         printWriteStatus("bsaved")
 
-        createLedgerBlock()
+        getOrCreateLedgerBlock()
+        blockRepo.save(ledgerBlock)
 
         summaries.     forEach {       addTxEntries ( it ) }
         if (this.block.number != 0L)   addRewardEntries()
 
-        entries.       forEach {       ledgRepo.save( it ) }
+        for (entry in entries){
+            val acc             = entry.account
+            val maxId           = ledgRepo.getMaxAccEntryInd(acc!!.id) ?: 0
+            entry.accentryind   = maxId+1
+            acc.entrCnt         = maxId+1
 
+            accRepo     .save(acc)
+            ledgRepo    .save(entry)
+        }
+        //entries.       forEach {       ledgRepo.save( it ) }
         //todo: use logger
-
     }
 
     private fun connectBlock() {

@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.PagingAndSortingRepository
 import org.springframework.data.repository.query.Param
+import org.springframework.transaction.annotation.Propagation
 import org.springframework.transaction.annotation.Transactional
 import stdweb.Core.HashDecodeException
 import stdweb.Core.Utils
@@ -29,10 +30,9 @@ interface  ILedgerBlockRepositoryCustom
     public fun deleteBlockWithEntriesFrom(id : Int)
 
     //public fun getPage(blockId: String) : List<LedgerBlock?>
-
 }
 
-class LedgerBlockRepositoryImpl : ILedgerBlockRepositoryCustom
+open class LedgerBlockRepositoryImpl : ILedgerBlockRepositoryCustom
 {
     @Autowired
     var blockRepo : LedgerBlockRepository? = null
@@ -74,25 +74,20 @@ class LedgerBlockRepositoryImpl : ILedgerBlockRepositoryCustom
         deleteBlockWithEntriesFrom(b.id)
     }
 
-    override fun deleteBlockWithEntries(id : Int)
+    //@Transactional(propagation = Propagation.REQUIRES_NEW)
+    override open fun deleteBlockWithEntries(id : Int)
     {
-//        val acclist = ledgerRepo  !!   .getAccountsByBlock(id)
-//
-//        acclist.distinct().forEach {
-//            if (it.firstBlock   ?.id==id ) it.firstBlock=null
-//            if (it.lastBlock    ?.id==id ) it.lastBlock =null
-//            accRepo!!.save(it)
-//        }
 
-        ledgerRepo  !!   .deleteByBlockNumber(id)
-        receiptRepo !!   .deleteByBlockNumber(id)
-        logRepo     !!   .deleteByBlockNumber(id)
-        txRepo      !!   .deleteByBlockNumber(id)
-
-        blockRepo   !!   .deleteByBlockNumber(id)
-
+        ledgerRepo  !!.deleteByBlockNumber(id)
+        receiptRepo !!.deleteByBlockNumber(id)
+        logRepo     !!.deleteByBlockNumber(id)
+        txRepo      !!.deleteByBlockNumber(id)
+        blockRepo   !!.deleteByBlockNumber(id)
     }
 
+
+
+    //@Transactional(propagation = Propagation.REQUIRES_NEW)
     override fun deleteBlockWithEntries(b: LedgerBlock)
     {
         deleteBlockWithEntries(b.id)

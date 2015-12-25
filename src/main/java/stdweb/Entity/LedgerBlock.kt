@@ -13,8 +13,7 @@ import javax.persistence.*
 
 @Entity
 @Table(indexes = arrayOf( Index (unique = true,name = "UIX_block_hash",columnList = "HASH")))
-class LedgerBlock
-{
+class LedgerBlock {
     @Id var id: Int = 0
 
     @JsonIgnore
@@ -96,5 +95,10 @@ class LedgerBlock
         throw NotImplementedError()
     }
 
+    constructor(){}
+    constructor( _id : Int )
+    {
+        this.id=_id
+    }
 
 }

@@ -10,8 +10,10 @@ import org.spongycastle.util.encoders.Hex
 
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
-
+import org.springframework.transaction.annotation.Propagation
 import org.springframework.transaction.annotation.Transactional
+
+
 import org.springframework.util.Assert
 import stdweb.Core.*
 import stdweb.Entity.AmountEntity
@@ -32,6 +34,7 @@ open class LedgerSyncService
     open var syncStatus : SyncStatus = SyncStatus.stopped
     open var nextStatus : SyncStatus = SyncStatus.stopped
 
+
     @Autowired open var blockRepo        : LedgerBlockRepository? = null
     @Autowired open var accRepo          : LedgerAccountRepository? = null
     @Autowired open var ledgerRepo       : LedgerEntryRepository? = null
@@ -40,6 +43,8 @@ open class LedgerSyncService
     @Autowired open var receiptRepo      : LedgerTxReceiptRepository? = null
     @Autowired open var ethereumBean     : EthereumBean? = null
     public     open var listener         : EthereumListener?=null
+
+    @Autowired open var dbBean           : DbBean? = null
 
     var q : HashMap<Sha3Hash,ReplayBlockWrite> = HashMap()
     var chain : LinkedList<ReplayBlockWrite> = LinkedList()
@@ -50,23 +55,22 @@ open class LedgerSyncService
 
     fun getOrCreateLedgerAccount(addr: ByteArray, block : LedgerBlock? ,isContract : Boolean = false) : LedgerAccount
     {
-
         var account = accRepo!!.findByAddress(addr) ?: LedgerAccount(addr)
 
         if (account.id==-1) {
             //account.firstBlock  = genesis
             account.isContract  = isContract//isContract(account.address)
 
-            account.firstBlock  = block
-            account.lastBlock   = block
+            //account.firstBlock  = block
+            //account.lastBlock   = block
             //account = fillLedgerAccount(account)
             account = accRepo!!.save(account)
             //println ("created acc: ${account.id} : ${account.toString()} :isContract ${account.isContract}" )
         }
         else
         {
-            account.lastBlock =  block
-            account = accRepo!!.save(account)
+            //account.lastBlock =  block
+            //account = accRepo!!.save(account)
             //todo: upd balance and nonce
             //account = fillLedgerAccount(account)
             //account = accRepo!!.save(account)
@@ -95,7 +99,8 @@ open class LedgerSyncService
 
     private var nextSyncBlock: Int =-1
 
-    @Transactional open fun ledgerBulkLoad(_from : Int, _to : Int) {
+    //@Transactional
+    open fun ledgerBulkLoad(_from : Int, _to : Int) {
 
         //ledgerBulkLoad(blockRepo?.topBlock()?.id ?: Int.MAX_VALUE )
 
@@ -108,26 +113,11 @@ open class LedgerSyncService
         for (i in _from .. _to)
         {
             val block=ethereumBean!! .blockchain.getBlockByNumber(i.toLong())
-
             val t1=System.currentTimeMillis()
 
-            val replayBlock = ReplayBlockWrite(
-                    this,block,
-                    blockRepo !!,
-                    accRepo !!,
-                    ledgerRepo!!,
-                    txRepo!!,
-                    logRepo!!,
-                    receiptRepo!!
-            )
-            //Utils.TimeDiff("before run",t1)
-            replayBlock.run()
-            //Utils.TimeDiff("after run",t1)
-            replayBlock.write()
-            //Utils.TimeDiff("after write",t1)
-            //saveBlockData(block,null)
-            println ("replay write ${block.number} : ${Hex.toHexString(block.hash)}")
+            dbBean!!.saveBlockData(block,null )
 
+            println ("replay write ${block.number} : ${Hex.toHexString(block.hash)}")
         }
         println ("    =====> end bulkloading  ")
     }
@@ -183,17 +173,6 @@ open class LedgerSyncService
 
     }
 
-    fun deleteTopBlockData() {
-        val topblock=blockRepo?.topBlockId()
-        deleteBlockData(topblock ?: -1)
-    }
-    @Transactional open fun deleteBlockData(id: Int)
-    {
-        accRepo?.updAccFirstBlock2null(id)
-        accRepo?.updAccLastBlock2null(id)
-
-        blockRepo?.deleteBlockWithEntries(id)
-    }
 
     private fun findForkPointBlock(newBlock: Block): Block? {
         var block : Block? = null
@@ -215,45 +194,26 @@ open class LedgerSyncService
         val forkPointBlock=findForkPointBlock(newBlock)
         println ("   <======== start rebranch ")
 
-        if (forkPointBlock==null)
+        if (forkPointBlock==null) {
+            println ("fork point not found. ${newBlock.number} : ${Hex.toHexString(newBlock.hash)}")
             return//??
-
-        (forkPointBlock.number.toInt()+1 .. sqlTop ).forEach {
-            this.deleteBlockData(it)
         }
-        println ("deleted from ${forkPointBlock.number} ${Hex.toHexString(newBlock.hash)}  to ${sqlTop}")
+
+        dbBean!!.deleteTopBlocksData(forkPointBlock.number.toInt()+1)
+//        (forkPointBlock.number.toInt()+1 .. sqlTop ).forEach {
+//            dbBean!!.deleteBlockData(it.toInt())
+//            //blockRepo!!.deleteBlockWithEntries(it.toInt())
+//        }
+        println ("deleted from ${forkPointBlock.number+1} to ${sqlTop}")
 
         ledgerBulkLoad(forkPointBlock.number.toInt()+1,newBlock.number.toInt()-1)
-        //saveBlockData(newBlock,null)
+
 
         println("   =======> end rebranch")
-        //val block=ethereumBean!!.blockchain.getBlockByHash()
+
     }
 
-
-    fun saveBlockData(block : Block,summaries: List<TransactionExecutionSummary>?)
-    {
-        val replayBlock = ReplayBlockWrite(
-                this,block,
-                blockRepo !!,
-                accRepo !!,
-                ledgerRepo!!,
-                txRepo!!,
-                logRepo!!,
-                receiptRepo!!
-        )
-
-        if (summaries==null)
-            replayBlock.run()
-        else
-            replayBlock.summaries = summaries
-
-        replayBlock.write()
-    }
-
-
-
-    @Transactional open fun saveBlock(newBlock : Block, summaries : List<TransactionExecutionSummary>?)
+    open fun saveBlock(newBlock : Block, summaries : List<TransactionExecutionSummary>?)
     {
         //println ("block wo ledg ${newBlock.number} hash:  ${Hex.toHexString(newBlock.hash)}")
         //println ("block wo ledg ${newBlock.number} ")
@@ -287,14 +247,14 @@ open class LedgerSyncService
                             //print (" <-- Norma ")
                             //normal blockchain sync loading
 
-                            saveBlockData(newBlock,summaries)
+                            dbBean!!.saveBlockData(newBlock,summaries)
 
                         }
                         blockDiff == 0 -> {
                             println("<---------------------------")
                             println ("b:${newBlock.number} : ${Hex.toHexString(newBlock.hash)}" +
                                     " b_Exists ${blockExists}, p_Exist ${parentExists}, b_Diff ${blockDiff} ")
-                            println("skip unitl next newBlock")
+                            println("skip until next newBlock")
                             //rebranchSqlDb(newBlock)
                             println("--------------------------->")
                         }
@@ -304,7 +264,7 @@ open class LedgerSyncService
                                     " b_Exists ${blockExists}, p_Exist ${parentExists}, b_Diff ${blockDiff} ")
 
                             rebranchSqlDb(newBlock)
-                            saveBlockData(newBlock,summaries)
+                            dbBean!!.saveBlockData(newBlock,summaries)
                             println("--------------------------->")
                         }// need rebranch
                         blockDiff > 1 -> {
@@ -322,7 +282,7 @@ open class LedgerSyncService
                             println (" <-- rebranch ")
                             //this.ledgerBulkLoad(sqlTop.id+1,newBlock.number.toInt())
                             this.rebranchSqlDb(newBlock)
-                            this.saveBlockData(newBlock,summaries)
+                            dbBean!!.saveBlockData(newBlock,summaries)
                             println("--------------------------->")
                         } //need bulkloading
 
