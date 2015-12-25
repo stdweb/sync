@@ -153,7 +153,7 @@ class ReplayBlockWrite : ReplayBlock
                 grossAmount         = amount
                 entryResult         = EntryResult.Ok
 
-                accRepo             .save(account)
+                //accRepo             .save(account)
                 entries             .add(0,this)
             }
 
@@ -184,7 +184,7 @@ class ReplayBlockWrite : ReplayBlock
 
                 entries             .add(this)
                 entries             .add(0,this)
-                accRepo             .save(account)
+                //accRepo             .save(account)
             }}
 
             with (LedgerEntry()){
@@ -209,7 +209,7 @@ class ReplayBlockWrite : ReplayBlock
                 entryResult         = EntryResult.Ok
 
                 entries             .add(0,this)
-                accRepo             .save(account)
+                //accRepo             .save(account)
             }
 
 
@@ -272,7 +272,7 @@ class ReplayBlockWrite : ReplayBlock
             accentryind = account?.entrCnt ?: 0
             balance         = account?.balance ?: BigDecimal.ZERO
 
-            accRepo         .save   (account)
+            //accRepo         .save   (account)
             entries         .add    (this)
         }
 
@@ -299,7 +299,7 @@ class ReplayBlockWrite : ReplayBlock
             if (_tx is InternalTransaction)
                 depth       = (_tx.deep + 1).toByte()
 
-            accRepo         .save   (account)
+            //accRepo         .save   (account)
             entries         .add    (this)
         }
     }
