@@ -47,7 +47,8 @@ open class LedgerSyncService
     @Autowired open var dbBean           : DbBean? = null
 
     var q : HashMap<Sha3Hash,ReplayBlockWrite> = HashMap()
-    var chain : LinkedList<ReplayBlockWrite> = LinkedList()
+    var blockSummaries : HashMap<Sha3Hash,List<TransactionExecutionSummary>> = HashMap()
+    
 
     open val lock : ReentrantLock = ReentrantLock()
 
@@ -95,10 +96,7 @@ open class LedgerSyncService
         return ledgerAccount
     }
 
-
-
     private var nextSyncBlock: Int =-1
-
 
     open fun ledgerBulkLoad(_from : Int, _to : Int) {
 
@@ -116,10 +114,15 @@ open class LedgerSyncService
             val block=ethereumBean!! .blockchain.getBlockByNumber(i.toLong())
             val t1=System.currentTimeMillis()
 
-            dbBean!!.saveBlockData(block,null )
+            val summaries=blockSummaries.remove(Sha3Hash(block.hash))
+            if (summaries==null)
+                println ("replay write ${block.number} : ${Hex.toHexString(block.hash)}")
+            else
+                println ("blockSummaries found in collection")
 
-            println ("replay write ${block.number} : ${Hex.toHexString(block.hash)}")
+            dbBean!!.saveBlockData(block,summaries )
         }
+
         println ("    =====> end bulkloading  ")
     }
 
@@ -215,28 +218,27 @@ open class LedgerSyncService
 
     open fun saveBlock(newBlock : Block, summaries : List<TransactionExecutionSummary>?)
     {
-        //println ("block wo ledg ${newBlock.number} hash:  ${Hex.toHexString(newBlock.hash)}")
-        //println ("block wo ledg ${newBlock.number} ")
-        //tmpWrite(newBlock,summaries!! )
-        //return
+
+        cleanBlockSummaries()
+
+
+        if (summaries!=null)
+            blockSummaries.putIfAbsent(Sha3Hash(newBlock.hash),summaries)
 
         val tst=ethereumBean!!.blockchain.getBlockByNumber(newBlock.number)
 
         try {
             lock.lock()
-            //val newBlockHash        =block.hash
-            //val newBlockParentHash  =block.parentHash
 
             val sqlTop=blockRepo!!.topBlock()!!
-
             val blockExists  = blockRepo!!.findByHash(newBlock.hash) !=null
             val parentExists = blockRepo!!.findByHash(newBlock.parentHash) !=null
-
             val blockDiff = newBlock.number.toInt()-sqlTop.id
 
             if (blockExists){
                 //exists in sql -- skipping
                 println ("bskip ${newBlock.number} : ${Hex.toHexString(newBlock.hash)}")
+                val summaries=blockSummaries.remove(Sha3Hash(newBlock.hash))
                 return
             }else{
                 if (parentExists)//block not exists in sql , parent exists
@@ -246,7 +248,7 @@ open class LedgerSyncService
                             //print ("b:${newBlock.number} b_Exists ${blockExists}, p_Exist ${parentExists}, b_Diff ${blockDiff} ")
                             //print (" <-- Norma ")
                             //normal blockchain sync loading
-
+                            blockSummaries.remove(Sha3Hash(newBlock.hash))
                             dbBean!!.saveBlockData(newBlock,summaries)
 
                         }
@@ -317,6 +319,18 @@ open class LedgerSyncService
         finally{ lock.unlock() }
     }
 
+    private fun cleanBlockSummaries() {
+        if (blockSummaries.size > 10) {
+            val iter = blockSummaries.entries.iterator()
+            val sqlTop = blockRepo!!.topBlock()!!
+            while (iter.hasNext()) {
+                val entry = iter.next()
+                val bl = ethereumBean!!.blockchain.getBlockByHash(entry.key.bytes)
+                if (bl.number < sqlTop.id - 255)
+                    iter.remove()
+            }
+        }
+    }
 
 
     @Transactional open fun start() {

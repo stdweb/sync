@@ -44,18 +44,16 @@ public class Application //extends javafx.application.Application
         bean.start();
 
 //        DbBean dbBean=ctx.getBean(DbBean.class);
-//        dbBean.deleteTopBlocksData(747686);
+//        dbBean.deleteTopBlocksData(749842);
 
 
         System.out.println(String.format("stdweb:FreeMemory %s, TotalMemory %s, 0.3 of totmem: %s",
                 getRuntime().freeMemory()/1024,getRuntime().totalMemory()/1024,getRuntime().totalMemory()/1024*0.3
         ));
 
-
         System.out.println("spring main finish");
        // launch(args);
     }
-
 
 
     //@Override

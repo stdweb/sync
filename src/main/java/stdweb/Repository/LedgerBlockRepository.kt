@@ -77,6 +77,7 @@ open class LedgerBlockRepositoryImpl : ILedgerBlockRepositoryCustom
     //@Transactional(propagation = Propagation.REQUIRES_NEW)
     override open fun deleteBlockWithEntries(id : Int)
     {
+        accRepo     !!.updBalanceAndEntryCount(id)
 
         ledgerRepo  !!.deleteByBlockNumber(id)
         receiptRepo !!.deleteByBlockNumber(id)
@@ -84,8 +85,6 @@ open class LedgerBlockRepositoryImpl : ILedgerBlockRepositoryCustom
         txRepo      !!.deleteByBlockNumber(id)
         blockRepo   !!.deleteByBlockNumber(id)
     }
-
-
 
     //@Transactional(propagation = Propagation.REQUIRES_NEW)
     override fun deleteBlockWithEntries(b: LedgerBlock)

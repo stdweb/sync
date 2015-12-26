@@ -24,5 +24,13 @@ public interface LedgerAccountRepository : PagingAndSortingRepository<LedgerAcco
     @Query("update LedgerAccount set entrCnt = :entryind where id=:accid")
     public fun updAccEntryInd(@Param("accid") accid : Int,@Param("entryind") entryind : Int)
 
+
+    @Modifying
+    @Query(nativeQuery = true,value = "update LEDGER_ACCOUNT a " +
+            "set BALANCE=BALANCE-(select sum(GROSS_AMOUNT) balance_delta from LEDGER_ENTRY where BLOCK_ID=:blockid and ACCOUNT_ID =a.id),    " +
+            "ENTR_CNT=ENTR_CNT-(select count(*)cnt_delta from LEDGER_ENTRY where BLOCK_ID=:blockid and ACCOUNT_ID =a.id)    " +
+            "where id in (select DISTINCT ACCOUNT_ID from LEDGER_ENTRY where BLOCK_ID=:blockid)")
+    public fun updBalanceAndEntryCount(@Param("blockid") blockid : Int)
+
 }
 
