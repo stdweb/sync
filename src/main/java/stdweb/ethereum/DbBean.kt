@@ -22,7 +22,7 @@ open class DbBean {
     @Autowired open var receiptRepo      : LedgerTxReceiptRepository? = null
     @Autowired open var ethereumBean     : EthereumBean? = null
 
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     open fun saveBlockData(block : Block, summaries: List<TransactionExecutionSummary>?)
     {
         val replayBlock = ReplayBlockWrite(
@@ -56,7 +56,7 @@ open class DbBean {
 
 
 
-    @Transactional//(propagation = Propagation.REQUIRES_NEW)
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     open fun deleteTopBlocksData(id : Int)
     {
         //accRepo?.updAccFirstBlock2null(id)
