@@ -154,7 +154,7 @@ class ReplayBlockWrite : ReplayBlock
                 grossAmount         = amount
                 entryResult         = EntryResult.Ok
 
-                //accRepo             .save(account)
+                accRepo             .save(account)
                 entries             .add(0,this)
             }
 
@@ -183,9 +183,9 @@ class ReplayBlockWrite : ReplayBlock
                 grossAmount         = uncleReward
                 entryResult         = EntryResult.Ok
 
-                entries             .add(this)
+                //entries             .add(this)
                 entries             .add(0,this)
-                //accRepo             .save(account)
+                accRepo             .save(account)
             }}
 
             with (LedgerEntry()){
@@ -210,7 +210,7 @@ class ReplayBlockWrite : ReplayBlock
                 entryResult         = EntryResult.Ok
 
                 entries             .add(0,this)
-                //accRepo             .save(account)
+                accRepo             .save(account)
             }
 
 
@@ -270,10 +270,10 @@ class ReplayBlockWrite : ReplayBlock
             grossAmount     = amount.subtract(fee)
             account?.balance= account?.balance?.add(grossAmount)
             account?.entrCnt= account?.entrCnt?.plus(1)
-            accentryind = account?.entrCnt ?: 0
+            accentryind     = account?.entrCnt ?: 0
             balance         = account?.balance ?: BigDecimal.ZERO
 
-            //accRepo         .save   (account)
+            accRepo         .save   (account)
             entries         .add    (this)
         }
 
@@ -294,13 +294,13 @@ class ReplayBlockWrite : ReplayBlock
 
             account?.balance= account?.balance?.add(grossAmount)
             account?.entrCnt= account?.entrCnt?.plus(1)
-            accentryind = account?.entrCnt ?: 0
+            accentryind     = account?.entrCnt ?: 0
             balance         = account?.balance ?: BigDecimal.ZERO
 
             if (_tx is InternalTransaction)
                 depth       = (_tx.deep + 1).toByte()
 
-            //accRepo         .save   (account)
+            accRepo         .save   (account)
             entries         .add    (this)
         }
     }
@@ -370,16 +370,16 @@ class ReplayBlockWrite : ReplayBlock
         summaries.     forEach {       addTxEntries ( it ) }
         if (this.block.number != 0L)   addRewardEntries()
 
-        for (entry in entries){
-            val acc             = entry.account
-            val maxId           = ledgRepo.getMaxAccEntryInd(acc!!.id) ?: 0
-            entry.accentryind   = maxId+1
-            acc.entrCnt         = maxId+1
-
-            accRepo     .save(acc)
-            ledgRepo    .save(entry)
-        }
-        //entries.       forEach {       ledgRepo.save( it ) }
+//        for (entry in entries){
+//            val acc             = entry.account
+//            val maxId           = ledgRepo.getMaxAccEntryInd(acc!!.id) ?: 0
+//            entry.accentryind   = maxId+1
+//            acc.entrCnt         = maxId+1
+//
+//            accRepo     .save(acc)
+//            ledgRepo    .save(entry)
+//        }
+        entries.       forEach {       ledgRepo.save( it ) }
         //todo: use logger
     }
 
