@@ -63,9 +63,9 @@ open class DbBean {
         //accRepo?.updAccLastBlock2null(id)
 
         //deletes blocks from SqlTop down to id
-        val sqltopId=blockRepo?.topBlockId() ?: -1
+        val sqltopId=blockRepo!!.topBlockId() ?: -1
 
-        println ("delete blocks from ${sqltopId} downto id")
+        println ("delete blocks from ${sqltopId} downto ${id}")
         (sqltopId downTo id) .forEach { blockId ->
 
             val accList=ledgerRepo!!.getAccountsByBlock(blockId)
