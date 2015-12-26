@@ -63,13 +63,15 @@ open class DbBean {
         //accRepo?.updAccLastBlock2null(id)
 
         //deletes blocks from SqlTop down to id
-        val sqltopId=blockRepo!!.topBlockId() ?: -1
+        val sqltopId=blockRepo!!.topBlockId()
 
         println ("delete blocks from ${sqltopId} downto ${id}")
         (sqltopId downTo id) .forEach { blockId ->
 
             val accList=ledgerRepo!!.getAccountsByBlock(blockId)
             blockRepo !!.deleteBlockWithEntries(id)
+
+            println("new sqlTop ${blockRepo!!.topBlockId()}")
 
 //            accList?.forEach {
 //                val maxId = ledgerRepo?.getMaxAccEntryInd(it.id) ?: 0
@@ -80,5 +82,6 @@ open class DbBean {
             println("block ${blockId} deleted")
         }
         println ("deletion completed")
+        println("SqlTop ${blockRepo!!.topBlockId()}")
     }
 }

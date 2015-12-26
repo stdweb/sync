@@ -103,6 +103,7 @@ open class LedgerSyncService
     open fun ledgerBulkLoad(_from : Int, _to : Int) {
 
         //ledgerBulkLoad(blockRepo?.topBlock()?.id ?: Int.MAX_VALUE )
+        println("sqlTop ${blockRepo!!.topBlockId()}")
 
         val bestBlock   =ethereumBean!! .blockchain.bestBlock.number
         val sqlTop      =blockRepo!!    .topBlock()!!.id
