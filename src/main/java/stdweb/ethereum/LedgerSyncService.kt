@@ -211,10 +211,7 @@ open class LedgerSyncService
 
         println ("deleted from ${forkPointBlock.number+1} to ${sqlTop}")
 
-        println("after rebranch delte exit")
-        System.exit(1)
         ledgerBulkLoad(forkPointBlock.number.toInt()+1,newBlock.number.toInt()-1)
-
 
         println("   =======> end rebranch")
 
