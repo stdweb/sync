@@ -22,7 +22,7 @@ open class DbBean {
     @Autowired open var receiptRepo      : LedgerTxReceiptRepository? = null
     @Autowired open var ethereumBean     : EthereumBean? = null
 
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    @Transactional//(propagation = Propagation.REQUIRES_NEW)
     open fun saveBlockData(block : Block, summaries: List<TransactionExecutionSummary>?)
     {
         val replayBlock = ReplayBlockWrite(
@@ -69,9 +69,7 @@ open class DbBean {
         (sqltopId downTo id) .forEach { blockId ->
 
             //val accList=ledgerRepo!!.getAccountsByBlock(blockId)
-            blockRepo !!.deleteBlockWithEntries(id)
-
-
+            blockRepo !!.deleteBlockWithEntries(blockId)
 
 //            accList?.forEach {
 //                val maxId = ledgerRepo?.getMaxAccEntryInd(it.id) ?: 0
@@ -79,6 +77,7 @@ open class DbBean {
 //                accRepo!!.save( it )
 //                //accRepo?.updAccEntryInd(it.id, maxId ?: 0)
 //            }
+
             println("block ${blockId} deleted")
             println("new sqlTop ${blockRepo!!.topBlockId()}")
         }
