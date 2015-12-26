@@ -45,7 +45,7 @@ public class Application //extends javafx.application.Application
 
         DbBean dbBean=ctx.getBean(DbBean.class);
 
-        dbBean.deleteTopBlocksData(747685);
+        dbBean.deleteTopBlocksData(747684);
 
 
         System.out.println(String.format("stdweb:FreeMemory %s, TotalMemory %s, 0.3 of totmem: %s",
