@@ -56,7 +56,7 @@ open class DbBean {
 
 
 
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    @Transactional//(propagation = Propagation.REQUIRES_NEW)
     open fun deleteTopBlocksData(id : Int)
     {
         //accRepo?.updAccFirstBlock2null(id)
