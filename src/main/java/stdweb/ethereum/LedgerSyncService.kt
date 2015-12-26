@@ -99,7 +99,7 @@ open class LedgerSyncService
 
     private var nextSyncBlock: Int =-1
 
-    //@Transactional
+
     open fun ledgerBulkLoad(_from : Int, _to : Int) {
 
         //ledgerBulkLoad(blockRepo?.topBlock()?.id ?: Int.MAX_VALUE )
@@ -198,12 +198,12 @@ open class LedgerSyncService
             println ("fork point not found. ${newBlock.number} : ${Hex.toHexString(newBlock.hash)}")
             return//??
         }
+        else
+            println ("fork point found. ${forkPointBlock.number} : ${Hex.toHexString(forkPointBlock.hash)}")
+
 
         dbBean!!.deleteTopBlocksData(forkPointBlock.number.toInt()+1)
-//        (forkPointBlock.number.toInt()+1 .. sqlTop ).forEach {
-//            dbBean!!.deleteBlockData(it.toInt())
-//            //blockRepo!!.deleteBlockWithEntries(it.toInt())
-//        }
+
         println ("deleted from ${forkPointBlock.number+1} to ${sqlTop}")
 
         ledgerBulkLoad(forkPointBlock.number.toInt()+1,newBlock.number.toInt()-1)

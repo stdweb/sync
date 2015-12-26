@@ -68,6 +68,7 @@ class ReplayBlockWrite : ReplayBlock
         {
             throw RuntimeException("ledgerBlock CreateError ${block.number} parent does not match")
         }
+
         var coinbaseAccount = ledgerSync.getOrCreateLedgerAccount(b?.coinbase ?: Utils.ZERO_BYTE_ARRAY_20,null)
         val blockId=b?.number?.toInt()!!
         //val ledgBlock =  blockRepo.findOne( blockId) ?: LedgerBlock(blockId)

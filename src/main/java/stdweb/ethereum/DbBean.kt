@@ -75,7 +75,10 @@ open class DbBean {
                 it.entrCnt=maxId
                 accRepo!!.save( it )
                 //accRepo?.updAccEntryInd(it.id, maxId ?: 0)
+
             }
+            println("block ${blockId} deleted")
         }
+        println ("deletion completed")
     }
 }
