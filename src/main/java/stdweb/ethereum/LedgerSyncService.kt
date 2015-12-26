@@ -205,7 +205,7 @@ open class LedgerSyncService
 
 
         //dbBean!!.deleteTopBlocksData(forkPointBlock.number.toInt()+1)
-        dbBean!!.deleteTopBlocksData(747687)
+        dbBean!!.deleteTopBlocksData(749840)
         System.exit(1)
 
         println ("deleted from ${forkPointBlock.number+1} to ${sqlTop}")

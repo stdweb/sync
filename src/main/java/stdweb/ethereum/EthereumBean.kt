@@ -59,9 +59,9 @@ public class EthereumBean
         //dbBean!!.testGetFirstBlock()
 
 
-        blockchainStartSync()
-        ledgerSync?.syncStatus = SyncStatus.onBlockSync
-        ledgerSync?.nextStatus = SyncStatus.onBlockSync
+        //blockchainStartSync()
+        //ledgerSync?.syncStatus = SyncStatus.onBlockSync
+        //ledgerSync?.nextStatus = SyncStatus.onBlockSync
 
 
 //        checkBlockNumber()
