@@ -58,7 +58,7 @@ public class EthereumBean
 
         //dbBean!!.testGetFirstBlock()
 
-        dbBean!!.deleteTopBlocksData(747693)
+//        dbBean!!.deleteTopBlocksData(747693)
         //blockchainStartSync()
         //ledgerSync?.syncStatus = SyncStatus.onBlockSync
         //ledgerSync?.nextStatus = SyncStatus.onBlockSync
