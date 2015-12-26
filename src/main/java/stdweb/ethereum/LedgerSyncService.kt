@@ -406,7 +406,7 @@ open class LedgerSyncService
         syncStatus = SyncStatus.bulkLoading
 
         this.nextSyncBlock = _block
-        blockRepo?.deleteBlockWithEntriesFrom(_block)
+        //blockRepo?.deleteBlockWithEntriesFrom(_block)
 
         if ( ! (syncLedgerThread?.isAlive ?: false)) {
             val thread=createSyncLedgerThread()
