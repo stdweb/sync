@@ -68,7 +68,7 @@ open class DbBean {
         println ("delete blocks from ${sqltopId} downto ${id}")
         (sqltopId downTo id) .forEach { blockId ->
 
-            val accList=ledgerRepo!!.getAccountsByBlock(blockId)
+            //val accList=ledgerRepo!!.getAccountsByBlock(blockId)
             blockRepo !!.deleteBlockWithEntries(id)
 
 

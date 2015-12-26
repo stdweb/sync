@@ -44,6 +44,7 @@ public class Application //extends javafx.application.Application
         bean.start();
 
         DbBean dbBean=ctx.getBean(DbBean.class);
+
         dbBean.deleteTopBlocksData(747685);
 
 
