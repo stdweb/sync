@@ -191,6 +191,9 @@ open class LedgerSyncService
     }
 
     private fun rebranchSqlDb(newBlock: Block) {
+
+        println("before rebranch exit")
+        System.exit(1)
            //block not exists, parent exists, blockDiff<1
         val bestBlock   =ethereumBean!! .blockchain.bestBlock.number
         val sqlTop      =blockRepo!!    .topBlock()!!.id
