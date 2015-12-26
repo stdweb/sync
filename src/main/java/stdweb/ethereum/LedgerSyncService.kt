@@ -192,8 +192,7 @@ open class LedgerSyncService
 
     private fun rebranchSqlDb(newBlock: Block) {
 
-        println("before rebranch exit")
-        System.exit(1)
+
            //block not exists, parent exists, blockDiff<1
         val bestBlock   =ethereumBean!! .blockchain.bestBlock.number
         val sqlTop      =blockRepo!!    .topBlock()!!.id
@@ -212,6 +211,8 @@ open class LedgerSyncService
 
         println ("deleted from ${forkPointBlock.number+1} to ${sqlTop}")
 
+        println("after rebranch delte exit")
+        System.exit(1)
         ledgerBulkLoad(forkPointBlock.number.toInt()+1,newBlock.number.toInt()-1)
 
 
