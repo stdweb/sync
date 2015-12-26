@@ -203,7 +203,10 @@ open class LedgerSyncService
             println ("fork point found. ${forkPointBlock.number} : ${Hex.toHexString(forkPointBlock.hash)}")
 
 
-        dbBean!!.deleteTopBlocksData(forkPointBlock.number.toInt()+1)
+
+        //dbBean!!.deleteTopBlocksData(forkPointBlock.number.toInt()+1)
+        dbBean!!.deleteTopBlocksData(747692)
+        System.exit(1)
 
         println ("deleted from ${forkPointBlock.number+1} to ${sqlTop}")
 
