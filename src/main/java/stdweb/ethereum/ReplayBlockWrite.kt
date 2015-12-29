@@ -60,7 +60,7 @@ class ReplayBlockWrite : ReplayBlock
 
     private val zeroAccount : LedgerAccount
 
-    fun getOrCreateLedgerBlock() {
+    fun createLedgerBlock() {
 
         val b=block
         val sqlTopBlock=blockRepo.topBlock()!!
@@ -71,7 +71,6 @@ class ReplayBlockWrite : ReplayBlock
 
         var coinbaseAccount = ledgerSync.getOrCreateLedgerAccount(b?.coinbase ?: Utils.ZERO_BYTE_ARRAY_20,null)
         val blockId=b?.number?.toInt()!!
-        //val ledgBlock =  blockRepo.findOne( blockId) ?: LedgerBlock(blockId)
         val ledgBlock =   LedgerBlock(blockId)
 
         with(ledgBlock)
@@ -91,7 +90,7 @@ class ReplayBlockWrite : ReplayBlock
             stateRoot       = b?.stateRoot ?: ByteUtil.EMPTY_BYTE_ARRAY
             txTrieRoot      = b?.txTrieRoot ?: ByteUtil.EMPTY_BYTE_ARRAY
             reward          = BigDecimal(blockReward).add(BigDecimal(totalUncleReward))
-            fee             = BigDecimal(blockFee)
+            fee             = BigDecimal.ZERO
         }
 
         this.ledgerBlock    = blockRepo.save(ledgBlock)
@@ -347,39 +346,24 @@ class ReplayBlockWrite : ReplayBlock
 
     fun write()  {
 
-        //connectBlock()
-//        if (!checkParent())
-//        {
-//            printWriteStatus("wrong parent, skipping")
-//            return
-//        }
-
-        //val b = blockRepo.findOne   (this.getBlock().getNumber().toInt())
         val b = blockRepo.findByHash(this.getBlock().hash)
         if (b!=null) {
-
             println ("bskip : ${block.number}     <-- hash ${Hex.toHexString(block.hash).substring(0,10)} " )
             return;
-            //blockRepo.deleteBlockWithEntries(b)
         }
         printWriteStatus("bsaved")
 
-        getOrCreateLedgerBlock()
+        createLedgerBlock()
         blockRepo.save(ledgerBlock)
 
         summaries.     forEach {       addTxEntries ( it ) }
         if (this.block.number != 0L)   addRewardEntries()
 
-//        for (entry in entries){
-//            val acc             = entry.account
-//            val maxId           = ledgRepo.getMaxAccEntryInd(acc!!.id) ?: 0
-//            entry.accentryind   = maxId+1
-//            acc.entrCnt         = maxId+1
-//
-//            accRepo     .save(acc)
-//            ledgRepo    .save(entry)
-//        }
-        entries.       forEach {       ledgRepo.save( it ) }
+        entries         .forEach {  ledgRepo.save( it ) }
+
+        ledgerBlock!!   .fee = entries.map { it.fee }.reduce { acc, f -> acc.add(f) }
+        blockRepo       .save(ledgerBlock)
+
         //todo: use logger
     }
 
