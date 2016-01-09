@@ -262,7 +262,19 @@ open class LedgerSyncService
                             //rebranchSqlDb(newBlock)
                             println("--------------------------->")
                         }
-                        blockDiff < 0 -> {
+
+                        blockDiff < -3 -> {
+                            println("<---------------------------")
+                            println ("b:${newBlock.number} : ${Hex.toHexString(newBlock.hash)}" +
+                                    " b_Exists ${blockExists}, p_Exist ${parentExists}, b_Diff ${blockDiff} ")
+
+                            println ("reloading blockchain , skip fork block")
+                            //rebranchSqlDb(newBlock)
+                            //dbBean!!.saveBlockData(newBlock,summaries)
+                            println("--------------------------->")
+                        }// need rebranch
+
+                        blockDiff >= -3  && blockDiff < 0 -> {
                             println("<---------------------------")
                             println ("b:${newBlock.number} : ${Hex.toHexString(newBlock.hash)}" +
                                     " b_Exists ${blockExists}, p_Exist ${parentExists}, b_Diff ${blockDiff} ")
