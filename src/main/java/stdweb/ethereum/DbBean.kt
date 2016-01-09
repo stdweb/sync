@@ -66,11 +66,14 @@ open class DbBean {
         val sqltopId=blockRepo!!.topBlockId()
 
 
+
         (sqltopId downTo id) .forEach { blockId ->
+
 
             //val accList=ledgerRepo!!.getAccountsByBlock(blockId)
             blockRepo !!.deleteBlockWithEntries(blockId)
 
+            println ("block deleted ${blockId}")
 //            accList?.forEach {
 //                val maxId = ledgerRepo?.getMaxAccEntryInd(it.id) ?: 0
 //                it.entrCnt=maxId

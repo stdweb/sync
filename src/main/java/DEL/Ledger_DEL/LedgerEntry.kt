@@ -55,8 +55,8 @@ class LedgerEntry  : ITableEntry {
             this.gasUsed = rs.getLong("GASUSED")
 
             this.fee = rs.getBigDecimal("FEE")
-            this.entryType =  EntryType.values.get( rs.getByte("ENTRYTYPE").toInt())
-            this.entryResult = EntryResult.values.get(rs.getByte("ENTRYRESULT").toInt())
+            this.entryType =  EntryType.values().get( rs.getByte("ENTRYTYPE").toInt())
+            this.entryResult = EntryResult.values().get(rs.getByte("ENTRYRESULT").toInt())
             //this.offsetAddress = rs.getBytes("OFFSETACCOUNT")
             this.extraData = String(rs.getBytes("DESCR"))
             this.grossAmount = rs.getBigDecimal("GROSSAMOUNT")
