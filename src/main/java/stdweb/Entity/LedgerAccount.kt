@@ -31,7 +31,7 @@ class LedgerAccount {
     var firstBlock  : LedgerBlock?  = null
 
 
-    @Column(precision = 31,scale = 0)
+    @Column(precision = 64,scale = 0)
     var balance     : BigDecimal = BigDecimal.ZERO
 
     @Column(length = 32)

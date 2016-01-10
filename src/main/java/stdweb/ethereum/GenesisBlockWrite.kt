@@ -69,7 +69,7 @@ class GenesisBlockWrite : ReplayBlock
         var blockchain=ethereumBean?.blockchain
         val zeroAccount=ledgerSync.getOrCreateLedgerAccount(Utils.ZERO_BYTE_ARRAY_20,null)
 
-        val snapshot = blockchain!!.repository.getSnapshotTo(Utils.hash_decode("d7f8974fb5ac78d9ac099b9ad5018bedc2ce0a72dad1827a1709da30580f0544"))
+        val snapshot = blockchain!!.repository.getSnapshotTo(Utils.hash_decode("f3f4696bbf3b3b07775128eb7a3763279a394e382130f27c21e70233e04946a9"))
 
         var entryNo = 0
         val accountsKeys = snapshot.accountsKeys

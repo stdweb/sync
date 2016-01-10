@@ -24,7 +24,7 @@ class LedgerEntry {
     @JsonIgnore
     var account: LedgerAccount? = null
 
-    @Column(precision = 31,scale = 0)
+    @Column(precision = 64,scale = 0)
     var amount: BigDecimal = BigDecimal.ZERO
 
     @JsonIgnore
@@ -46,10 +46,10 @@ class LedgerEntry {
     @ManyToOne(fetch = FetchType.LAZY)
     var offsetAccount: LedgerAccount? = null
 
-    @Column(precision = 31,scale = 0)
+    @Column(precision = 64,scale = 0)
     var grossAmount: BigDecimal = BigDecimal.ZERO
 
-    @Column(precision = 31,scale = 0)
+    @Column(precision = 64,scale = 0)
     var balance: BigDecimal = BigDecimal.ZERO
 
     @ManyToOne(fetch = FetchType.LAZY)
