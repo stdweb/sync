@@ -179,15 +179,24 @@ open class LedgerSyncService
 
 
     private fun findForkPointBlock(newBlock: Block): Block? {
-        var block : Block? = null
+        var retblock : Block? = null
+
         for (i in newBlock.number-1 downTo newBlock.number-256) {
 
-            block=ethereumBean  !!.blockchain.getBlockByNumber(i)
+            val block=ethereumBean  !!.blockchain?.getBlockByNumber(i)
+            retblock=block
+
+            println("getting block by num ${i} found ${block?.number}");
+
             val sqlBlock = blockRepo!!.findByHash(block.hash)
+
+            println ("found sql block ${sqlBlock?.id}")
+
             if (sqlBlock!=null)
                 break
         }
-        return block
+
+        return retblock
     }
 
     private fun rebranchSqlDb(newBlock: Block) {
