@@ -58,10 +58,17 @@ public class EthereumBean
 
         //dbBean!!.testGetFirstBlock()
 
+        for ( i in 925999..926002) {
+            val block = ethereum.blockchain.getBlockByNumber(i.toLong());
+            println ("block ${i} found: ${block?.number} : ${block?.shortHash}")
+        }
 
-        blockchainStartSync()
-        ledgerSync?.syncStatus = SyncStatus.onBlockSync
-        ledgerSync?.nextStatus = SyncStatus.onBlockSync
+
+
+
+//        blockchainStartSync()
+//        ledgerSync?.syncStatus = SyncStatus.onBlockSync
+//        ledgerSync?.nextStatus = SyncStatus.onBlockSync
 
 
 //        checkBlockNumber()
