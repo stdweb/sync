@@ -179,19 +179,14 @@ open class LedgerSyncService
 
     open fun saveBlock(newBlock : Block, summaries : List<TransactionExecutionSummary>?)
     {
-
         cleanBlockSummaries()
-
 
         if (summaries!=null)
             blockSummaries.putIfAbsent(Sha3Hash(newBlock.hash),summaries)
 
         val tst=ethereumBean!!.blockchain.getBlockByNumber(newBlock.number)
 
-        if (true) {
-            println ("tmp skip all: ${newBlock.number} : ${Hex.toHexString(newBlock.hash)}")
-            return;
-        }
+
 
         try {
             lock.lock()
