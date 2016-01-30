@@ -238,8 +238,8 @@ open class LedgerSyncService
 
         val tst=ethereumBean!!.blockchain.getBlockByNumber(newBlock.number)
 
-//        try {
-//            lock.lock()
+        try {
+            lock.lock()
 
             val sqlTop=blockRepo!!.topBlock()!!
             val blockExists  = blockRepo!!.findByHash(newBlock.hash) !=null
@@ -321,12 +321,12 @@ open class LedgerSyncService
                     }
             }
 
-        //}
-//        catch ( e : Exception){
-//            println("RuntimeException : ${e.message}")
-//            throw RuntimeException("Error writing block ",e)
-//        }
-//        finally{ lock.unlock() }
+        }
+        catch ( e : Exception){
+            println("RuntimeException : ${e.message}")
+            throw RuntimeException("Error writing block ",e)
+        }
+        finally{ lock.unlock() }
     }
 
     private fun cleanBlockSummaries() {
