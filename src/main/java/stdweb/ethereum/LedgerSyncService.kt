@@ -126,56 +126,6 @@ open class LedgerSyncService
         println ("    =====> end bulkloading  ")
     }
 
-    private fun enqueue(replayBlock: ReplayBlockWrite) {
-        //already stored block
-        print("enq, block ${replayBlock.block.number} --> ")
-        if (blockRepo!!.findByHash(replayBlock.block.hash)!=null) {
-            println ("block ${replayBlock.block.number} already stored")
-            return;
-        }
-        val blockchain=ethereumBean!!.blockchain
-        val sqlTopBlock=blockRepo!!.topBlock()!!
-
-        if (replayBlock.block.number>=sqlTopBlock.id+5){
-            println("enq >=+5 , getting block ${ sqlTopBlock.id.toLong()+1 } from blochain")
-            val block2add=blockchain.getBlockByNumber(sqlTopBlock.id.toLong()+1)
-            println ("got block ${sqlTopBlock.id.toLong()+1}")
-
-            var r=q.get(Sha3Hash(block2add.hash))
-            if (r==null){
-                print ("replay ")
-                r= ReplayBlockWrite(this,block2add,blockRepo!!,accRepo!!,ledgerRepo!!,txRepo!!,logRepo!!,receiptRepo!!)
-                r.run()
-
-            }
-            if (r?.isChildOf(sqlTopBlock.hash) ?: false) {
-                r?.write()
-                q.remove(Sha3Hash(block2add.hash))
-                println ("write and remove from q: ${r?.block?.number} , q size : ${q.size}")
-            }
-            else{
-                println ("replayblock  ${r.block.number} : ${Hex.toHexString(r.block.hash)} " +
-                        "parent: ${Hex.toHexString(r.block.parentHash)} \n" +
-                        "not child of sql top ${sqlTopBlock.id} hash : ${sqlTopBlock.hash_str} ")
-            }
-        }
-
-        println ("block ${replayBlock.block.number} added to queue, q size : ${q.size}")
-        q.putIfAbsent(Sha3Hash(replayBlock.block.hash), replayBlock)
-
-        //clear old blocks in queue
-        //println("before clear old blocks inq , size ${q.size}")
-        q
-                .filter     { it.value.block.number<sqlTopBlock.id }
-                .forEach    { q.remove( Sha3Hash(it.value.block.hash)) }
-//        println("after clear old blocks inq , size ${q.size}")
-//        println("")
-
-        //Thread.sleep(2000)
-        println("<-- finish q , block ${replayBlock.block.number}")
-        println("_________________________________________________________")
-
-    }
 
 
     private fun findForkPointBlock(newBlock: Block): Block? {
@@ -237,6 +187,11 @@ open class LedgerSyncService
             blockSummaries.putIfAbsent(Sha3Hash(newBlock.hash),summaries)
 
         val tst=ethereumBean!!.blockchain.getBlockByNumber(newBlock.number)
+
+        if (true) {
+            println ("tmp skip all: ${newBlock.number} : ${Hex.toHexString(newBlock.hash)}")
+            return;
+        }
 
         try {
             lock.lock()
@@ -394,7 +349,6 @@ open class LedgerSyncService
     constructor()
     {}
 
-
     @Synchronized @Throws(SQLException::class, InterruptedException::class)
     fun createSyncLedgerThread() : Thread {
 
@@ -441,7 +395,6 @@ open class LedgerSyncService
 
     private var syncLedgerThread: Thread? = null
 
-
     fun replayAndSaveBlock(blockNumber: Int) {
 
         //todo: LedgerSyncService. autowire in ctor
@@ -481,6 +434,57 @@ open class LedgerSyncService
     //        //    return false
     //
     //        return (contractDetails.code.size != 0)
+    //    }
+
+    //    private fun enqueue(replayBlock: ReplayBlockWrite) {
+    //        //already stored block
+    //        print("enq, block ${replayBlock.block.number} --> ")
+    //        if (blockRepo!!.findByHash(replayBlock.block.hash)!=null) {
+    //            println ("block ${replayBlock.block.number} already stored")
+    //            return;
+    //        }
+    //        val blockchain=ethereumBean!!.blockchain
+    //        val sqlTopBlock=blockRepo!!.topBlock()!!
+    //
+    //        if (replayBlock.block.number>=sqlTopBlock.id+5){
+    //            println("enq >=+5 , getting block ${ sqlTopBlock.id.toLong()+1 } from blochain")
+    //            val block2add=blockchain.getBlockByNumber(sqlTopBlock.id.toLong()+1)
+    //            println ("got block ${sqlTopBlock.id.toLong()+1}")
+    //
+    //            var r=q.get(Sha3Hash(block2add.hash))
+    //            if (r==null){
+    //                print ("replay ")
+    //                r= ReplayBlockWrite(this,block2add,blockRepo!!,accRepo!!,ledgerRepo!!,txRepo!!,logRepo!!,receiptRepo!!)
+    //                r.run()
+    //
+    //            }
+    //            if (r?.isChildOf(sqlTopBlock.hash) ?: false) {
+    //                r?.write()
+    //                q.remove(Sha3Hash(block2add.hash))
+    //                println ("write and remove from q: ${r?.block?.number} , q size : ${q.size}")
+    //            }
+    //            else{
+    //                println ("replayblock  ${r.block.number} : ${Hex.toHexString(r.block.hash)} " +
+    //                        "parent: ${Hex.toHexString(r.block.parentHash)} \n" +
+    //                        "not child of sql top ${sqlTopBlock.id} hash : ${sqlTopBlock.hash_str} ")
+    //            }
+    //        }
+    //
+    //        println ("block ${replayBlock.block.number} added to queue, q size : ${q.size}")
+    //        q.putIfAbsent(Sha3Hash(replayBlock.block.hash), replayBlock)
+    //
+    //        //clear old blocks in queue
+    //        //println("before clear old blocks inq , size ${q.size}")
+    //        q
+    //                .filter     { it.value.block.number<sqlTopBlock.id }
+    //                .forEach    { q.remove( Sha3Hash(it.value.block.hash)) }
+    ////        println("after clear old blocks inq , size ${q.size}")
+    ////        println("")
+    //
+    //        //Thread.sleep(2000)
+    //        println("<-- finish q , block ${replayBlock.block.number}")
+    //        println("_________________________________________________________")
+    //
     //    }
 
 }
