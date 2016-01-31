@@ -81,7 +81,8 @@ class ReplayBlockWrite : ReplayBlock
             parentHash      = sqlTopBlock.hash
             timestamp       = b?.timestamp ?: 0
             difficulty      = b?.difficultyBI?.toLong() ?: 0
-            gasLimit        = BigInteger(1, b?.gasLimit).toLong()
+            //gasLimit        = BigInteger(1, b?.gasLimit).toLong()
+            gasLimit        = b?.gasLimit ?: 0
             gasUsed         = b?.gasUsed ?: 0
             txCount         = b?.transactionsList?.size ?: 0
             unclesCount     = b?.uncleList?.size ?: 0

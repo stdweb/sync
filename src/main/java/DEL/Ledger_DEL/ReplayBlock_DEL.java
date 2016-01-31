@@ -161,7 +161,7 @@ public class ReplayBlock_DEL {
         for (Transaction tx : block.getTransactionsList()) {
             if (tx.getGasPrice() == null)
                 continue;
-            fee = fee.add(BigInteger.valueOf(tx.transactionCost()).multiply(new BigInteger(1, tx.getGasPrice())));
+            fee = fee.add(BigInteger.valueOf(tx.transactionCost(block)).multiply(new BigInteger(1, tx.getGasPrice())));
         }
         return fee;
     }

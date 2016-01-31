@@ -47,7 +47,8 @@ dependencies {
     compile 'org.jetbrains.kotlin:kotlin-stdlib:1.0.0-beta-4584'
     compile("org.springframework.boot:spring-boot-starter-data-jpa")
     compile("com.h2database:h2")
-    compile ("org.ethereum:ethereumj-core:1.0.0-std"){
+    //compile ("org.ethereum:ethereumj-core:1.0.0-std"){
+    compile ("org.ethereum:ethereumj-core:1.0.0-stage2-std"){
 
         exclude group: "log4j"
         exclude group: "org.slf4j", module: "log4j-over-slf4j"

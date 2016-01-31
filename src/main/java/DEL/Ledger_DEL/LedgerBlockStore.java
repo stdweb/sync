@@ -113,7 +113,7 @@ public class LedgerBlockStore extends SqlStore<del_LBlock> {
                 header.getParentHash(), header.getUnclesHash(), header.getCoinbase(),
                 header.getLogsBloom(),
                 new BigInteger(1, header.getDifficulty()).toByteArray(), header.getNumber(),
-                new BigInteger(1,header.getGasLimit()).longValue(),
+                header.getGasLimit(),
                 header.getGasUsed(), header.getTimestamp() ,
                 header.getExtraData(), header.getMixHash(),
                 new BigInteger(1, header.getNonce()).toByteArray());
@@ -171,7 +171,7 @@ public class LedgerBlockStore extends SqlStore<del_LBlock> {
         //ID,HASH, PARENTHASH, UNCLESHASH, COINBASE, STATEROOT, TXTRIEROOT,
         // RECEIPTTRIEROOT, LOGSBLOOM, DIFFICULTY, TIMESTAMP, GASLIMIT, GASUSED, MIXHASH, EXTRADATA, NONCE, FEE, TRIEBALANCE
         st.setLong(1,block.getNumber());
-        st.setBytes(2,block.getHash().getBytes());
+        st.setBytes(2,block.getHash());
         st.setBytes(3,block.getParentHash());
         st.setBytes(4,block.getUnclesHash());
         st.setBytes(5,block.getCoinbase());
@@ -182,7 +182,7 @@ public class LedgerBlockStore extends SqlStore<del_LBlock> {
         st.setBytes(9,block.getLogsBloom());
         st.setLong(10, new BigInteger(1,block.getDifficulty()).longValue());
         st.setTimestamp(11, new Timestamp(block.getTimestamp()));
-        st.setLong(12, new BigInteger(1,block.getGasLimit()).longValue());
+        st.setLong(12, block.getGasLimit());
         st.setLong(13,block.getGasUsed());
         st.setBytes(14,block.getMixHash());
         st.setBytes(15,block.getExtraData());

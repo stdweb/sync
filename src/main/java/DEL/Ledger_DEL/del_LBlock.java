@@ -55,7 +55,7 @@ public class del_LBlock extends BlockHeader {
                          byte[] logsBloom, byte[] difficulty, long number,
                          long gasLimit, long gasUsed, long timestamp,
                          byte[] extraData, byte[] mixHash, byte[] nonce) {
-        super(parentHash,unclesHash,coinbase,logsBloom,difficulty,number,BigInteger.valueOf(gasLimit).toByteArray(),gasUsed,timestamp,extraData,mixHash,nonce);
+        super(parentHash,unclesHash,coinbase,logsBloom,difficulty,number,gasLimit,gasUsed,timestamp,extraData,mixHash,nonce);
 //        this.parentHash = parentHash;
 //        this.unclesHash = unclesHash;
 //        this.coinbase = coinbase;
@@ -121,7 +121,7 @@ public class del_LBlock extends BlockHeader {
         HashMap<String, String> hashMap = new HashMap<>();
 
         hashMap.put("height",String.valueOf(block.getNumber()) );
-        hashMap.put("hash",addParentheses("0x"+ Hex.toHexString(block.getHash().getBytes())));
+        hashMap.put("hash",addParentheses("0x"+ Hex.toHexString(block.getHash())));
         hashMap.put("parenthash",addParentheses("0x"+Hex.toHexString(block.getParentHash())));
         hashMap.put("stateroot",addParentheses("0x"+Hex.toHexString(block.getStateRoot())));
         hashMap.put("receiptroot",addParentheses("0x"+Hex.toHexString(block.getReceiptsRoot())));
@@ -164,9 +164,9 @@ public class del_LBlock extends BlockHeader {
         this.setDirty(true);
     }
 
-    public Sha3Hash getHash() {
-        return hash;
-    }
+//    public Sha3Hash getHash() {
+//        return hash;
+//    }
 
     public void setFee(BigDecimal fee) {
         this.fee = fee;

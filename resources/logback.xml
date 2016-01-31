@@ -60,6 +60,4 @@
     <logger level="ERROR" name="std"/>
     <logger level="INFO" name="rest"/>
 
-
-
 </configuration>

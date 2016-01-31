@@ -4,7 +4,7 @@ import org.ethereum.core.BlockchainImpl
 import org.ethereum.db.RepositoryImpl
 import org.ethereum.facade.Ethereum
 import org.ethereum.facade.EthereumFactory
-import org.ethereum.net.eth.sync.SyncState
+//import org.ethereum.net.eth.sync.SyncState
 import org.spongycastle.util.encoders.Hex
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
@@ -72,7 +72,7 @@ public class EthereumBean
 
 
 //        checkBlockNumber()
-        println("EtheteumBean initService")
+        println("EthereumBean initService")
     }
 
     private fun checkBlockNumber() {
