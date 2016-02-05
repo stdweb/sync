@@ -80,21 +80,21 @@ open class LedgerSyncService
         return account
     }
 
-    fun fillLedgerAccount(ledgerAccount: LedgerAccount): LedgerAccount {
-        val acc = Account()
-        acc.address = ledgerAccount.address
-
-        val repository = ethereumBean?.ethereum?.repository as RepositoryImpl
-        val nonce = repository.getNonce(ledgerAccount.address)
-        ledgerAccount.nonce = nonce.toLong()
-
-        val balance = repository.getBalance(ledgerAccount.address)
-        ledgerAccount.balance = BigDecimal(balance)
-        repository.flushNoReconnect()
-        // todo: ledgerAccount.name= ... get addres name from blockchain
-
-        return ledgerAccount
-    }
+//    fun fillLedgerAccount(ledgerAccount: LedgerAccount): LedgerAccount {
+//        val acc = Account()
+//        acc.address = ledgerAccount.address
+//
+//        val repository = ethereumBean?.ethereum?.repository as RepositoryImpl
+//        val nonce = repository.getNonce(ledgerAccount.address)
+//        ledgerAccount.nonce = nonce.toLong()
+//
+//        val balance = repository.getBalance(ledgerAccount.address)
+//        ledgerAccount.balance = BigDecimal(balance)
+//        repository.flushNoReconnect()
+//        // todo: ledgerAccount.name= ... get addres name from blockchain
+//
+//        return ledgerAccount
+//    }
 
     private var nextSyncBlock: Int =-1
 
@@ -186,8 +186,6 @@ open class LedgerSyncService
 
         val tst=ethereumBean!!.blockchain.getBlockByNumber(newBlock.number)
 
-
-
         try {
             lock.lock()
 
@@ -209,8 +207,8 @@ open class LedgerSyncService
                             //print ("b:${newBlock.number} b_Exists ${blockExists}, p_Exist ${parentExists}, b_Diff ${blockDiff} ")
                             //print (" <-- Norma ")
                             //normal blockchain sync loading
-                            blockSummaries.remove(Sha3Hash(newBlock.hash))
-                            dbBean!!.saveBlockData(newBlock,summaries)
+                            blockSummaries  .remove(Sha3Hash(newBlock.hash))
+                            dbBean!!        .saveBlockData(newBlock,summaries)
 
                         }
                         blockDiff == 0 -> {

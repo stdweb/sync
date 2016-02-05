@@ -146,7 +146,10 @@ public abstract class ReplayBlock {
             totalGasUsed += executor.getGasUsed();
             ProgramResult result = executor.getResult();
             long gasRefund = Math.min(result.getFutureRefund(), result.getGasUsed() / 2);
+
+            //snapshot.flushNoReconnect();
 //            Utils.TimeDiff("        finish tx exec",t1);
+
         }
 
         //printEntries();
