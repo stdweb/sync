@@ -36,7 +36,9 @@ open class DbBean {
         )
 
         if (summaries==null)
-            replayBlock.run()
+            return
+            //test badalloc
+            //replayBlock.run()
         else
             replayBlock.summaries = summaries
 

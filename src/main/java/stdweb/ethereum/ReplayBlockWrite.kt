@@ -64,10 +64,12 @@ class ReplayBlockWrite : ReplayBlock
 
         val b=block
         val sqlTopBlock=blockRepo.topBlock()!!
-        if (!Arrays.equals(sqlTopBlock.hash,block.parentHash))
-        {
-            throw RuntimeException("ledgerBlock CreateError ${block.number} parent does not match")
-        }
+
+        //test badalloc
+//        if (!Arrays.equals(sqlTopBlock.hash,block.parentHash))
+//        {
+//            throw RuntimeException("ledgerBlock CreateError ${block.number} parent does not match")
+//        }
 
         var coinbaseAccount = ledgerSync.getOrCreateLedgerAccount(b?.coinbase ?: Utils.ZERO_BYTE_ARRAY_20,null)
         val blockId=b?.number?.toInt()!!
