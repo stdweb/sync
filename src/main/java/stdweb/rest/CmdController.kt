@@ -82,7 +82,7 @@ class CmdController
             }
             else -> try {
                 val block = Integer.parseInt(cmd)
-                ledgSync.old_ledgerBulkLoad(block)
+                //ledgSync.old_ledgerBulkLoad(block)
                 //ethereumBean.ledgerStartSync(block);
             } catch (e: NumberFormatException) {
                 //return "Wrong cmd in method /ledger/{cmd}"

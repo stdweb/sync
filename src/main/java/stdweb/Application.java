@@ -35,11 +35,8 @@ public class Application //extends javafx.application.Application
         ConfigurableApplicationContext ctx = SpringApplication.run(Application.class, args);
 //        String[] beanNames = ctx.getBeanDefinitionNames();
 
-        try {
-            Thread.sleep(1000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+        System.out.println("app on start");
+
         LedgerSyncService bean = ctx.getBean(LedgerSyncService.class);
         bean.start();
 
