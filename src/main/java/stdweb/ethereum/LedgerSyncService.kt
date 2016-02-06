@@ -413,6 +413,7 @@ open class LedgerSyncService
                 receiptRepo!!
         )
         saveBlock(block,replayBlock.summaries)
+
     }
 
     //    fun isContract(addr: ByteArray): Boolean {

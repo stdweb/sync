@@ -1,6 +1,7 @@
 package stdweb.ethereum
 
 import org.ethereum.core.BlockchainImpl
+import org.ethereum.core.CallTransaction
 import org.ethereum.db.RepositoryImpl
 import org.ethereum.facade.Ethereum
 import org.ethereum.facade.EthereumFactory
@@ -10,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
 import stdweb.Core.Amount
 import stdweb.Core.SyncStatus
+import java.math.BigInteger
 import javax.annotation.PostConstruct
 
 @Service
@@ -27,6 +29,9 @@ public class EthereumBean
     var dbBean : DbBean? = null
 
     var blockchainSyncStatus : SyncStatus = SyncStatus.stopped
+
+
+
 
     fun blockchainStartSync() {
         blockchain.stopOn       = java.lang.Long.MAX_VALUE
@@ -47,31 +52,13 @@ public class EthereumBean
         this.listener.ledgerSync=this.ledgerSync!!
         blockchainStopSync()
 
-
-        //val sqltop=ledgerSync!!.blockRepo!!.topBlockId()
-//        for (i in sqltop downTo 740950) {
-//            println("try del top block ${i}")
-
-        //ledgerSync?.deleteBlockData(745105)
-//        }
-        //ledgerSync!!.ledgerBulkLoad(74000,75000)
-
-        //dbBean!!.testGetFirstBlock()
-
-//        for ( i in 925999..926002) {
-//            val block = ethereum.blockchain.getBlockByNumber(i.toLong());
-//            println ("block ${i} found: ${block?.number} : ${block?.shortHash}")
-//        }
-
-
+        //ledgerSync!!.replayAndSaveBlock(758586);
 
 
         blockchainStartSync()
         ledgerSync?.syncStatus = SyncStatus.onBlockSync
         ledgerSync?.nextStatus = SyncStatus.onBlockSync
 
-
-//        checkBlockNumber()
         println("EthereumBean initService")
     }
 

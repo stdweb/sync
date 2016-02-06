@@ -1,0 +1,4 @@
+contract Coin{function Coin();
+function queryBalance(address addr)constant returns(uint256 balance);
+function mint(address owner,uint256 amount);
+function send(address receiver,uint256 amount);}

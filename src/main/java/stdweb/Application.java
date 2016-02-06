@@ -12,6 +12,7 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 import stdweb.Core.Amount;
+import stdweb.Core.GlobalRegistry;
 import stdweb.Core.HashDecodeException;
 import stdweb.Desktop.DesktopController;
 import stdweb.Entity.AmountEntity;
@@ -40,18 +41,25 @@ public class Application //extends javafx.application.Application
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
+
+        GlobalRegistry reg=ctx.getBean(GlobalRegistry.class);
+
+//        System.out.println("ethpool name :"+reg.getName("0x4bb96091ee9d802ed039c4d1a5f6216f90f81b01"));
+//        System.out.println("nanopool name :"+reg.getName("0x52bc44d5378309ee2abf1539bf71de1b7d7be3b5"));
+
+
         LedgerSyncService bean = ctx.getBean(LedgerSyncService.class);
         bean.start();
 
+
+
 //        DbBean dbBean=ctx.getBean(DbBean.class);
 //        dbBean.deleteTopBlocksData(749842);
-
-
-        System.out.println(String.format("stdweb:FreeMemory %s, TotalMemory %s, 0.3 of totmem: %s",
-                getRuntime().freeMemory()/1024,getRuntime().totalMemory()/1024,getRuntime().totalMemory()/1024*0.3
-        ));
-
-        System.out.println("spring main finish");
+//        System.out.println(String.format("stdweb:FreeMemory %s, TotalMemory %s, 0.3 of totmem: %s",
+//                getRuntime().freeMemory()/1024,getRuntime().totalMemory()/1024,getRuntime().totalMemory()/1024*0.3
+//        ));
+//
+//        System.out.println("spring main finish");
        // launch(args);
     }
 

@@ -114,21 +114,22 @@ public abstract class ReplayBlock {
         BlockStore blockStore = blockchain.getBlockStore();
         ProgramInvokeFactory programInvokeFactory = blockchain.getProgramInvokeFactory();
 
-        Repository track = blockchain.getRepository();
+        Repository repo = blockchain.getRepository();
 
         Repository snapshot;
         if (block.getNumber() == 0)
-            snapshot = track.getSnapshotTo(null);
+            snapshot = repo.getSnapshotTo(null);
         else
-            snapshot = track.getSnapshotTo(blockchain.getBlockByHash(block.getParentHash()).getStateRoot());
+            snapshot = repo.getSnapshotTo(blockchain.getBlockByHash(block.getParentHash()).getStateRoot());
 
         long totalGasUsed = 0;
 
+        Repository track =snapshot.startTracking();
         //Utils.TimeDiff("after snapshot",t1);
         for (Transaction tx : block.getTransactionsList()) {
 
             TransactionExecutor executor = new TransactionExecutor(tx, block.getCoinbase(),
-                    snapshot, blockStore,
+                    track, blockStore,
                     programInvokeFactory, block, ethereumBean.getListener(), totalGasUsed);
 
             executor.setLocalCall(false);
@@ -147,7 +148,7 @@ public abstract class ReplayBlock {
             ProgramResult result = executor.getResult();
             long gasRefund = Math.min(result.getFutureRefund(), result.getGasUsed() / 2);
 
-            //snapshot.flushNoReconnect();
+            track.rollback();
 //            Utils.TimeDiff("        finish tx exec",t1);
 
         }
