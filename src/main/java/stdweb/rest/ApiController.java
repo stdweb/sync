@@ -216,14 +216,14 @@ public class ApiController {
 
         BlockchainImpl blockchain = (BlockchainImpl)ethereumBean.getEthereum().getBlockchain();
         String result="TopBlock:"+blockchain.getBestBlock().getNumber()+"\n";
-        result+="stopOn:"+blockchain.getStopOn()+"\n";
+        //result+="stopOn:"+blockchain.getStopOn()+"\n";
 
         result+="Blockchain syncStatus:"+ EthereumBean_DEL.getBlockchainSyncStatus()+"\n";
 
-        if (blockchain.getStopOn()<=blockchain.getBestBlock().getNumber())
-            result+=String.format("Top block %s, Blockchain is stopped\n",String.valueOf(blockchain.getBestBlock().getNumber()));
-        else
-            result+=String.format("Top block %s, Blockchain is loading\n",String.valueOf(blockchain.getBestBlock().getNumber()));
+//        if (blockchain.getStopOn()<=blockchain.getBestBlock().getNumber())
+//            result+=String.format("Top block %s, Blockchain is stopped\n",String.valueOf(blockchain.getBestBlock().getNumber()));
+//        else
+//            result+=String.format("Top block %s, Blockchain is loading\n",String.valueOf(blockchain.getBestBlock().getNumber()));
 
         try {
             result+=String.format("Ledger_DEL sql Top block: %s\n", SqlDb.getSqlDb().getQuery().getSqlTopBlock());

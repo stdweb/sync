@@ -31,31 +31,29 @@ public class EthereumBean
     var blockchainSyncStatus : SyncStatus = SyncStatus.stopped
 
 
-
-
-    fun blockchainStartSync() {
-        blockchain.stopOn       = java.lang.Long.MAX_VALUE
-        blockchainSyncStatus    = SyncStatus.onBlockSync
-        println("blockchain started")
-    }
-
-    fun blockchainStopSync() {
-        blockchainSyncStatus= SyncStatus.stopped
-        blockchain.stopOn = 0
-        println("blockchain stopped")
-        Thread.sleep(1000)
-    }
+//    fun blockchainStartSync() {
+//        blockchain.stopOn       = java.lang.Long.MAX_VALUE
+//        blockchainSyncStatus    = SyncStatus.onBlockSync
+//        println("blockchain started")
+//    }
+//
+//    fun blockchainStopSync() {
+//        blockchainSyncStatus= SyncStatus.stopped
+//        blockchain.stopOn = 0
+//        println("blockchain stopped")
+//        Thread.sleep(1000)
+//    }
 
     @PostConstruct
     public  fun initService()
     {
         this.listener.ledgerSync=this.ledgerSync!!
-        blockchainStopSync()
+        //blockchainStopSync()
 
         //ledgerSync!!.replayAndSaveBlock(758586);
 
 
-        blockchainStartSync()
+        //blockchainStartSync()
         ledgerSync?.syncStatus = SyncStatus.onBlockSync
         ledgerSync?.nextStatus = SyncStatus.onBlockSync
 

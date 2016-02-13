@@ -82,7 +82,7 @@ class ReplayBlockWrite : ReplayBlock
             timestamp       = b?.timestamp ?: 0
             difficulty      = b?.difficultyBI?.toLong() ?: 0
             //gasLimit        = BigInteger(1, b?.gasLimit).toLong()
-            gasLimit        = b?.gasLimit ?: 0
+            gasLimit        = BigInteger(1,b?.gasLimit).toLong() ?: 0
             gasUsed         = b?.gasUsed ?: 0
             txCount         = b?.transactionsList?.size ?: 0
             unclesCount     = b?.uncleList?.size ?: 0
@@ -216,28 +216,27 @@ class ReplayBlockWrite : ReplayBlock
 
     }
 
-    fun addTxEntries(summary: TransactionExecutionSummary ) {
+    fun addTxEntries(receipt: TransactionReceipt, ind: Int) {
 
-
-
-        val ledg_tx= getOrCreateTx(summary.transaction,summary.entryNumber )
+        val summary=receipt.summary
+        val ledg_tx= getOrCreateTx(receipt.transaction, ind )
         val calcGasUsed = summary.gasLimit.subtract(summary.gasLeftover.add(summary.gasRefund)).toLong()
 
-        addTxEntries(summary.transaction, calcGasUsed, ledg_tx, summary.isFailed)
+        addTxEntries(receipt.transaction, calcGasUsed, ledg_tx, summary.isFailed)
 
         summary.internalTransactions.forEach { t ->
             addTxEntries(t, 0,
                     ledg_tx, t.isRejected)
         }
 
-        if (summary.receipt==null) {
-            println("receipt null for ${Hex.toHexString(summary.transaction.hash)} , block ${block.number}")
+        if (receipt==null) {
+            println("receipt null for ${Hex.toHexString(receipt.transaction.hash)} , block ${block.number}")
             print ("")
         }
 
 
-        saveReceipt (summary,ledg_tx)
-        saveLogs    (summary,ledg_tx)
+        saveReceipt (receipt,ledg_tx)
+        saveLogs    (receipt,ledg_tx)
     }
 
     fun addTxEntries(_tx: Transaction, _gasUsed: Long, ledg_tx : Tx, isFailed: Boolean) {
@@ -357,7 +356,8 @@ class ReplayBlockWrite : ReplayBlock
         createLedgerBlock()
         blockRepo.save(ledgerBlock)
 
-        summaries.     forEach {       addTxEntries ( it ) }
+
+        receipts.     forEach {       addTxEntries ( it ,receipts.indexOf(it) )   }
         if (this.block.number != 0L)   addRewardEntries()
 
         entries         .forEach {  ledgRepo.save( it ) }
@@ -379,9 +379,9 @@ class ReplayBlockWrite : ReplayBlock
 
     }
 
-    private fun saveReceipt(summary: TransactionExecutionSummary, _tx : Tx) {
+    private fun saveReceipt(receipt: TransactionReceipt, _tx : Tx) {
 
-        val r=summary.receipt
+        val r=receipt
         with (TxReceipt())
         {
             id              = _tx.id
@@ -395,10 +395,10 @@ class ReplayBlockWrite : ReplayBlock
         }
     }
 
-    private fun saveLogs(summary: TransactionExecutionSummary,_tx : Tx) {
+    private fun saveLogs(receipt: TransactionReceipt,_tx : Tx) {
 
         var _ind=0
-        summary .receipt .logInfoList .forEach {
+        receipt .logInfoList .forEach {
             with (TxLog())
             {
                 tx          = _tx

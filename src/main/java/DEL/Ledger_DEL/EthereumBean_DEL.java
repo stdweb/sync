@@ -299,7 +299,7 @@ public class EthereumBean_DEL {
     public static void blockchainStartSync()
     {
         String ret="";
-        blockchain.setStopOn(Long.MAX_VALUE);
+        //blockchain.setStopOn(Long.MAX_VALUE);
         if (blockchainSyncStatus==SyncStatus.onBlockSync)
             ret="blockchain sync is already started";
         else {
@@ -318,7 +318,7 @@ public class EthereumBean_DEL {
 //        else
         ret="blockchain sync is stopped";
 
-        blockchain.setStopOn(0);
+        //blockchain.setStopOn(0);
         blockchainSyncStatus=SyncStatus.stopped;
 
         try {

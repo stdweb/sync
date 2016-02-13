@@ -2,6 +2,7 @@ package stdweb.ethereum;
 
 import org.ethereum.core.Block;
 import org.ethereum.core.TransactionExecutionSummary;
+import org.ethereum.core.TransactionReceipt;
 import org.ethereum.facade.Ethereum;
 import org.ethereum.listener.EthereumListenerAdapter;
 import stdweb.Core.SyncStatus;
@@ -28,7 +29,7 @@ public class EthereumListener extends EthereumListenerAdapter {
     }
 
     @Override
-    public void onBlockExecuted(Block block,List<TransactionExecutionSummary> summaries)
+    public void onBlock(Block block,List<TransactionReceipt> receipts)
     {
 
         if (block.getNumber()==0)
@@ -45,7 +46,7 @@ public class EthereumListener extends EthereumListenerAdapter {
 //            System.out.println("LedgerSync is locked");
 
         if (ledgerSync.getSyncStatus()== SyncStatus.onBlockSync) {
-                ledgerSync.saveBlock(block, summaries);
+                ledgerSync.saveBlock(block, receipts);
         }
     }
 

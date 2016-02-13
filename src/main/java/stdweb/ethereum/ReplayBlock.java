@@ -98,14 +98,18 @@ public abstract class ReplayBlock {
 //            System.out.println("Replayblock ctor. BlockNo not found:" + blockNo);
 //    }
 
-    List<TransactionExecutionSummary> summaries = null;
+    List<TransactionReceipt> receipts = null;
 
     public void run() throws HashDecodeException, AddressDecodeException {
+
+        System.out.println("Replay block is disabled");
+        System.exit(-1);
+
         if (block == null) {
             return ;
         }
         blockReplayed=true;
-        summaries= new ArrayList<>();
+        receipts= new ArrayList< >();
 
 
         long t1= System.currentTimeMillis();
@@ -141,7 +145,7 @@ public abstract class ReplayBlock {
             executor.go();
             //Utils.TimeDiff("        after gor",t1);
 
-            summaries.add(executor.finalization());
+            executor.finalization();
             //Utils.TimeDiff("        after finaliz",t1);
 
             totalGasUsed += executor.getGasUsed();

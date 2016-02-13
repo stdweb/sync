@@ -33,8 +33,8 @@ public class TestBalances {
         SqlDb sqlDb = SqlDb.getSqlDb();
         BlockchainImpl blockchain = (BlockchainImpl) EthereumBean_DEL.getBlockchainImpl();
 
-        long stopOn = blockchain.getStopOn();
-        blockchain.setStopOn(0);
+        //long stopOn = blockchain.getStopOn();
+        //blockchain.setStopOn(0);
         Thread.sleep(500);
         BigDecimal trieBalance = BlockchainQuery.getTrieBalance(block);
         BigDecimal ledgerBlockBalance = sqlDb.getQuery().getLedgerBlockBalance(block.getNumber());
@@ -47,7 +47,7 @@ public class TestBalances {
             result="Block balance incorrect:" + number + ", trie - ledger: " + Convert2json.BI2ValStr(trieBalance.toBigInteger(), false) + " - " + Convert2json.BI2ValStr(ledgerBlockBalance.toBigInteger(), false);
         }
 
-        blockchain.setStopOn(stopOn);
+        //blockchain.setStopOn(stopOn);
 
         result+="\n"+"ledger count:"+ sqlDb.getQuery().ledgerCount(block.getNumber())+"\n";
         result+="Coinbase delta:"+ Hex.toHexString(block.getCoinbase())+" -> "+Convert2json.BD2ValStr(BlockchainQuery.getCoinbaseTrieDelta(block),false);
@@ -66,8 +66,8 @@ public class TestBalances {
         SqlDb sqlDb = SqlDb.getSqlDb();
         BlockchainImpl blockchain = (BlockchainImpl) EthereumBean_DEL.getBlockchainImpl();
 
-        long stopOn = blockchain.getStopOn();
-        blockchain.setStopOn(0);
+        //long stopOn = blockchain.getStopOn();
+        //blockchain.setStopOn(0);
         Thread.sleep(500);
 
         LedgerQuery query = LedgerQuery.getQuery(SqlDb.getSqlDb());
@@ -98,7 +98,7 @@ public class TestBalances {
             }
         }
 
-        blockchain.setStopOn(stopOn);
+        //blockchain.setStopOn(stopOn);
         return result;
     }
 

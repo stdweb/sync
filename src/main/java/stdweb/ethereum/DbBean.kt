@@ -2,6 +2,7 @@ package stdweb.ethereum
 
 import org.ethereum.core.Block
 import org.ethereum.core.TransactionExecutionSummary
+import org.ethereum.core.TransactionReceipt
 import org.spongycastle.util.encoders.Hex
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
@@ -23,7 +24,7 @@ open class DbBean {
     @Autowired open var ethereumBean     : EthereumBean? = null
 
     @Transactional//(propagation = Propagation.REQUIRES_NEW)
-    open fun saveBlockData(block : Block, summaries: List<TransactionExecutionSummary>?)
+    open fun saveBlockData(block : Block, receipts: List<TransactionReceipt>?)
     {
         val replayBlock = ReplayBlockWrite(
                 ledgService!!,block,
@@ -35,10 +36,10 @@ open class DbBean {
                 receiptRepo!!
         )
 
-        if (summaries==null)
+        if (receipts==null)
             replayBlock.run()
         else
-            replayBlock.summaries = summaries
+            replayBlock.receipts = receipts
 
         replayBlock.write()
     }

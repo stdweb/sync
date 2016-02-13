@@ -82,7 +82,7 @@ class CmdController
             }
             else -> try {
                 val block = Integer.parseInt(cmd)
-                ledgSync.old_ledgerBulkLoad(block)
+                //ledgSync.old_ledgerBulkLoad(block)
                 //ethereumBean.ledgerStartSync(block);
             } catch (e: NumberFormatException) {
                 //return "Wrong cmd in method /ledger/{cmd}"
@@ -99,12 +99,12 @@ class CmdController
         var result= HashMap<String, String>()
 
         when (cmd.toLowerCase()) {
-            "stop" -> ethereumBean.blockchainStopSync()
-            "start" -> {
-                ledgSync.syncStatus = SyncStatus.onBlockSync
-                ledgSync.nextStatus = SyncStatus.onBlockSync
-                ethereumBean.blockchainStartSync()
-            }
+            //"stop" -> ethereumBean.blockchainStopSync()
+//            "start" -> {
+//                ledgSync.syncStatus = SyncStatus.onBlockSync
+//                ledgSync.nextStatus = SyncStatus.onBlockSync
+//                ethereumBean.blockchainStartSync()
+//            }
             "check" -> result.put ("check balance","not implemented")//TestBalances.checkBalance()
         }//status
         result.putAll( ledgSync.status())

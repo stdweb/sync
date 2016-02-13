@@ -4,6 +4,7 @@ package stdweb.ethereum
 import org.ethereum.core.Account
 import org.ethereum.core.Block
 import org.ethereum.core.TransactionExecutionSummary
+import org.ethereum.core.TransactionReceipt
 import org.ethereum.db.ByteArrayWrapper
 import org.ethereum.db.RepositoryImpl
 import org.spongycastle.util.encoders.Hex
@@ -47,7 +48,7 @@ open class LedgerSyncService
     @Autowired open var dbBean           : DbBean? = null
 
     var q : HashMap<Sha3Hash,ReplayBlockWrite> = HashMap()
-    var blockSummaries : HashMap<Sha3Hash,List<TransactionExecutionSummary>> = HashMap()
+    var blockReceipts: HashMap<Sha3Hash,List<TransactionReceipt>> = HashMap()
     
 
     open val lock : ReentrantLock = ReentrantLock()
@@ -114,13 +115,13 @@ open class LedgerSyncService
             val block=ethereumBean!! .blockchain.getBlockByNumber(i.toLong())
             val t1=System.currentTimeMillis()
 
-            val summaries=blockSummaries.remove(Sha3Hash(block.hash))
-            if (summaries==null)
+            val receipts= blockReceipts.remove(Sha3Hash(block.hash))
+            if (receipts==null)
                 println ("replay write ${block.number} : ${Hex.toHexString(block.hash)}")
             else
                 println ("blockSummaries found in collection")
 
-            dbBean!!.saveBlockData(block,summaries )
+            dbBean!!.saveBlockData(block,receipts )
         }
 
         println ("    =====> end bulkloading  ")
@@ -177,12 +178,13 @@ open class LedgerSyncService
 
     }
 
-    open fun saveBlock(newBlock : Block, summaries : List<TransactionExecutionSummary>?)
+    open fun saveBlock(newBlock : Block, receipts : List<TransactionReceipt>?)
     {
+
         cleanBlockSummaries()
 
-        if (summaries!=null)
-            blockSummaries.putIfAbsent(Sha3Hash(newBlock.hash),summaries)
+        if (receipts!=null)
+            blockReceipts.putIfAbsent(Sha3Hash(newBlock.hash),receipts )
 
         val tst=ethereumBean!!.blockchain.getBlockByNumber(newBlock.number)
 
@@ -197,7 +199,7 @@ open class LedgerSyncService
             if (blockExists){
                 //exists in sql -- skipping
                 println ("bskip ${newBlock.number} : ${Hex.toHexString(newBlock.hash)}")
-                val summaries=blockSummaries.remove(Sha3Hash(newBlock.hash))
+                val summaries= blockReceipts.remove(Sha3Hash(newBlock.hash))
                 return
             }else{
                 if (parentExists)//block not exists in sql , parent exists
@@ -207,8 +209,8 @@ open class LedgerSyncService
                             //print ("b:${newBlock.number} b_Exists ${blockExists}, p_Exist ${parentExists}, b_Diff ${blockDiff} ")
                             //print (" <-- Norma ")
                             //normal blockchain sync loading
-                            blockSummaries  .remove(Sha3Hash(newBlock.hash))
-                            dbBean!!        .saveBlockData(newBlock,summaries)
+                            blockReceipts.remove(Sha3Hash(newBlock.hash))
+                            dbBean!!        .saveBlockData(newBlock,receipts)
 
                         }
                         blockDiff == 0 -> {
@@ -237,7 +239,7 @@ open class LedgerSyncService
                                     " b_Exists ${blockExists}, p_Exist ${parentExists}, b_Diff ${blockDiff} ")
 
                             rebranchSqlDb(newBlock)
-                            dbBean!!.saveBlockData(newBlock,summaries)
+                            dbBean!!.saveBlockData(newBlock,receipts)
                             println("--------------------------->")
                         }// need rebranch
                         blockDiff > 1 -> {
@@ -255,7 +257,7 @@ open class LedgerSyncService
                             println (" <-- rebranch ")
                             //this.ledgerBulkLoad(sqlTop.id+1,newBlock.number.toInt())
                             this.rebranchSqlDb(newBlock)
-                            dbBean!!.saveBlockData(newBlock,summaries)
+                            dbBean!!.saveBlockData(newBlock,receipts)
                             println("--------------------------->")
                         } //need bulkloading
 
@@ -278,8 +280,8 @@ open class LedgerSyncService
     }
 
     private fun cleanBlockSummaries() {
-        if (blockSummaries.size > 10) {
-            val iter = blockSummaries.entries.iterator()
+        if (blockReceipts.size > 10) {
+            val iter = blockReceipts.entries.iterator()
             val sqlTop = blockRepo!!.topBlock()!!
             while (iter.hasNext()) {
                 val entry = iter.next()
@@ -342,28 +344,28 @@ open class LedgerSyncService
     constructor()
     {}
 
-    @Synchronized @Throws(SQLException::class, InterruptedException::class)
-    fun createSyncLedgerThread() : Thread {
-
-        println("create Ledger BulkLoadThread")
-        ethereumBean?.blockchainStopSync()
-
-        return  Thread {
-            while (syncStatus == SyncStatus.bulkLoading) {
-                if (nextSyncBlock <= ethereumBean?.blockchain?.bestBlock?.number?.toInt() ?: 0)
-                {
-                    replayAndSaveBlock(nextSyncBlock)
-                    nextSyncBlock++
-                }
-                else {
-                    syncStatus = nextStatus
-                    println("finished bulkloading . Block:" + ethereumBean?.blockchain?.bestBlock?.number)
-                    println("Snc status set to: " + syncStatus)
-                    break
-                }
-            }
-        }
-    }
+//    @Synchronized @Throws(SQLException::class, InterruptedException::class)
+//    fun createSyncLedgerThread() : Thread {
+//
+//        println("create Ledger BulkLoadThread")
+//        ethereumBean?.blockchainStopSync()
+//
+//        return  Thread {
+//            while (syncStatus == SyncStatus.bulkLoading) {
+//                if (nextSyncBlock <= ethereumBean?.blockchain?.bestBlock?.number?.toInt() ?: 0)
+//                {
+//                    replayAndSaveBlock(nextSyncBlock)
+//                    nextSyncBlock++
+//                }
+//                else {
+//                    syncStatus = nextStatus
+//                    println("finished bulkloading . Block:" + ethereumBean?.blockchain?.bestBlock?.number)
+//                    println("Snc status set to: " + syncStatus)
+//                    break
+//                }
+//            }
+//        }
+//    }
 
     fun stopSync() {
         println("stop BulkLoad")
@@ -371,20 +373,20 @@ open class LedgerSyncService
         nextSyncBlock = 1000000000
     }
 
-    fun old_ledgerBulkLoad(_block: Int) {
-
-        println("Ledger Start BulkLoad from :" + _block)
-        syncStatus = SyncStatus.bulkLoading
-
-        this.nextSyncBlock = _block
-        //blockRepo?.deleteBlockWithEntriesFrom(_block)
-
-        if ( ! (syncLedgerThread?.isAlive ?: false)) {
-            val thread=createSyncLedgerThread()
-            thread.start()
-            syncLedgerThread=thread
-        }
-    }
+//    fun old_ledgerBulkLoad(_block: Int) {
+//
+//        println("Ledger Start BulkLoad from :" + _block)
+//        syncStatus = SyncStatus.bulkLoading
+//
+//        this.nextSyncBlock = _block
+//        //blockRepo?.deleteBlockWithEntriesFrom(_block)
+//
+//        if ( ! (syncLedgerThread?.isAlive ?: false)) {
+//            val thread=createSyncLedgerThread()
+//            thread.start()
+//            syncLedgerThread=thread
+//        }
+//    }
 
     private var syncLedgerThread: Thread? = null
 
@@ -412,7 +414,7 @@ open class LedgerSyncService
                 logRepo!!,
                 receiptRepo!!
         )
-        saveBlock(block,replayBlock.summaries)
+        saveBlock(block,replayBlock.receipts)
 
     }
 

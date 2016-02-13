@@ -180,14 +180,14 @@ public class ReplayBlock_DEL {
 
     public void addTxEntries(TransactionExecutionSummary summary) {
 
-        Transaction tx = summary.getTransaction();
+        //Transaction tx = summary.getTransaction();
         long calcGasUsed = summary.getGasLimit().subtract(summary.getGasLeftover().add(summary.getGasRefund())).longValue();
 
-        addTxEntries(tx, calcGasUsed, summary.getEntryNumber(), summary.isFailed());
+        //addTxEntries(tx, calcGasUsed, summary.getEntryNumber(), summary.isFailed());
 
-        summary.getInternalTransactions()
-                .forEach(t -> addTxEntries(t, 0,
-                        summary.getEntryNumber(), t.isRejected()));
+//        summary.getInternalTransactions()
+//                .forEach(t -> addTxEntries(t, 0,
+//                        summary.getEntryNumber(), t.isRejected()));
 
     }
 

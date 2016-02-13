@@ -55,7 +55,9 @@ public class del_LBlock extends BlockHeader {
                          byte[] logsBloom, byte[] difficulty, long number,
                          long gasLimit, long gasUsed, long timestamp,
                          byte[] extraData, byte[] mixHash, byte[] nonce) {
-        super(parentHash,unclesHash,coinbase,logsBloom,difficulty,number,gasLimit,gasUsed,timestamp,extraData,mixHash,nonce);
+        super(parentHash,unclesHash,coinbase,logsBloom,difficulty,number,
+                null,//gasLimit,
+                gasUsed,timestamp,extraData,mixHash,nonce);
 //        this.parentHash = parentHash;
 //        this.unclesHash = unclesHash;
 //        this.coinbase = coinbase;
