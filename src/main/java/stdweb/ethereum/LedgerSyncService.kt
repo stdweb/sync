@@ -191,9 +191,13 @@ open class LedgerSyncService
         try {
             lock.lock()
 
+            val t1=System.currentTimeMillis()
             val sqlTop=blockRepo!!.topBlock()!!
+            Utils.TimeDiff("after topblock",t1)
             val blockExists  = blockRepo!!.findByHash(newBlock.hash) !=null
+            Utils.TimeDiff("after block hash search",t1)
             val parentExists = blockRepo!!.findByHash(newBlock.parentHash) !=null
+            Utils.TimeDiff("after parent hash search",t1)
             val blockDiff = newBlock.number.toInt()-sqlTop.id
 
             if (blockExists){
@@ -388,7 +392,7 @@ open class LedgerSyncService
 //        }
 //    }
 
-    private var syncLedgerThread: Thread? = null
+    //private var syncLedgerThread: Thread? = null
 
     fun replayAndSaveBlock(blockNumber: Int) {
 

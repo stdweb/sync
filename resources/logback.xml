@@ -39,7 +39,7 @@
         <appender-ref ref="STDOUT" />
     </root>
 
-    <logger level="ERROR" name="general"/>
+    <logger level="INFO" name="general"/>
     <logger level="ERROR" name="net"/>
     <logger level="OFF" name="wire"/>
 

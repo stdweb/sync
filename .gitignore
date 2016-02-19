@@ -8,7 +8,7 @@
 logs
 
 database
-database1
+database*
 sqldb
 
 build

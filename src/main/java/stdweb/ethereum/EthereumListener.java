@@ -35,6 +35,11 @@ public class EthereumListener extends EthereumListenerAdapter {
         if (block.getNumber()==0)
             return;
 
+        if (block.getNumber()<1001035)
+        {
+            System.out.println("skip without check:"+block.getNumber());
+            return;
+        }
 
         //System.out.println("on block exec "+block.getNumber());
         if (ledgerSync==null)

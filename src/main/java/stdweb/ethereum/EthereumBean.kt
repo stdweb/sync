@@ -52,6 +52,9 @@ public class EthereumBean
 
         //ledgerSync!!.replayAndSaveBlock(758586);
 
+        //dbBean!!.deleteTopBlocksData(1000994)
+        //val block = blockchain.getBlockByNumber(1000994);
+        //println ("found  ${block.number} -> ${block.shortHash}")
 
         //blockchainStartSync()
         ledgerSync?.syncStatus = SyncStatus.onBlockSync
